@@ -1,7 +1,8 @@
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db";
-import { run, screenshot } from "../db/schema/core";
+import { run, screenshot, version } from "../db/schema/core";
+import { screenshotsQueue } from "../lib/queue";
 import { protectedProcedure, router } from "../lib/trpc";
 
 export const runsRouter = router({
@@ -16,12 +17,31 @@ export const runsRouter = router({
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
-			const { emailId, versionId } = input;
+			const { emailId, versionId, clients, dark } = input;
+			// fetch HTML for the version to embed in job data
+			const [versionRow] = await db
+				.select()
+				.from(version)
+				.where(eq(version.id, versionId));
+			if (!versionRow) {
+				throw new Error("Version not found");
+			}
 			const [row] = await db
 				.insert(run)
 				.values({ emailId, versionId })
 				.returning();
-			// TODO: enqueue BullMQ jobs here (Phase 3)
+			// Enqueue a job per client/engine pair
+			await Promise.all(
+				clients.map((c) =>
+					screenshotsQueue.add("screenshot", {
+						runId: row.id,
+						html: versionRow.html,
+						client: c.client,
+						engine: c.engine,
+						dark,
+					}),
+				),
+			);
 			return row;
 		}),
 

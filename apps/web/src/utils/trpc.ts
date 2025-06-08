@@ -2,7 +2,6 @@ import { QueryCache, QueryClient } from "@tanstack/react-query";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { toast } from "sonner";
-// @ts-ignore TODO: routed via project reference, throws TS errors on Vercel
 import type { AppRouter } from "../../../server/src/routers";
 
 export const queryClient = new QueryClient({

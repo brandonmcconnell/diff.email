@@ -2,6 +2,7 @@
 	"name": "diff-email",
 	"private": true,
 	"workspaces": ["apps/*", "packages/*"],
+	"packageManager": "pnpm@10.11.0",
 	"scripts": {
 		"check": "biome check --write .",
 		"prepare": "husky",
@@ -26,6 +27,5 @@
 		"*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}": [
 			"biome check --write ."
 		]
-	},
-	"packageManager": "pnpm@10.11.0"
+	}
 }

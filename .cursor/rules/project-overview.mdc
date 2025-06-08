@@ -1,0 +1,183 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# diff.email – Comprehensive Project Rules & Context
+
+**Mission**  
+Build an all-in-one playground for email devs/designers that lets users:
+
+1. **Author** raw HTML or React Email markup.  
+2. **Preview instantly** in a sandboxed `<iframe>` (no client quirks yet).  
+3. **Generate pixel-perfect screenshots** using real webmail engines.  
+4. **Version every run** and compare diffs over time.  
+5. Organize work as **Projects → Emails → Versions → Runs → Screenshots**.  
+6. Background jobs continue even when the user is offline.
+
+---
+
+## A · Non-negotiable Tech Stack
+
+| Layer         | Choice                            | Rationale                                    |
+|---------------|-----------------------------------|----------------------------------------------|
+| Frontend      | **Next.js 14 (App Router)**       | Single repo, file-based routing, RSC         |
+| Backend/API   | **Next.js API routes + tRPC**     | End-to-end TS types                           |
+| Runtime       | **Node.js**                       | Required for Playwright & Better Auth        |
+| Auth          | **Better Auth (Postgres adapter)**| Lightweight sessions, fits Neon              |
+| Database      | **Neon Postgres (serverless)**    | No infra, free tier                           |
+| ORM           | **Drizzle ORM**                   | SQL-first, TS-typed                           |
+| Object Store  | **@vercel/blob**                  | Public CDN, simple SDK                       |
+| Queue         | **BullMQ + Upstash Redis**        | Durable jobs, serverless friendly            |
+| Worker Host   | **Vercel Background Function** *(or Fly VM)* | Runs Playwright even after logout            |
+| Screenshot    | **Playwright headless** (Chromium, Firefox, WebKit) | Real rendering engines                       |
+| Lint / Hooks  | **Biome + Husky**                 | Auto-format & pre-commit checks              |
+| Package mgr   | **pnpm**                          | Fast installs, deterministic                 |
+
+> **Scope guard:** Do **NOT** suggest Bun, Prisma, Prisma Edge, MongoDB, Dynamo, or native mobile frameworks. Stay within the stack.
+
+---
+
+## B · Supported Screenshot Targets (MVP)
+
+| Engine  | Webmail Client | Label shown in UI |
+|---------|----------------|-------------------|
+| Chromium | Gmail Web             | Gmail (Chrome) |
+| Chromium | Outlook Web           | Outlook (Chrome) |
+| Chromium | Yahoo Mail            | Yahoo (Chrome) |
+| Chromium | AOL Mail              | AOL (Chrome) |
+| Chromium | iCloud Mail web       | Apple Mail (web, Chrome) |
+| Firefox  | *(same clients as above)* | Gmail (Firefox), etc. |
+| WebKit   | *(same clients)*      | Gmail (Safari), etc. |
+
+*15 screenshots per run.*  
+Native desktop Outlook and mobile clients are **explicitly out of scope** for MVP.
+
+---
+
+## C · Domain Concepts & Schema
+
+### 1. Hierarchy
+```
+User
+  └── Project (folder)
+        └── Email (document)
+              └── Version (snapshot of HTML)
+                    └── Run (set of screenshots)
+                          └── Screenshot (PNG per client/engine)
+```
+
+### 2. SQL Tables (Drizzle)
+```sql
+users(
+  id uuid PK,
+  email varchar UNIQUE,
+  password_hash varchar,
+  created_at timestamptz default now()
+)
+
+projects(
+  id uuid PK,
+  user_id uuid FK ref users(id),
+  name varchar,
+  created_at timestamptz default now()
+)
+
+emails(
+  id uuid PK,
+  project_id uuid FK,
+  title varchar,
+  created_at timestamptz default now()
+)
+
+versions(
+  id uuid PK,
+  email_id uuid FK,
+  html text,
+  created_at timestamptz default now()
+)
+
+runs(
+  id uuid PK,
+  email_id uuid FK,
+  version_id uuid FK,
+  status varchar check (status in ('pending','running','done','error')),
+  created_at timestamptz default now()
+)
+
+screenshots(
+  id uuid PK,
+  run_id uuid FK,
+  client varchar,      -- gmail, outlook, yahoo, aol, icloud
+  engine varchar,      -- chromium, firefox, webkit
+  dark_mode boolean,
+  url text,
+  created_at timestamptz default now()
+)
+```
+
+---
+
+## D · API Contract (tRPC)
+
+- `auth.getSession() → { userId }`
+- `projects.list()`  
+- `projects.create(name)`
+- `emails.list(projectId)`
+- `emails.create(projectId, title, html?)`
+- `versions.save(emailId, html)` – returns `versionId`
+- `runs.create(emailId, versionId, clients[], dark)`  
+  - Inserts `runs` row (status=pending)  
+  - Enqueues BullMQ jobs `{ runId, html, client, engine, dark }`
+- `runs.get(runId)` → `{ status, screenshots[] }`
+- `runs.list(emailId)` → history
+
+---
+
+## E · Worker Responsibilities
+
+1. Consume BullMQ job.  
+2. Select Playwright engine.  
+3. Load stored cookies `storage/{client}-{engine}.json`.  
+4. `page.setContent(html)` *or* deep-link into inbox (future).  
+5. `page.emulateMedia({ colorScheme })` for dark.  
+6. `page.screenshot()` → buffer.  
+7. `put()` to @vercel/blob → get public URL.  
+8. Insert into `screenshots` table.  
+9. When last job for run completes → update `runs.status = 'done'`.
+
+---
+
+## F · UI Requirements
+
+* **Editor pane** – Monaco or `<textarea>` with syntax highlight.  
+* **Preview tab** – Raw iframe (`srcdoc`) updates on every save.  
+* **Screenshots grid** – Show placeholder “⏳ pending” until PNG ready.  
+* **Buttons**  
+  * “Save” → new Version only.  
+  * “Save & Run” → new Version + new Run.  
+* **Diff viewer** – simple side-by-side HTML diff between versions.
+
+---
+
+## G · Post-MVP Enhancements (reference only)
+
+- Client-quirk CSS injection (email-css-resets).  
+- Pixel diff overlay.  
+- Team workspaces & RBAC via Better Auth roles.  
+- AI side-bar (`@vercel/ai`) for code suggestions, accessibility fixes.  
+- Native Outlook screenshots via Litmus API.  
+- PWA service worker & optional Tauri desktop shell.
+
+---
+
+### IMPORTANT EDITOR RULES
+
+* If a prompt conflicts with this document, **ask for clarification** before generating code.  
+* Do not propose alternative stacks.  
+* Keep generated code TypeScript-strict (`noUncheckedIndexedAccess`, etc.).  
+* Use Drizzle schema imports instead of raw SQL in app code.  
+* Background job code must run in Node runtime (not edge).  
+* Store screenshots in @vercel/blob with public URLs.
+
+*(End of rules – you can slimming later once groundwork is done.)*

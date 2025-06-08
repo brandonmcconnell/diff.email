@@ -25,6 +25,7 @@ export default function Dashboard() {
 		<div>
 			<h1>Dashboard</h1>
 			<p>Welcome {session?.user.name}</p>
+			{/* @ts-ignore TODO: routed via project reference, throws TS errors on Vercel */}
 			<p>privateData: {privateData.data?.message}</p>
 		</div>
 	);

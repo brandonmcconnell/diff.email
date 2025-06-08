@@ -12,7 +12,12 @@ export const runsRouter = router({
 				emailId: z.string().uuid(),
 				versionId: z.string().uuid(),
 				// clients array & dark flag for future; accept but ignore for now
-				clients: z.array(z.object({ client: z.string(), engine: z.string() })),
+				clients: z.array(
+					z.object({
+						client: z.enum(["gmail", "outlook", "yahoo", "aol", "icloud"]),
+						engine: z.enum(["chromium", "firefox", "webkit"]),
+					}),
+				),
 				dark: z.boolean(),
 			}),
 		)

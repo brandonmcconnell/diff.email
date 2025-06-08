@@ -1,0 +1,31 @@
+{
+	"name": "diff-email",
+	"private": true,
+	"workspaces": ["apps/*", "packages/*"],
+	"scripts": {
+		"check": "biome check --write .",
+		"prepare": "husky",
+		"dev": "pnpm -r dev",
+		"build": "pnpm -r build",
+		"check-types": "pnpm -r check-types",
+		"dev:native": "pnpm --filter native dev",
+		"dev:web": "pnpm --filter web dev",
+		"dev:server": "pnpm --filter server dev",
+		"db:push": "pnpm --filter server db:push",
+		"db:studio": "pnpm --filter server db:studio",
+		"db:generate": "pnpm --filter server db:generate",
+		"db:migrate": "pnpm --filter server db:migrate"
+	},
+	"dependencies": {},
+	"devDependencies": {
+		"@biomejs/biome": "1.9.4",
+		"husky": "^9.1.7",
+		"lint-staged": "^15.5.0"
+	},
+	"lint-staged": {
+		"*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}": [
+			"biome check --write ."
+		]
+	},
+	"packageManager": "pnpm@10.11.0"
+}

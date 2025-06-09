@@ -8,7 +8,8 @@
 		"dev": "tsx watch src/index.ts",
 		"build": "tsc -p tsconfig.json",
 		"start": "node dist/index.js",
-		"cache-sessions": "tsx src/cacheSessions.ts"
+		"cache-sessions": "tsx src/cacheSessions.ts",
+		"clone-sessions": "tsx src/cloneSessions.ts"
 	},
 	"dependencies": {
 		"@vercel/blob": "^1.1.0",

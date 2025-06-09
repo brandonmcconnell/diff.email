@@ -3,11 +3,10 @@ description:
 globs: 
 alwaysApply: false
 ---
-# Future Considerations
+This document captures ideas or enhancements that are currently **out-of-scope** but worth tracking for later iterations.
+Once a issue management solution is set up for diff.email (Linear, GitHub, Jira), consider moving these into issues.
 
-This document captures ideas or enhancements that are **out-of-scope for MVP** but worth tracking for later iterations.
-
-## 1. Outlook Web deep-link via Graph / EWS
+# Outlook Web deep-link via Graph / EWS
 
 Current MVP falls back to subject-search polling in Outlook Web.  A more reliable and faster path is to:
 
@@ -17,10 +16,48 @@ Current MVP falls back to subject-search polling in Outlook Web.  A more reliabl
 
 This requires three new env-vars (`GRAPH_TENANT_ID`, `GRAPH_CLIENT_ID`, `GRAPH_CLIENT_SECRET`) and token refresh logic in the worker.
 
-## 2. Passkeys / WebAuthn for Automated Login
+# Passkeys / WebAuthn for Automated Login
 
 Automating 2FA via passkeys or WebAuthn would remove the dependence on TOTP secrets and reduce friction when providers deprecate TOTP.  Playwright supports WebAuthn emulation, but the flow differs per provider and is currently brittle in CI.  Re-evaluate once browser & provider support stabilise.
 
-## 3. Password-manager Integration for TOTP
+# Password-manager Integration for TOTP
 
 Instead of storing the 32-char TOTP secret in env-vars, consider integrating a secrets manager (1Password Connect, HashiCorp Vault, etc.) that can generate TOTP codes on demand, further reducing secret sprawl.
+
+# Dark mode
+
+Add better support for dark mode, toggling email client option for dark mode and emulating dark mode via CSS.
+
+Consideration: If the overhead on toggling between light and dark mode is too much, or if it poses a risk with multiple workers working in parallel (e.g. one toggling into dark mode while another attempts to take a screenshot in light mode), consider creating different mail account for light vs. dark mode.
+
+# Use email client APIs for faster email availability checks and meta details
+
+Use email client APIs/SDKs to check email details (in spam vs. not, etc.), email readiness, deep-link IDs, etc.
+
+# Fully-Automated iCloud 2FA via SMS API (Twilio)
+
+The MVP captures iCloud session cookies once (after a human approves the initial 2FA SMS) and reuses them for ~90 days. For uninterrupted, unattended operation, migrate to an SMS-automation flow using Twilio:
+
+1. Add a programmable SMS number (Twilio, Vonage, etc.) as a **trusted phone** on the Apple ID.
+2. Update the Playwright login helper to select “Text Message to +<TwilioNumber>”, then poll Twilio’s REST API for the six-digit code:
+   ```ts
+   const sms = await pollTwilioCode(env.TWILIO_SID, env.TWILIO_TOKEN, env.TWILIO_NUMBER);
+   await page.fill('input[name="code"]', sms);
+   ```
+3. On success, save the new storageState and overwrite the blob file. The SMS flow will only run when cookies expire.
+
+Additional env-vars: `TWILIO_SID`, `TWILIO_TOKEN`, `TWILIO_NUMBER`.
+
+This upgrade removes all human steps from iCloud log-ins while keeping the worker architecture unchanged.
+
+# Add support for physical device screenshots (high effort)
+
+Look into setting up a screenshot architecture and workflow for physical devices and native apps. This will require organizing my own VM/device farm locally or resourcing a service like HeadSpin (https://www.headspin.io/) for testing.
+
+HeadSpin's unlimited usage plan starts at $125/mo, but it would likely still lack some feature I would need, so I would need to explore pricing options for their enterprise-level CloudTest Pro plan (prices not listed).
+
+It would be great to find a way to integrate with HeadSpin or a similar service that would work in the heart of this being a dedicated open-source project, to the extent that I would consider starting with HeadSpin and eventually launching a second related open-source platform for dedicated pay-as-you-go usage-billed VM/device farm usage with safe device restores between sessions.
+
+One other considerations here is that rather than buying many different devices, I may be able to get "close enough" for Apple device usage using the official Apple Xcode Simulators available for iOS, iPadOS, watchOS, tvOS, and visionOS. This separate business entity would operate both to empower diff.email as well as exist as its own standalone product/service, also pay-as-you and usage-billed.
+
+For different browser-based testing, if there was a need, a service like BrowserStack or TestGrid might be worth looking into, though that would be purely for OS/browser-based testing, but without access to native apps.

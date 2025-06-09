@@ -23,7 +23,8 @@
 		},
 		"declaration": true,
 		"emitDeclarationOnly": true,
-		"declarationDir": "dist/types"
+		"declarationDir": "dist/types",
+		"noEmit": true
 	},
 	"include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
 	"exclude": ["node_modules"]

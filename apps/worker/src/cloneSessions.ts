@@ -2,6 +2,7 @@
 // Usage: pnpm --filter worker clone-sessions
 // Requires env var SESSIONS_STATE_READ_WRITE_TOKEN (RW token for the bucket).
 
+import "dotenv/config";
 import process from "node:process";
 import { put } from "@vercel/blob";
 

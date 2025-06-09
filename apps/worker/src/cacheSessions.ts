@@ -2,6 +2,7 @@
 
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import "dotenv/config"; // load env vars from .env in this package
 import process from "node:process";
 import { put } from "@vercel/blob";
 import { type BrowserType, chromium, firefox, webkit } from "playwright";
@@ -16,7 +17,8 @@ interface Args {
 }
 
 function parseArgs(): Args {
-	const args = process.argv.slice(2);
+	// Remove standalone "--" tokens that pnpm inserts when passing args
+	const args = process.argv.slice(2).filter((t) => t !== "--");
 	const out: Record<string, string> = {};
 	for (let i = 0; i < args.length; i += 2) {
 		const key = args[i]?.replace(/^--/, "");
@@ -95,4 +97,8 @@ const browserType: BrowserType =
 	await put(key, buffer, { access: "public", token: sessionsToken });
 
 	console.log("✅ Session uploaded successfully.");
+
+	// Explicitly exit to release any lingering handles so that shell loops can
+	// continue automatically.
+	process.exit(0);
 })();

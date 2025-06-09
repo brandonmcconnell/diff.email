@@ -5,53 +5,10 @@ import path from "node:path";
 import "dotenv/config"; // load env vars from .env in this package
 import process from "node:process";
 import { put } from "@vercel/blob";
+import { Command } from "commander";
 import { chromium, firefox, webkit } from "playwright";
 
 import type { Client, Engine } from "@server/lib/queue";
-
-// ---------------------------------------------------------------------------
-// Helper: rudimentary arg parser ------------------------------------------------
-interface Args {
-	client: Client;
-	engine: Engine;
-	force: boolean;
-	debug: boolean;
-}
-
-function parseArgs(): Args {
-	// Remove standalone "--" tokens that pnpm inserts when passing args
-	const argv = process.argv.slice(2).filter((t) => t !== "--");
-	const out: Record<string, string> = {};
-	let force = false;
-	let debug = false;
-	for (let i = 0; i < argv.length; i++) {
-		const token = argv[i];
-		if (token === "--force") {
-			force = true;
-			continue;
-		}
-		if (token === "--debug") {
-			debug = true;
-			continue;
-		}
-		if (!token.startsWith("--")) continue;
-		const key = token.replace(/^--/, "");
-		const val = argv[i + 1];
-		if (!val || val.startsWith("--")) continue;
-		out[key] = val;
-		i++; // skip value in next iteration
-	}
-	const { client, engine } = out as Partial<Omit<Args, "force" | "debug">>;
-	if (!client || !engine) {
-		console.error(
-			"Usage: tsx cacheSessions.ts --client <gmail|outlook|yahoo|aol|icloud> --engine <chromium|firefox|webkit> [--force] [--debug]",
-		);
-		process.exit(1);
-	}
-	return { client, engine, force, debug } as Args;
-}
-
-const { client, engine, force, debug } = parseArgs();
 
 // ---------------------------------------------------------------------------
 // Env vars & constants --------------------------------------------------------
@@ -67,10 +24,37 @@ function envPrefix(): "dev" | "preview" | "prod" {
 	return "dev";
 }
 
-const key = `${envPrefix()}/sessions/${client}-${engine}.json`;
+// key and URLs will be computed after CLI options are parsed
 
-// Derive the store host (<storeId>.public.blob.vercel-storage.com) from the
-// read-write token: vercel_blob_rw_<storeId>_<secret>
+// ---------------------------------------------------------------------------
+// Parse CLI early so we can use variables in subsequent consts --------------
+
+const cli = new Command();
+
+cli
+	.requiredOption("--client <client>", "gmail|outlook|yahoo|aol|icloud")
+	.requiredOption("--engine <engine>", "chromium|firefox|webkit")
+	.option("--force", "overwrite existing session")
+	.option("--debug", "verbose output");
+
+cli.parse(process.argv);
+
+const opts = cli.opts<{
+	client: Client;
+	engine: Engine;
+	force?: boolean;
+	debug?: boolean;
+}>();
+
+const client = opts.client as Client;
+const engine = opts.engine as Engine;
+const force = !!opts.force;
+const debug = !!opts.debug;
+
+// ---------------------------------------------------------------------------
+// Derived paths/URLs ---------------------------------------------------------
+
+const key = `${envPrefix()}/sessions/${client}-${engine}.json`;
 const storeId = sessionsToken
 	.match(/^vercel_blob_rw_([A-Za-z0-9]+)_/)?.[1]
 	?.toLowerCase();

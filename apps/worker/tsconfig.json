@@ -3,7 +3,7 @@
 		"target": "ES2019",
 		"module": "esnext",
 		"lib": ["esnext"],
-		"moduleResolution": "node",
+		"moduleResolution": "bundler",
 		"esModuleInterop": true,
 		"skipLibCheck": true,
 		"strict": true,
@@ -13,10 +13,13 @@
 		"types": ["node"],
 		"verbatimModuleSyntax": true,
 		"allowSyntheticDefaultImports": true,
+		"outDir": "dist",
+		"baseUrl": ".",
 		"paths": {
 			"@server/*": ["../server/src/*"]
 		}
 	},
-	"include": ["src", "../server/src"],
-	"exclude": ["node_modules"]
+	"include": ["src"],
+	"exclude": ["node_modules"],
+	"references": [{ "path": "../server" }]
 }

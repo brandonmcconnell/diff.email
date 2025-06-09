@@ -69,7 +69,15 @@ async function getStorageStatePath(
 
 //--------------------------------------------------------------------------
 async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
-	const { runId, html, client, engine, dark } = job.data;
+	const {
+		runId,
+		html,
+		client,
+		engine,
+		dark,
+		subjectToken: _subjectToken,
+		messageId: _messageId,
+	} = job.data;
 
 	// Choose browser type
 	const browserType =

@@ -19,10 +19,13 @@ export const runsRouter = router({
 					}),
 				),
 				dark: z.boolean(),
+				subjectToken: z.string().optional(),
+				messageId: z.string().optional(),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
-			const { emailId, versionId, clients, dark } = input;
+			const { emailId, versionId, clients, dark, subjectToken, messageId } =
+				input;
 			// fetch HTML for the version to embed in job data
 			const [versionRow] = await db
 				.select()
@@ -44,6 +47,8 @@ export const runsRouter = router({
 						client: c.client,
 						engine: c.engine,
 						dark,
+						subjectToken,
+						messageId,
 					}),
 				),
 			);

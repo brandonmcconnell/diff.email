@@ -5,7 +5,7 @@ import path from "node:path";
 import "dotenv/config"; // load env vars from .env in this package
 import process from "node:process";
 import { put } from "@vercel/blob";
-import { type BrowserType, chromium, firefox, webkit } from "playwright";
+import { chromium, firefox, webkit } from "playwright";
 
 import type { Client, Engine } from "@server/lib/queue";
 
@@ -14,29 +14,44 @@ import type { Client, Engine } from "@server/lib/queue";
 interface Args {
 	client: Client;
 	engine: Engine;
+	force: boolean;
+	debug: boolean;
 }
 
 function parseArgs(): Args {
 	// Remove standalone "--" tokens that pnpm inserts when passing args
-	const args = process.argv.slice(2).filter((t) => t !== "--");
+	const argv = process.argv.slice(2).filter((t) => t !== "--");
 	const out: Record<string, string> = {};
-	for (let i = 0; i < args.length; i += 2) {
-		const key = args[i]?.replace(/^--/, "");
-		const val = args[i + 1];
-		if (!key || !val) continue;
+	let force = false;
+	let debug = false;
+	for (let i = 0; i < argv.length; i++) {
+		const token = argv[i];
+		if (token === "--force") {
+			force = true;
+			continue;
+		}
+		if (token === "--debug") {
+			debug = true;
+			continue;
+		}
+		if (!token.startsWith("--")) continue;
+		const key = token.replace(/^--/, "");
+		const val = argv[i + 1];
+		if (!val || val.startsWith("--")) continue;
 		out[key] = val;
+		i++; // skip value in next iteration
 	}
-	const { client, engine } = out as Partial<Args>;
+	const { client, engine } = out as Partial<Omit<Args, "force" | "debug">>;
 	if (!client || !engine) {
 		console.error(
-			"Usage: tsx cacheSessions.ts --client <gmail|outlook|yahoo|aol|icloud> --engine <chromium|firefox|webkit>",
+			"Usage: tsx cacheSessions.ts --client <gmail|outlook|yahoo|aol|icloud> --engine <chromium|firefox|webkit> [--force] [--debug]",
 		);
 		process.exit(1);
 	}
-	return { client, engine } as Args;
+	return { client, engine, force, debug } as Args;
 }
 
-const { client, engine } = parseArgs();
+const { client, engine, force, debug } = parseArgs();
 
 // ---------------------------------------------------------------------------
 // Env vars & constants --------------------------------------------------------
@@ -53,22 +68,60 @@ function envPrefix(): "dev" | "preview" | "prod" {
 }
 
 const key = `${envPrefix()}/sessions/${client}-${engine}.json`;
-const uploadPath = `https://blob.vercel-storage.com/${sessionsBucket}/${key}`;
+
+// Derive the store host (<storeId>.public.blob.vercel-storage.com) from the
+// read-write token: vercel_blob_rw_<storeId>_<secret>
+const storeId = sessionsToken
+	.match(/^vercel_blob_rw_([A-Za-z0-9]+)_/)?.[1]
+	?.toLowerCase();
+const blobUrlSub = storeId
+	? `https://${storeId}.public.blob.vercel-storage.com/${key}`
+	: undefined;
+const blobUrlPath = `https://blob.vercel-storage.com/${sessionsBucket}/${key}`;
+
+// ---------------------------------------------------------------------------
+// Early exit if blob already exists and --force not provided -----------------
+async function blobExists(): Promise<boolean> {
+	const urls = blobUrlSub ? [blobUrlSub, blobUrlPath] : [blobUrlPath];
+	for (const url of urls) {
+		try {
+			const res = await fetch(url, {
+				method: "GET",
+				headers: {
+					Range: "bytes=0-0",
+					Authorization: `Bearer ${sessionsToken}`,
+				},
+			});
+			if (debug) console.log("skip check", url, res.status);
+			if (res.status === 200 || res.status === 206) return true;
+		} catch (err) {
+			if (debug) console.log("skip check error", url, err);
+		}
+	}
+	return false;
+}
+
+if (!force && (await blobExists())) {
+	console.log(
+		"🔄 session already exists, skip (use --force to refresh) ->",
+		key,
+	);
+	process.exit(0);
+}
 
 // ---------------------------------------------------------------------------
 // Step 1: Launch headed browser & wait for operator login --------------------
-const browserType: BrowserType =
+const browserType =
 	engine === "firefox" ? firefox : engine === "webkit" ? webkit : chromium;
 
 (async () => {
 	console.log(`Launching ${engine} for ${client}.`);
-	const userDataDir = `/tmp/${client}-${engine}-cache`; // persistent dir
+	const userDataDir = `/tmp/${client}-${engine}-cache`;
 	const context = await browserType.launchPersistentContext(userDataDir, {
 		headless: false,
 	});
 	const page = await context.newPage();
 
-	// naive login URL mapping
 	const loginUrl: Record<Client, string> = {
 		gmail: "https://mail.google.com/",
 		outlook: "https://outlook.live.com/mail/",
@@ -93,12 +146,10 @@ const browserType: BrowserType =
 	await context.close();
 
 	const buffer = await fs.readFile(statePath);
-	console.log("Uploading to", uploadPath);
+	console.log("Uploading to", blobUrlPath);
 	await put(key, buffer, { access: "public", token: sessionsToken });
 
 	console.log("✅ Session uploaded successfully.");
 
-	// Explicitly exit to release any lingering handles so that shell loops can
-	// continue automatically.
 	process.exit(0);
 })();

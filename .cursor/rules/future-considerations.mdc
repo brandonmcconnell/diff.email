@@ -20,6 +20,10 @@ This requires three new env-vars (`GRAPH_TENANT_ID`, `GRAPH_CLIENT_ID`, `GRAPH_C
 
 Automating 2FA via passkeys or WebAuthn would remove the dependence on TOTP secrets and reduce friction when providers deprecate TOTP.  Playwright supports WebAuthn emulation, but the flow differs per provider and is currently brittle in CI.  Re-evaluate once browser & provider support stabilise.
 
+# Security policies
+
+We need to either find a way to only show thumbnails temporarily and clear them after each run, or save them for a certain amount of time (maybe 1 month) and give the user the option to delete them sooner if they wish, and also to regenerate screenshots from stale runs where screenshots have expired.
+
 # Password-manager Integration for TOTP
 
 Instead of storing the 32-char TOTP secret in env-vars, consider integrating a secrets manager (1Password Connect, HashiCorp Vault, etc.) that can generate TOTP codes on demand, further reducing secret sprawl.

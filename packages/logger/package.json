@@ -3,12 +3,23 @@
 	"version": "0.1.0",
 	"private": true,
 	"type": "module",
-	"main": "./index.js",
-	"types": "./index.d.ts",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
 	"description": "Shared pino logger used by diff.email backend apps",
 	"keywords": ["logger", "pino", "diff.email"],
 	"author": "diff.email",
 	"license": "MIT",
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		}
+	},
+	"files": ["dist"],
+	"scripts": {
+		"build": "tsc -p tsconfig.json",
+		"prepare": "pnpm run build"
+	},
 	"dependencies": {
 		"pino": "^9.7.0"
 	},

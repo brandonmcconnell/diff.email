@@ -1,0 +1,17 @@
+{
+	"compilerOptions": {
+		"target": "ES2019",
+		"module": "esnext",
+		"lib": ["esnext"],
+		"moduleResolution": "bundler",
+		"skipLibCheck": true,
+		"declaration": true,
+		"outDir": "dist",
+		"rootDir": "src",
+		"emitDeclarationOnly": false,
+		"allowSyntheticDefaultImports": true,
+		"verbatimModuleSyntax": true,
+		"strict": true
+	},
+	"include": ["src/**/*.ts"]
+}

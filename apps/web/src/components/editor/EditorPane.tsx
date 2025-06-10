@@ -1,11 +1,22 @@
 "use client";
-import dynamic from "next/dynamic";
-import { useEffect } from "react";
+import type { editor as Monaco } from "monaco-editor";
 import { useTheme } from "next-themes";
+import dynamic from "next/dynamic";
 
-const MonacoEditor = dynamic<any>(() => import("@monaco-editor/react"), {
-	ssr: false,
-});
+interface MonacoEditorPropsMinimal {
+	theme?: string;
+	language?: string;
+	value?: string;
+	onChange?: (value: string | undefined) => void;
+	options?: Monaco.IStandaloneEditorConstructionOptions;
+	className?: string;
+}
+
+// Dynamically load Monaco while keeping full prop typing.
+const MonacoEditor = dynamic<MonacoEditorPropsMinimal>(
+	() => import("@monaco-editor/react").then((mod) => mod.default),
+	{ ssr: false },
+);
 
 interface Props {
 	value: string;
@@ -29,4 +40,4 @@ export function EditorPane({ value, onChange }: Props) {
 			/>
 		</div>
 	);
-} 
+}

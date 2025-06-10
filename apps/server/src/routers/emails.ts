@@ -1,7 +1,8 @@
 import { eq } from "drizzle-orm";
+import type { CreateEmailResponse } from "resend";
 import { z } from "zod";
 import { db } from "../db";
-import { email, sentEmail, version, run } from "../db/schema/core";
+import { email, run, sentEmail, version } from "../db/schema/core";
 import { screenshotsQueue } from "../lib/queue";
 import { protectedProcedure, router } from "../lib/trpc";
 
@@ -57,29 +58,28 @@ export const emailsRouter = router({
 
 			// Send via Resend
 			const { resend } = await import("../lib/resend");
-			const res: any = await resend.emails.send({
+			const res: CreateEmailResponse = await resend.emails.send({
 				from: "Diff.email <noreply@diff.email>",
 				to,
 				subject,
 				html: v.html,
 			});
 
-			// Resend returns { id, to, ... } but headers may contain Message-ID
-			const resendId = res.id as string;
-			let messageId: string | undefined;
-			if (res?.headers && typeof res.headers === "object") {
-				messageId = (res.headers as Record<string, string>)["message-id"];
+			if (!res.data) {
+				throw new Error(
+					res.error?.message ?? "Failed to send email via Resend",
+				);
 			}
 
-			// Store row
+			const resendId = res.data.id;
+
 			await db.insert(sentEmail).values({
 				versionId,
 				resendId,
-				messageId,
 				to,
 			});
 
-			return { resendId, messageId };
+			return { resendId };
 		}),
 	/**
 	 * Send test email and enqueue screenshot run.
@@ -100,7 +100,7 @@ export const emailsRouter = router({
 					)
 					.default([{ client: "gmail", engine: "chromium" }]),
 				dark: z.boolean().default(false),
-			})
+			}),
 		)
 		.mutation(async ({ ctx, input }) => {
 			const { emailId, versionId, to, subject, clients, dark } = input;
@@ -112,23 +112,26 @@ export const emailsRouter = router({
 				.where(eq(version.id, versionId));
 			if (!v) throw new Error("Version not found");
 
-			// Send email via Resend
+			// Send email via Resend (v4)
 			const { resend } = await import("../lib/resend");
-			const res: any = await resend.emails.send({
+			const res: CreateEmailResponse = await resend.emails.send({
 				from: "Diff.email <noreply@diff.email>",
 				to,
 				subject,
 				html: v.html,
 			});
-			const resendId = res.id as string;
-			const messageId = (res.headers as Record<string, string>)[
-				"message-id"
-			];
+
+			if (!res.data) {
+				throw new Error(
+					res.error?.message ?? "Failed to send email via Resend",
+				);
+			}
+
+			const resendId = res.data.id;
 
 			await db.insert(sentEmail).values({
 				versionId,
 				resendId,
-				messageId,
 				to,
 			});
 
@@ -138,7 +141,7 @@ export const emailsRouter = router({
 				.values({ emailId, versionId })
 				.returning();
 
-			// Enqueue screenshots with messageId
+			// Enqueue screenshots (messageId not used currently)
 			await Promise.all(
 				clients.map((c) =>
 					screenshotsQueue.add("screenshot", {
@@ -147,11 +150,10 @@ export const emailsRouter = router({
 						client: c.client,
 						engine: c.engine,
 						dark,
-						messageId,
 					}),
 				),
 			);
 
-			return { runId: runRow.id, resendId, messageId };
+			return { runId: runRow.id, resendId };
 		}),
 });

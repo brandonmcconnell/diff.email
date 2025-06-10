@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { promises as fs } from "node:fs";
 import logger from "@diff-email/logger";
 import { put } from "@vercel/blob";
@@ -129,6 +130,11 @@ export const worker = new Worker<ScreenshotJobData>(
 		connection: redis,
 		concurrency: 3,
 	},
+);
+
+logger.info(
+	{ concurrency: 3 },
+	"Screenshot worker started and waiting for jobs",
 );
 
 worker.on("completed", async (job: Job<ScreenshotJobData>) => {

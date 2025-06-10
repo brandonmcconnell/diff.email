@@ -84,3 +84,16 @@ export const screenshot = pgTable("screenshots", {
 		.defaultNow()
 		.notNull(),
 });
+
+export const sentEmail = pgTable("sent_emails", {
+	id: uuid("id").defaultRandom().primaryKey(),
+	versionId: uuid("version_id")
+		.notNull()
+		.references(() => version.id, { onDelete: "cascade" }),
+	resendId: text("resend_id").notNull(),
+	messageId: text("message_id"),
+	to: text("to").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true })
+		.defaultNow()
+		.notNull(),
+});

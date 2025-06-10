@@ -24,7 +24,8 @@
 		"@vercel/blob": "^1.1.0",
 		"playwright": "^1.43.2",
 		"ioredis": "^5.3.2",
-		"@diff-email/logger": "workspace:*"
+		"@diff-email/logger": "workspace:*",
+		"resend": "^4.5.2"
 	},
 	"devDependencies": {
 		"@types/node": "^20",

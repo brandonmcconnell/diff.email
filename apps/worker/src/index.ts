@@ -6,14 +6,11 @@ import { type Job, Worker } from "bullmq";
 import { eq } from "drizzle-orm";
 import { chromium, firefox, webkit } from "playwright";
 
+import type { ScreenshotJobData } from "@diff-email/shared";
 // --- Shared imports from the server package ------------------------------
 import { db } from "@server/db";
 import { run, screenshot } from "@server/db/schema/core";
-import {
-	type ScreenshotJobData,
-	redis,
-	screenshotsQueue,
-} from "@server/lib/queue";
+import { redis, screenshotsQueue } from "@server/lib/queue";
 
 // -------------------------------------------------------------------------
 // Environment helpers

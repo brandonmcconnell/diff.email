@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db } from "../db";
 import { email, run, sentEmail, version } from "../db/schema/core";
 import { screenshotsQueue } from "../lib/queue";
+import { resend } from "../lib/resend";
 import { protectedProcedure, router } from "../lib/trpc";
 
 export const emailsRouter = router({
@@ -57,7 +58,6 @@ export const emailsRouter = router({
 			}
 
 			// Send via Resend
-			const { resend } = await import("../lib/resend");
 			const res: CreateEmailResponse = await resend.emails.send({
 				from: "Diff.email <noreply@diff.email>",
 				to,
@@ -112,8 +112,7 @@ export const emailsRouter = router({
 				.where(eq(version.id, versionId));
 			if (!v) throw new Error("Version not found");
 
-			// Send email via Resend (v4)
-			const { resend } = await import("../lib/resend");
+			// Send email via Resend
 			const res: CreateEmailResponse = await resend.emails.send({
 				from: "Diff.email <noreply@diff.email>",
 				to,

@@ -1,4 +1,5 @@
 "use client";
+import Editor from "@monaco-editor/react";
 import type { editor as Monaco } from "monaco-editor";
 import { useTheme } from "next-themes";
 import dynamic from "next/dynamic";
@@ -12,12 +13,6 @@ interface MonacoEditorPropsMinimal {
 	className?: string;
 }
 
-// Dynamically load Monaco while keeping full prop typing.
-const MonacoEditor = dynamic<MonacoEditorPropsMinimal>(
-	() => import("@monaco-editor/react").then((mod) => mod.default),
-	{ ssr: false },
-);
-
 interface Props {
 	value: string;
 	onChange: (v: string | undefined) => void;
@@ -27,7 +22,7 @@ export function EditorPane({ value, onChange }: Props) {
 	const { theme } = useTheme();
 	return (
 		<div className="h-full w-full border-r">
-			<MonacoEditor
+			<Editor
 				theme={theme === "dark" ? "vs-dark" : "light"}
 				language="html"
 				value={value}
@@ -36,7 +31,6 @@ export function EditorPane({ value, onChange }: Props) {
 					scrollBeyondLastLine: false,
 					automaticLayout: true,
 				}}
-				className="h-full w-full"
 			/>
 		</div>
 	);

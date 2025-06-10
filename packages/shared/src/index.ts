@@ -1,7 +1,3 @@
-export const ENGINES = ["chromium", "firefox", "webkit"] as const;
+export * from "./emailClients";
 
-export type Engine = (typeof ENGINES)[number];
-
-export const CLIENTS = ["gmail", "outlook", "yahoo", "aol", "icloud"] as const;
-
-export type Client = (typeof CLIENTS)[number];
+export type { ScreenshotJobData } from "./queueTypes";

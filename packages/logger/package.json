@@ -1,0 +1,18 @@
+{
+	"name": "@diff-email/logger",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"main": "./index.js",
+	"types": "./index.d.ts",
+	"description": "Shared pino logger used by diff.email backend apps",
+	"keywords": ["logger", "pino", "diff.email"],
+	"author": "diff.email",
+	"license": "MIT",
+	"dependencies": {
+		"pino": "^9.7.0"
+	},
+	"devDependencies": {
+		"pino-pretty": "^13.0.0"
+	}
+}

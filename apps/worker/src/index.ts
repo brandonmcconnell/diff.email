@@ -1,4 +1,5 @@
 import { promises as fs } from "node:fs";
+import logger from "@diff-email/logger";
 import { put } from "@vercel/blob";
 import { type Job, Worker } from "bullmq";
 import { eq } from "drizzle-orm";
@@ -145,5 +146,5 @@ worker.on("completed", async (job: Job<ScreenshotJobData>) => {
 });
 
 worker.on("failed", (job: Job<ScreenshotJobData> | undefined, err: unknown) => {
-	console.error("Job failed", job?.id, err);
+	logger.error({ jobId: job?.id, err }, "Job failed");
 });

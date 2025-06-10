@@ -1,6 +1,6 @@
+import type { Client, Engine } from "@diff-email/shared";
 import { Queue } from "bullmq";
 import IORedis from "ioredis";
-import type { Client, Engine } from "@diff-email/shared";
 
 const redisUrl = process.env.UPSTASH_REDIS_TLS_URL ?? process.env.REDIS_URL;
 if (!redisUrl) {

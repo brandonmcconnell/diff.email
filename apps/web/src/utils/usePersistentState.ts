@@ -20,4 +20,4 @@ export function usePersistentState<T>(key: string, defaultValue: T) {
 	}, [key, state]);
 
 	return [state, setState] as const;
-} 
+}

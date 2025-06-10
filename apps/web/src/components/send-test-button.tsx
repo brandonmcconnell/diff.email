@@ -1,9 +1,9 @@
 "use client";
+import { Button } from "@/components/ui/button";
 import { trpc } from "@/utils/trpc";
 import { useMutation } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 type Props = {
 	versionId: string;
@@ -11,9 +11,7 @@ type Props = {
 };
 
 export function SendTestButton({ versionId, defaultSubject }: Props) {
-	const sendTestMutation = useMutation(
-		trpc.emails.sendTest.mutationOptions(),
-	);
+	const sendTestMutation = useMutation(trpc.emails.sendTest.mutationOptions());
 
 	async function handleClick() {
 		const to = window.prompt("Send test email to:");
@@ -44,4 +42,4 @@ export function SendTestButton({ versionId, defaultSubject }: Props) {
 			)}
 		</Button>
 	);
-} 
+}

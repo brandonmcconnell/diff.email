@@ -1,5 +1,5 @@
 declare module "@monaco-editor/react" {
-	import * as React from "react";
+	import type * as React from "react";
 	import type * as monaco from "monaco-editor";
 
 	export interface MonacoEditorProps {
@@ -10,9 +10,12 @@ declare module "@monaco-editor/react" {
 		defaultValue?: string;
 		theme?: string;
 		options?: monaco.editor.IStandaloneEditorConstructionOptions;
-		onChange?: (value: string | undefined, ev: monaco.editor.IModelContentChangedEvent) => void;
+		onChange?: (
+			value: string | undefined,
+			ev: monaco.editor.IModelContentChangedEvent,
+		) => void;
 	}
 
 	const Editor: React.FC<MonacoEditorProps>;
 	export default Editor;
-} 
+}

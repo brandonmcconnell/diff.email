@@ -1,7 +1,7 @@
 "use client";
 import * as Select from "@/components/ui/dropdown-menu";
-import { Sun, Moon, ImageIcon, PlayIcon } from "lucide-react";
-import { ENGINES, CLIENTS, type Engine, type Client } from "@diff-email/shared";
+import { CLIENTS, type Client, ENGINES, type Engine } from "@diff-email/shared";
+import { ImageIcon, Moon, PlayIcon, Sun } from "lucide-react";
 
 type Props = {
 	engine: Engine;
@@ -15,16 +15,8 @@ type Props = {
 };
 
 export function Toolbar(props: Props) {
-	const {
-		engine,
-		setEngine,
-		client,
-		setClient,
-		mode,
-		setMode,
-		dark,
-		setDark,
-	} = props;
+	const { engine, setEngine, client, setClient, mode, setMode, dark, setDark } =
+		props;
 
 	return (
 		<div className="flex items-center gap-2 border-b px-2 py-1 text-sm">
@@ -91,4 +83,4 @@ export function Toolbar(props: Props) {
 			</div>
 		</div>
 	);
-} 
+}

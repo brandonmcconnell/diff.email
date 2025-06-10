@@ -1,6 +1,6 @@
 "use client";
+import type { Client, Engine } from "@diff-email/shared";
 import { useEffect, useRef } from "react";
-import type { Engine, Client } from "@diff-email/shared";
 
 interface Props {
 	html: string;
@@ -23,10 +23,10 @@ export function PreviewPane({ html, mode, dark }: Props) {
 	if (mode === "screenshot") {
 		return (
 			<div className="flex h-full w-full items-center justify-center bg-muted">
-				<p className="text-sm text-muted-foreground">Screenshots TBD…</p>
+				<p className="text-muted-foreground text-sm">Screenshots TBD…</p>
 			</div>
 		);
 	}
 
 	return <iframe title="Preview" ref={iframeRef} className="h-full w-full" />;
-} 
+}

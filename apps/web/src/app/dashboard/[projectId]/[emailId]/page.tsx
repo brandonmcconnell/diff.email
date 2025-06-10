@@ -1,11 +1,11 @@
 "use client";
-import { useState } from "react";
-import { useParams } from "next/navigation";
 import { EditorPane } from "@/components/editor/EditorPane";
 import { PreviewPane } from "@/components/editor/PreviewPane";
 import { Toolbar } from "@/components/editor/Toolbar";
 import { usePersistentState } from "@/utils/usePersistentState";
 import type { Client, Engine } from "@diff-email/shared";
+import { useParams } from "next/navigation";
+import { useState } from "react";
 
 export default function EmailEditorPage() {
 	const params = useParams<{ projectId: string; emailId: string }>();
@@ -20,7 +20,10 @@ export default function EmailEditorPage() {
 		"chromium",
 	);
 	const [client, setClient] = usePersistentState<Client>("ui-client", "gmail");
-	const [mode, setMode] = usePersistentState<"live" | "screenshot">("ui-mode", "live");
+	const [mode, setMode] = usePersistentState<"live" | "screenshot">(
+		"ui-mode",
+		"live",
+	);
 	const [dark, setDark] = usePersistentState<boolean>("ui-dark", false);
 
 	return (
@@ -49,4 +52,4 @@ export default function EmailEditorPage() {
 			</div>
 		</div>
 	);
-} 
+}

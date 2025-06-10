@@ -25,7 +25,8 @@
 		"playwright": "^1.43.2",
 		"ioredis": "^5.3.2",
 		"@diff-email/logger": "workspace:*",
-		"resend": "^4.5.2"
+		"resend": "^4.5.2",
+		"@diff-email/shared": "workspace:*"
 	},
 	"devDependencies": {
 		"@types/node": "^20",

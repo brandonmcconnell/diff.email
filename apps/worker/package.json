@@ -21,7 +21,8 @@
 		"playwright": "^1.43.2",
 		"dotenv": "^16.5.0",
 		"commander": "^11.0.0",
-		"@diff-email/logger": "workspace:*"
+		"@diff-email/logger": "workspace:*",
+		"@diff-email/shared": "workspace:*"
 	},
 	"devDependencies": {
 		"@types/node": "^20",

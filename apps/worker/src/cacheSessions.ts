@@ -8,7 +8,7 @@ import { put } from "@vercel/blob";
 import { Command } from "commander";
 import { chromium, firefox, webkit } from "playwright";
 
-import type { Client, Engine } from "@server/lib/queue";
+import type { Client, Engine } from "@diff-email/shared";
 
 // ---------------------------------------------------------------------------
 // Env vars & constants --------------------------------------------------------

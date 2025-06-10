@@ -1,5 +1,6 @@
 import { Queue } from "bullmq";
 import IORedis from "ioredis";
+import type { Client, Engine } from "@diff-email/shared";
 
 const redisUrl = process.env.UPSTASH_REDIS_TLS_URL ?? process.env.REDIS_URL;
 if (!redisUrl) {
@@ -11,9 +12,6 @@ export const redis = new IORedis(redisUrl, {
 	// Upstash TLS urls already include rediss://
 	maxRetriesPerRequest: null,
 });
-
-export type Client = "gmail" | "outlook" | "yahoo" | "aol" | "icloud";
-export type Engine = "chromium" | "firefox" | "webkit";
 
 export interface ScreenshotJobData {
 	runId: string;

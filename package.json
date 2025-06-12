@@ -6,6 +6,7 @@
 	"scripts": {
 		"check": "biome check --write .",
 		"prepare": "husky",
+		"postinstall": "playwright install --with-deps chromium firefox webkit",
 		"dev": "pnpm -r dev",
 		"build": "pnpm -r build",
 		"check-types": "pnpm -r check-types",
@@ -22,7 +23,8 @@
 		"husky": "^9.1.7",
 		"lint-staged": "^15.5.0",
 		"tsx": "^4.19.4",
-		"typescript": "^5.4.0"
+		"typescript": "^5.4.0",
+		"playwright": "^1.53.0"
 	},
 	"lint-staged": {
 		"*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}": [

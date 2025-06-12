@@ -1,4 +1,9 @@
 import "dotenv/config";
+
+// TODO: This is a temporary fix to ensure Playwright looks for browsers inside node_modules/.local-browsers when deployed.
+// Ensure Playwright looks for browsers inside node_modules/.local-browsers when deployed.
+process.env.PLAYWRIGHT_BROWSERS_PATH = "0";
+
 import { promises as fs } from "node:fs";
 import logger from "@diff-email/logger";
 import { put } from "@vercel/blob";
@@ -73,6 +78,9 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 
 	const log = logger.child({ jobId: job.id, runId, client, engine });
 	log.info("Job received");
+
+	// Mark the run as running if it is still pending
+	await db.update(run).set({ status: "running" }).where(eq(run.id, runId));
 
 	try {
 		// Choose browser type
@@ -218,4 +226,10 @@ worker.on("completed", async (job: Job<ScreenshotJobData>) => {
 
 worker.on("failed", (job: Job<ScreenshotJobData> | undefined, err: unknown) => {
 	logger.error({ jobId: job?.id, err }, "Job failed");
+	if (job) {
+		void db
+			.update(run)
+			.set({ status: "error" })
+			.where(eq(run.id, job.data.runId));
+	}
 });

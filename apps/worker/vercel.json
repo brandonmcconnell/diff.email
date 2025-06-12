@@ -3,7 +3,16 @@
 		"dist/index.js": {
 			"runtime": "nodejs18.x",
 			"maxDuration": 900
+		},
+		"dist/cloneSessionsCron.js": {
+			"runtime": "nodejs18.x",
+			"maxDuration": 900
 		}
 	},
-	"routes": []
+	"routes": [
+		{
+			"src": "/api/clone-sessions",
+			"dest": "dist/cloneSessionsCron.js"
+		}
+	]
 }

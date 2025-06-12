@@ -149,14 +149,23 @@ export const emailsRouter = router({
 			// Enqueue screenshots with the subjectToken so the worker can search the inbox.
 			await Promise.all(
 				clients.map((c) =>
-					screenshotsQueue.add("screenshot", {
-						runId: runRow.id,
-						html: v.html,
-						client: c.client,
-						engine: c.engine,
-						dark,
-						subjectToken,
-					}),
+					screenshotsQueue.add(
+						"screenshot",
+						{
+							runId: runRow.id,
+							html: v.html,
+							client: c.client,
+							engine: c.engine,
+							dark,
+							subjectToken,
+						},
+						{
+							attempts: 3,
+							backoff: { type: "exponential", delay: 30000 },
+							removeOnComplete: true,
+							removeOnFail: false,
+						},
+					),
 				),
 			);
 

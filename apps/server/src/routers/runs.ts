@@ -42,15 +42,27 @@ export const runsRouter = router({
 			// Enqueue a job per client/engine pair
 			await Promise.all(
 				clients.map((c) =>
-					screenshotsQueue.add("screenshot", {
-						runId: row.id,
-						html: versionRow.html,
-						client: c.client,
-						engine: c.engine,
-						dark,
-						subjectToken,
-						messageId,
-					}),
+					screenshotsQueue.add(
+						"screenshot",
+						{
+							runId: row.id,
+							html: versionRow.html,
+							client: c.client,
+							engine: c.engine,
+							dark,
+							subjectToken,
+							messageId,
+						},
+						{
+							attempts: 3,
+							backoff: {
+								type: "exponential",
+								delay: 30_000, // 30 s initial delay
+							},
+							removeOnComplete: true,
+							removeOnFail: false,
+						},
+					),
 				),
 			);
 			return row;

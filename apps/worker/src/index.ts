@@ -226,7 +226,7 @@ worker.on("completed", async (job: Job<ScreenshotJobData>) => {
 
 worker.on("failed", (job: Job<ScreenshotJobData> | undefined, err: unknown) => {
 	logger.error({ jobId: job?.id, err }, "Job failed");
-	if (job) {
+	if (job && job.attemptsMade >= (job.opts.attempts ?? 1)) {
 		void db
 			.update(run)
 			.set({ status: "error" })

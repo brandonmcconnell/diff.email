@@ -11,7 +11,7 @@ import { type Job, Worker } from "bullmq";
 import { eq } from "drizzle-orm";
 import { type Page, chromium, firefox, webkit } from "playwright";
 
-import type { ScreenshotJobData } from "@diff-email/shared";
+import type { Client, ScreenshotJobData } from "@diff-email/shared";
 // --- Shared imports from the server package ------------------------------
 import { db } from "@server/db";
 import { run, screenshot } from "@server/db/schema/core";
@@ -105,14 +105,13 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 		await page.emulateMedia({ colorScheme: dark ? "dark" : "light" });
 
 		let captured = false;
-		if (client === "gmail" && subjectToken) {
+		if (subjectToken) {
 			try {
-				log.info({ subjectToken }, "Opening Gmail to locate email");
-
-				await openGmailMessage(page, subjectToken, messageId);
+				log.info({ subjectToken }, "Opening webmail client to locate email");
+				await openMailboxMessage(page, client, subjectToken, messageId);
 				captured = true;
 			} catch (err) {
-				log.warn({ err }, "Gmail flow failed, falling back to setContent");
+				log.warn({ err }, "Deep-link flow failed, falling back to setContent");
 			}
 		}
 
@@ -168,6 +167,92 @@ async function openGmailMessage(
 	if (!firstRow) throw new Error("No search rows found");
 	await firstRow.click();
 	// Wait for message view to render - 'div[role="main"] img' etc.
+	await page.waitForSelector('div[role="main"]', { timeout: 10000 });
+}
+
+// ------------------------------------------------------------------------
+// Helper: open mailbox for other clients via subject search token.
+async function openMailboxMessage(
+	page: Page,
+	client: Client,
+	token: string,
+	messageId?: string,
+): Promise<void> {
+	if (client === "gmail") {
+		return openGmailMessage(page, token, messageId);
+	}
+
+	const baseUrls: Record<Client, string> = {
+		gmail: "https://mail.google.com/mail/u/0/#inbox",
+		outlook: "https://outlook.live.com/mail/0/",
+		yahoo: "https://mail.yahoo.com/",
+		aol: "https://mail.aol.com/",
+		icloud: "https://www.icloud.com/mail",
+	};
+
+	const spamSelecors: Record<
+		Client,
+		{ value: string; type: "url" | "selector" }
+	> = {
+		gmail: {
+			value: "https://mail.google.com/mail/u/0/#spam",
+			type: "url",
+		},
+		outlook: {
+			value: '[data-folder-name*="junk"]',
+			type: "selector",
+		},
+		yahoo: {
+			value: "https://mail.yahoo.com/n/folders/6",
+			type: "url",
+		},
+		aol: {
+			value: "https://mail.aol.com/d/folders/6",
+			type: "url",
+		},
+		icloud: {
+			value: 'li[aria-label="junk" i]',
+			type: "selector",
+		},
+	};
+
+	await page.goto(baseUrls[client], { waitUntil: "domcontentloaded" });
+
+	const searchSelectors: Record<Client, string> = {
+		gmail: 'form[role="search"] input:not([disabled])',
+		outlook: "input#topSearchInput",
+		yahoo:
+			"[data-search-form-id] input:not([disabled]):not([aria-hidden=true])",
+		aol: "[data-search-form-id] input:not([disabled]):not([aria-hidden=true])",
+		icloud: "ui-autocomplete-token-field",
+	};
+
+	const selector = searchSelectors[client as keyof typeof searchSelectors];
+	if (!selector) throw new Error(`Search selector not defined for ${client}`);
+
+	await page.waitForSelector(selector, { timeout: 10000 });
+	await page.fill(selector, token);
+	await page.keyboard.press("Enter");
+
+	// Wait for results table/grid to appear and click first row.
+	await page.waitForTimeout(3000); // allow results to load
+
+	// General fallbacks – may need per-client tuning.
+	const firstRowCandidates = [
+		'[data-convid][data-focusable-row="true"]',
+		"tr[jscontroller]",
+		'div[role="checkbox"]',
+		'div[role="listitem"]',
+	];
+
+	for (const cand of firstRowCandidates) {
+		const el = await page.$(cand);
+		if (el) {
+			await el.click();
+			break;
+		}
+	}
+
 	await page.waitForSelector('div[role="main"]', { timeout: 10000 });
 }
 

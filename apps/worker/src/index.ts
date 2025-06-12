@@ -190,32 +190,7 @@ async function openMailboxMessage(
 		icloud: "https://www.icloud.com/mail",
 	};
 
-	const spamSelecors: Record<
-		Client,
-		{ value: string; type: "url" | "selector" }
-	> = {
-		gmail: {
-			value: "https://mail.google.com/mail/u/0/#spam",
-			type: "url",
-		},
-		outlook: {
-			value: '[data-folder-name*="junk"]',
-			type: "selector",
-		},
-		yahoo: {
-			value: "https://mail.yahoo.com/n/folders/6",
-			type: "url",
-		},
-		aol: {
-			value: "https://mail.aol.com/d/folders/6",
-			type: "url",
-		},
-		icloud: {
-			value: 'li[aria-label="junk" i]',
-			type: "selector",
-		},
-	};
-
+	// Navigate to inbox/root first so the search UI is present.
 	await page.goto(baseUrls[client], { waitUntil: "domcontentloaded" });
 
 	const searchSelectors: Record<Client, string> = {

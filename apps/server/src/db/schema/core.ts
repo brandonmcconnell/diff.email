@@ -1,5 +1,6 @@
 import {
 	boolean,
+	integer,
 	pgEnum,
 	pgTable,
 	text,
@@ -66,6 +67,7 @@ export const run = pgTable("runs", {
 		.notNull()
 		.references(() => version.id, { onDelete: "cascade" }),
 	status: runStatusEnum("status").default("pending").notNull(),
+	expectedShots: integer("expected_shots"),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.defaultNow()
 		.notNull(),

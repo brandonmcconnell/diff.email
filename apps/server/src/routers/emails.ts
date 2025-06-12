@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import type { CreateEmailResponse } from "resend";
 import { z } from "zod";
@@ -112,11 +113,15 @@ export const emailsRouter = router({
 				.where(eq(version.id, versionId));
 			if (!v) throw new Error("Version not found");
 
-			// Send email via Resend
+			// Generate a short unique token to later find the email in webmail UIs.
+			const subjectToken = randomUUID().slice(0, 8);
+			const subjectWithToken = `${subject} [${subjectToken}]`;
+
+			// Send email via Resend with the token appended to subject
 			const res: CreateEmailResponse = await resend.emails.send({
 				from: "Diff.email <noreply@diff.email>",
 				to,
-				subject,
+				subject: subjectWithToken,
 				html: v.html,
 			});
 
@@ -134,13 +139,14 @@ export const emailsRouter = router({
 				to,
 			});
 
-			// Insert run row
+			// Insert run row with expected shot count
+			const expectedShots = clients.length;
 			const [runRow] = await db
 				.insert(run)
-				.values({ emailId, versionId })
+				.values({ emailId, versionId, expectedShots })
 				.returning();
 
-			// Enqueue screenshots (messageId not used currently)
+			// Enqueue screenshots with the subjectToken so the worker can search the inbox.
 			await Promise.all(
 				clients.map((c) =>
 					screenshotsQueue.add("screenshot", {
@@ -149,6 +155,7 @@ export const emailsRouter = router({
 						client: c.client,
 						engine: c.engine,
 						dark,
+						subjectToken,
 					}),
 				),
 			);

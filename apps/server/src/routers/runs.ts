@@ -34,9 +34,10 @@ export const runsRouter = router({
 			if (!versionRow) {
 				throw new Error("Version not found");
 			}
+			const expectedShots = clients.length;
 			const [row] = await db
 				.insert(run)
-				.values({ emailId, versionId })
+				.values({ emailId, versionId, expectedShots })
 				.returning();
 			// Enqueue a job per client/engine pair
 			await Promise.all(

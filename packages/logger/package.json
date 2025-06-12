@@ -21,9 +21,7 @@
 		"prepare": "pnpm run build"
 	},
 	"dependencies": {
-		"pino": "^9.7.0"
-	},
-	"devDependencies": {
+		"pino": "^9.7.0",
 		"pino-pretty": "^13.0.0"
 	}
 }

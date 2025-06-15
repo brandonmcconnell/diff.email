@@ -1,0 +1,8 @@
+{
+	"routes": [
+		{
+			"src": "/api/clone-sessions",
+			"dest": "api/clone-sessions.ts"
+		}
+	]
+}

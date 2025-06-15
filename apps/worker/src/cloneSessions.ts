@@ -99,7 +99,10 @@ async function cloneCombo(combo: string): Promise<void> {
 	}
 }
 
-(async () => {
+export async function cloneSessions(
+	options: Partial<typeof opts> = {},
+): Promise<void> {
+	const merged = { ...opts, ...options };
 	for (const combo of combos) {
 		try {
 			await cloneCombo(combo);
@@ -107,4 +110,12 @@ async function cloneCombo(combo: string): Promise<void> {
 			console.error("❌ failed to clone", combo, err);
 		}
 	}
-})();
+}
+
+// If run via CLI (`pnpm --filter worker run clone-sessions`) execute immediately
+if (process.argv[1]?.endsWith("cloneSessions.ts")) {
+	cloneSessions().catch((err) => {
+		console.error(err);
+		process.exit(1);
+	});
+}

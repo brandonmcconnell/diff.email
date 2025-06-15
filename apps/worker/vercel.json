@@ -1,8 +1,0 @@
-{
-	"routes": [
-		{
-			"src": "/api/clone-sessions",
-			"dest": "dist/worker/src/cloneSessionsCron.js"
-		}
-	]
-}

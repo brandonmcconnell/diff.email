@@ -12,7 +12,7 @@
 		"cache-sessions": "tsx src/cacheSessions.ts",
 		"clone-sessions": "tsx src/cloneSessions.ts",
 		"cache-all-sessions": "tsx src/cacheAllSessions.ts",
-		"postinstall": "PLAYWRIGHT_BROWSERS_PATH=0 playwright install chromium firefox webkit"
+		"postinstall": "if [ \"$VERCEL\" = \"1\" ]; then echo 'skip browser download on Vercel'; else PLAYWRIGHT_BROWSERS_PATH=0 playwright install chromium firefox webkit; fi"
 	},
 	"dependencies": {
 		"@vercel/blob": "^1.1.0",

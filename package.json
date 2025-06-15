@@ -6,7 +6,6 @@
 	"scripts": {
 		"check": "biome check --write .",
 		"prepare": "husky",
-		"postinstall": "playwright install --with-deps chromium firefox webkit",
 		"dev": "pnpm -r dev",
 		"build": "pnpm -r build",
 		"check-types": "pnpm -r check-types",

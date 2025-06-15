@@ -3,8 +3,8 @@ import path from "node:path";
 
 // Vercel function config
 export const config = {
-	runtime: "nodejs18.x",
-	maxDuration: 900,
+	runtime: "nodejs@22.6.0",
+	maxDuration: 800,
 };
 
 export default async function handler(): Promise<Response> {

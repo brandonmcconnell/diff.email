@@ -39,6 +39,10 @@ export const runsRouter = router({
 				.insert(run)
 				.values({ emailId, versionId, expectedShots })
 				.returning();
+
+			if (!row) {
+				throw new Error("Failed to insert run row");
+			}
 			// Enqueue a job per client/engine pair
 			await Promise.all(
 				clients.map((c) =>

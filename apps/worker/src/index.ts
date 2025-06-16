@@ -82,6 +82,25 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 	// Mark the run as running if it is still pending
 	await db.update(run).set({ status: "running" }).where(eq(run.id, runId));
 
+	// Verify the run row exists, retrying a few times to account for possible replica lag
+	let runRowExists: { id: string } | undefined;
+	for (let attempt = 0; attempt < 5; attempt++) {
+		[runRowExists] = await db
+			.select({ id: run.id })
+			.from(run)
+			.where(eq(run.id, runId));
+
+		if (runRowExists) break;
+
+		// Wait with exponential back-off: 100 ms, 200 ms, 400 ms, …
+		await new Promise((r) => setTimeout(r, 100 * 2 ** attempt));
+	}
+
+	if (!runRowExists) {
+		log.error("Run row not found after retries; aborting job");
+		throw new Error("Run row missing in database (after retries)");
+	}
+
 	try {
 		// Choose browser type
 		const browserType =

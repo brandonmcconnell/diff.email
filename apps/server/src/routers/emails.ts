@@ -146,6 +146,10 @@ export const emailsRouter = router({
 				.values({ emailId, versionId, expectedShots })
 				.returning();
 
+			if (!runRow) {
+				throw new Error("Failed to insert run row");
+			}
+
 			// Enqueue screenshots with the subjectToken so the worker can search the inbox.
 			await Promise.all(
 				clients.map((c) =>

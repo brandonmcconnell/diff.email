@@ -1,6 +1,6 @@
 import { cloneSessions } from "../src/cloneSessions";
 
-export const config = { runtime: "nodejs18.x", maxDuration: 800 } as const;
+export const config = { maxDuration: 800 } as const;
 
 export default async function handler() {
 	try {

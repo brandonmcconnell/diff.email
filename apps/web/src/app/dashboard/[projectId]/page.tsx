@@ -1,5 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/utils/trpc";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -66,7 +67,7 @@ export default function ProjectPage() {
 			</ul>
 
 			<div className="mt-6 flex gap-2">
-				<input
+				<Input
 					type="text"
 					value={title}
 					onChange={(e) => setTitle(e.target.value)}

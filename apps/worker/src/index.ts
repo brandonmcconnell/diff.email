@@ -135,8 +135,24 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 		}
 
 		if (!captured) {
-			log.info("Rendering HTML via setContent fallback");
-			await page.setContent(html, { waitUntil: "load" });
+			log.warn(
+				"Falling back to raw HTML render – email message could not be located",
+			);
+			const fallbackHtml = `<!DOCTYPE html>
+			<html lang="en">
+			<head>
+			<meta charset="utf-8" />
+			<title>diff.email – Fallback Screenshot</title>
+			<style>
+				body{display:flex;align-items:center;justify-content:center;height:100vh;margin:0;font-family:system-ui,Arial,sans-serif;background:#f6f7f9;color:#444;text-align:center;padding:2rem}
+				h1{font-size:1.5rem;max-width:28rem;line-height:1.4}
+			</style>
+			</head>
+			<body>
+				<h1>⚠️ diff.email could not locate the sent message in the mailbox, so this placeholder screenshot was taken instead.</h1>
+			</body>
+			</html>`;
+			await page.setContent(fallbackHtml, { waitUntil: "load" });
 		}
 
 		const buffer = await page.screenshot();

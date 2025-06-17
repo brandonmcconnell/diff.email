@@ -1,6 +1,7 @@
 "use client";
 
-import { Logo } from "@/components/pro-blocks/logo";
+import HomeLink from "@/components/home-link";
+import { Logomark } from "@/components/pro-blocks/logomark";
 import {
 	Accordion,
 	AccordionContent,
@@ -43,21 +44,20 @@ import { useState } from "react";
 const pricingData = {
 	plans: [
 		{
-			name: "Starter",
-			description: "For individuals or small teams getting started.",
+			name: "Free",
+			description: "Perfect for trying diff.email on personal projects.",
 			features: [
 				{
-					name: "Basic task management",
-					tooltip:
-						"Essential task management features for individuals and small teams",
+					name: "1 project",
+					tooltip: "Create a single project to experiment with diff.email.",
 				},
 				{
-					name: "1 automation per workflow",
-					tooltip: "Create one automated workflow to streamline your processes",
+					name: "3 screenshot runs / month",
+					tooltip: "Run up to three full screenshot batches every month.",
 				},
 				{
-					name: "5GB storage",
-					tooltip: "Store your files and documents securely in the cloud",
+					name: "Live preview iframe",
+					tooltip: "Instantly see your HTML update as you type.",
 				},
 			],
 			pricing: {
@@ -68,24 +68,24 @@ const pricingData = {
 		},
 		{
 			name: "Pro",
-			description: "For growing teams ready to scale their business.",
+			description: "Unlimited runs and advanced tooling for professionals.",
 			badge: "Most popular",
 			features: [
 				{
-					name: "Unlimited boards",
-					tooltip: "Create as many boards as you need for your team",
+					name: "Unlimited projects",
+					tooltip: "Organize as many client or side-projects as you like.",
 				},
 				{
-					name: "Advanced automation",
-					tooltip: "Create complex automated workflows to save time",
+					name: "Unlimited screenshot runs",
+					tooltip: "Generate pixel-perfect screenshots whenever you need.",
 				},
 				{
-					name: "50GB storage",
-					tooltip: "Expanded storage for all your team's needs",
+					name: "HTML diff viewer",
+					tooltip: "Quickly compare any two versions to spot changes.",
 				},
 				{
-					name: "Integrations",
-					tooltip: "Connect with your favorite tools and services",
+					name: "Team sharing (coming soon)",
+					tooltip: "Invite team-mates to collaborate in real-time.",
 				},
 			],
 			pricing: {
@@ -96,23 +96,23 @@ const pricingData = {
 		},
 		{
 			name: "Enterprise",
-			description: "For large organizations with custom needs.",
+			description: "White-glove support & custom limits for large senders.",
 			features: [
 				{
 					name: "Dedicated support",
-					tooltip: "Get priority support from our dedicated team",
+					tooltip: "Slack channel & guaranteed 24-hour response time.",
 				},
 				{
-					name: "Custom workflows",
-					tooltip: "Build custom workflows tailored to your organization",
+					name: "Custom screenshot capacity",
+					tooltip: "We scale to match your volume and retention needs.",
 				},
 				{
-					name: "150GB storage",
-					tooltip: "Enterprise-grade storage for large teams",
+					name: "Single-sign-on",
+					tooltip: "SAML & Okta integration for easy user management.",
 				},
 				{
-					name: "Advanced security",
-					tooltip: "Enhanced security features for enterprise needs",
+					name: "On-prem option",
+					tooltip: "Run diff.email inside your own VPC if required.",
 				},
 			],
 			pricing: {
@@ -131,8 +131,8 @@ export default function Home() {
 				<HeroSection7 />
 				<FeatureSection9 />
 				<FeatureSection3 />
-				<TestimonialsSection5 />
-				<PricingSection4 />
+				{/* <TestimonialsSection5 /> */}
+				{/* <PricingSection4 /> */}
 				<FaqSection1 />
 			</main>
 			<Footer2 />
@@ -150,22 +150,28 @@ function HeroSection7() {
 			<div className="container mx-auto flex flex-col items-center gap-12 px-6 lg:gap-16">
 				<div className="flex gap-12 lg:gap-16">
 					<div className="flex flex-col gap-4 md:gap-6 lg:flex-row lg:gap-8">
-						<h1 id="hero-heading" className="heading-xl flex-1 text-foreground">
-							Work smarter, not harder with{" "}
-							<span className="text-primary">Flowly</span>
+						<h1
+							id="hero-heading"
+							className="heading-xl flex-1 text-balance text-foreground"
+						>
+							Test your emails before you send them.
 						</h1>
 						<div className="flex w-full flex-1 flex-col gap-8">
 							<p className="text-base text-muted-foreground lg:text-lg">
-								Automate workflows, streamline tasks, and collaborate seamlessly
-								– all in one platform.
+								Stop guessing how your email will render. Add your source code
+								and get real screenshots from Gmail, Outlook, Yahoo & more.
 							</p>
 
 							<div className="flex flex-col gap-3 lg:flex-row">
-								<Button>Start free trial</Button>
-								<Button variant="ghost">
-									Explore
-									<ArrowRight />
+								<Button asChild>
+									<Link href="/sign-up">Get started free</Link>
 								</Button>
+								{/* <Button variant="ghost" asChild>
+									<Link href="/docs">
+										Docs
+										<ArrowRight />
+									</Link>
+								</Button> */}
 							</div>
 						</div>
 					</div>
@@ -192,7 +198,7 @@ function FeatureSection9() {
 					<p className="font-semibold text-muted-foreground text-sm md:text-base">
 						Features
 					</p>
-					<h2 className="heading-lg text-foreground">Why choose Flowly?</h2>
+					<h2 className="heading-lg text-foreground">Why diff.email?</h2>
 					<p className="text-base text-muted-foreground">
 						Transform the way your team works with these powerful features:
 					</p>
@@ -204,11 +210,10 @@ function FeatureSection9() {
 						</div>
 						<div className="flex flex-col gap-2">
 							<h3 className="font-semibold text-foreground">
-								Workflow automation
+								Real client screenshots
 							</h3>
-							<p className="text-muted-foreground">
-								Eliminate repetitive tasks and save time with customizable
-								automation.
+							<p className="text-balance text-muted-foreground">
+								Generate screenshots across Gmail, Outlook, Yahoo & more.
 							</p>
 						</div>
 					</div>
@@ -218,10 +223,10 @@ function FeatureSection9() {
 						</div>
 						<div className="flex flex-col gap-2">
 							<h3 className="font-semibold text-foreground">
-								Real-time collaboration
+								Live preview iframe
 							</h3>
-							<p className="text-muted-foreground">
-								Keep your team in sync with shared boards and instant updates.
+							<p className="text-balance text-muted-foreground">
+								See your HTML update instantly while you type—zero refreshes.
 							</p>
 						</div>
 					</div>
@@ -231,10 +236,10 @@ function FeatureSection9() {
 						</div>
 						<div className="flex flex-col gap-2">
 							<h3 className="font-semibold text-foreground">
-								Data-driven insights
+								Version history & diff
 							</h3>
-							<p className="text-muted-foreground">
-								Track progress and measure success with advanced analytics.
+							<p className="text-balance text-muted-foreground">
+								Every save is versioned so you can compare changes side-by-side.
 							</p>
 						</div>
 					</div>
@@ -244,11 +249,10 @@ function FeatureSection9() {
 						</div>
 						<div className="flex flex-col gap-2">
 							<h3 className="font-semibold text-foreground">
-								Easy integration
+								CLI & API (coming soon)
 							</h3>
-							<p className="text-muted-foreground">
-								Connect seamlessly with tools like Slack, Google Workspace, and
-								Trello.
+							<p className="text-balance text-muted-foreground">
+								Trigger runs from CI or your editor—the pipeline is yours.
 							</p>
 						</div>
 					</div>
@@ -271,7 +275,7 @@ function FeatureSection3() {
 							Getting started is easy!
 						</h2>
 						<p className="text-base text-muted-foreground">
-							In just 2 simple steps, you're ready to go:
+							In just a few simple steps, you're ready to go:
 						</p>
 					</div>
 					<div className="flex flex-col gap-6">
@@ -282,7 +286,7 @@ function FeatureSection3() {
 							<div className="flex flex-col gap-2">
 								<h3 className="font-semibold text-foreground">Sign up</h3>
 								<p className="text-muted-foreground">
-									Create your account in under 2 minutes.
+									Create your free account.
 								</p>
 							</div>
 						</div>
@@ -295,7 +299,7 @@ function FeatureSection3() {
 									Set up your workflow
 								</h3>
 								<p className="text-muted-foreground">
-									Customize tasks, boards, and automations to fit your team.
+									Paste or import your email HTML / React code.
 								</p>
 							</div>
 						</div>
@@ -308,7 +312,7 @@ function FeatureSection3() {
 									Start collaborating
 								</h3>
 								<p className="text-muted-foreground">
-									Work smarter with your team and watch your productivity soar.
+									Hit "Run" and review full screenshot grid.
 								</p>
 							</div>
 						</div>
@@ -351,8 +355,8 @@ function TestimonialsSection5() {
 						{/* First Testimonial */}
 						<div className="flex flex-col gap-8">
 							<p className="text-center font-medium text-foreground text-lg leading-7 md:text-left">
-								&quot;Flowly helped us save 10+ hours per week by automating our
-								repetitive tasks. We can't imagine going back!&quot;
+								&quot;diff.email replaced our Litmus subscription and cut our
+								review cycle from days to minutes.&quot;
 							</p>
 
 							<div className="flex flex-col items-center gap-5 md:flex-row">
@@ -369,7 +373,7 @@ function TestimonialsSection5() {
 										Kurt Bates
 									</p>
 									<p className="text-base text-muted-foreground leading-6">
-										Marketing Manager at BrightIdeas Inc.
+										Email Developer at BrightIdeas Inc.
 									</p>
 								</div>
 							</div>
@@ -384,8 +388,8 @@ function TestimonialsSection5() {
 						{/* Second Testimonial */}
 						<div className="flex flex-col gap-8">
 							<p className="text-center font-medium text-foreground text-lg leading-7 md:text-left">
-								&quot;This tool is a game-changer for our remote team. The
-								workflow automations are insanely good.&quot;
+								&quot;Screenshots arrive faster than the coffee brews – every
+								stakeholder finally sees the same thing.&quot;
 							</p>
 
 							<div className="flex flex-col items-center gap-5 md:flex-row">
@@ -402,7 +406,7 @@ function TestimonialsSection5() {
 										Alex Buckmaster
 									</p>
 									<p className="text-base text-muted-foreground leading-6">
-										Founder of TechWave
+										Head of Design at TechWave
 									</p>
 								</div>
 							</div>
@@ -461,7 +465,7 @@ function PricingSection4() {
 					</Tabs>
 
 					{/* Horizontal Pricing Cards Layout - Stacks on mobile */}
-					<div className="mx-auto flex w-full flex-col gap-6 lg:max-w-5xl lg:flex-row">
+					<div className="mx-auto flex w-full grid-cols-3 flex-col gap-6 lg:grid lg:max-w-5xl">
 						{pricingData.plans.map((plan, index) => (
 							<Card
 								key={plan.name}
@@ -599,41 +603,42 @@ function FaqSection1() {
 				<Accordion type="single" defaultValue="item-1" aria-label="FAQ items">
 					<AccordionItem value="item-1">
 						<AccordionTrigger className="text-left font-medium text-base">
-							Is Flowly free to use?
+							Is diff.email free to use?
 						</AccordionTrigger>
 						<AccordionContent className="text-muted-foreground text-sm">
-							Yes! We offer a free plan with essential features to get you
-							started.
+							Yes! Our Free plan lets you run three screenshot batches every
+							month—no credit card required.
 						</AccordionContent>
 					</AccordionItem>
 
 					<AccordionItem value="item-2">
 						<AccordionTrigger className="text-left font-medium text-base">
-							Can I cancel anytime?
+							What clients do you support?
 						</AccordionTrigger>
 						<AccordionContent className="text-muted-foreground text-sm">
-							Yes, you can cancel your subscription at any time with no
-							questions asked.
+							We spin up real Chromium, Firefox & WebKit browsers logged into
+							Gmail, Outlook, Yahoo, AOL and iCloud Mail. More coming soon!
 						</AccordionContent>
 					</AccordionItem>
 
 					<AccordionItem value="item-3">
 						<AccordionTrigger className="text-left font-medium text-base">
-							Do you offer discounts for nonprofits or education?
+							Do you store my email HTML?
 						</AccordionTrigger>
 						<AccordionContent className="text-muted-foreground text-sm">
-							Yes, we offer special pricing for nonprofit organizations and
-							educational institutions.
+							We keep every version so you can diff over time. Delete a version
+							at any point and it's gone forever, both from your account and our
+							databases.
 						</AccordionContent>
 					</AccordionItem>
 
 					<AccordionItem value="item-4">
 						<AccordionTrigger className="text-left font-medium text-base">
-							What integrations does Flowly support?
+							Can I trigger screenshot runs from CI?
 						</AccordionTrigger>
 						<AccordionContent className="text-muted-foreground text-sm">
-							Flowly integrates with popular tools like Slack, Google Workspace,
-							and Trello, among others.
+							Absolutely. A REST API and Node.js CLI are in private beta—ping us
+							to get access.
 						</AccordionContent>
 					</AccordionItem>
 				</Accordion>
@@ -648,7 +653,20 @@ function FaqSection1() {
 							Have questions or need assistance? Our team is here to help!
 						</p>
 					</div>
-					<Button aria-label="Contact our support team">Contact us</Button>
+					{/* TODO: When this is ready...
+						– remove the onClick from Button
+						– add asChild prop to Button
+						– uncomment the <Link> */}
+					<Button
+						aria-label="Contact our support team"
+						onClick={() => {
+							alert("This is a placeholder for the contact us action");
+						}}
+					>
+						{/* <Link href="mailto:support@diff.email"> */}
+						Contact us
+						{/* </Link> */}
+					</Button>
 				</div>
 			</div>
 		</section>
@@ -667,9 +685,9 @@ function Footer2() {
 					<div className="flex flex-col gap-12 md:items-center md:justify-between lg:flex-row">
 						{/* Logo and Navigation */}
 						<div className="flex flex-col items-center gap-12 lg:flex-row">
-							<a href="#top" aria-label="Go to homepage">
-								<Logo />
-							</a>
+							<HomeLink id="top" aria-label="diff.email">
+								<Logomark width={32} />
+							</HomeLink>
 
 							{/* Main Navigation */}
 							<nav
@@ -688,18 +706,18 @@ function Footer2() {
 								>
 									Features
 								</a>
-								<a
+								{/* <a
 									href="#testimonials"
 									className="text-muted-foreground transition-colors hover:text-foreground"
 								>
 									Testimonials
-								</a>
-								<a
+								</a> */}
+								{/* <a
 									href="#pricing"
 									className="text-muted-foreground transition-colors hover:text-foreground"
 								>
 									Pricing
-								</a>
+								</a> */}
 								<a
 									href="#faq"
 									className="text-muted-foreground transition-colors hover:text-foreground"
@@ -723,10 +741,14 @@ function Footer2() {
 								aria-required="true"
 								aria-label="Enter your email for newsletter"
 							/>
+							{/* TODO: When this is ready remove the onClick set type="submit" */}
 							<Button
-								type="submit"
+								type="button"
 								className="w-full md:w-auto"
 								aria-label="Subscribe to our newsletter"
+								onClick={() => {
+									alert("This is a placeholder for the subscribe action");
+								}}
 							>
 								Subscribe
 							</Button>
@@ -738,9 +760,9 @@ function Footer2() {
 					{/* Bottom Section */}
 					<div className="flex flex-col items-center justify-between gap-12 text-center lg:flex-row">
 						<p className="order-2 text-muted-foreground md:order-1">
-							<span>Copyright © {new Date().getFullYear()}</span>{" "}
-							<Link href="/" className="hover:underline">
-								shadcndesign.com
+							<span>Copyright &copy; {new Date().getFullYear()}</span>{" "}
+							<Link href="/home" className="hover:underline">
+								diff.email
 							</Link>
 							. All rights reserved.
 						</p>

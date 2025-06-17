@@ -131,4 +131,107 @@ body {
 	body {
 		@apply bg-background text-foreground;
 	}
+	.pattern-background-lp-1-example {
+		background-image: url("data:image/svg+xml,%3Csvg width='140' height='16' viewBox='0 0 140 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cg clip-path='url(%23clip0_4133_10133)'%3E%3Cpath d='M-0.0390625 44C16.7069 44 23.8369 34.61 32.6009 24.676C41.5709 14.516 51.4569 4 70.0009 4C88.5449 4 98.4309 14.516 107.401 24.676C116.165 34.61 123.295 44 140.041 44M-0.0390625 28.004C16.7069 28 23.8369 18.612 32.6009 8.678C41.5709 -1.484 51.4569 -12 70.0009 -12C88.5449 -12 98.4309 -1.484 107.401 8.678C116.165 18.612 123.295 28 140.041 28.006M140.001 12.008C123.255 12.006 116.165 2.612 107.401 -7.322C98.4309 -17.484 88.5449 -28 70.0009 -28C51.4569 -28 41.5709 -17.484 32.6009 -7.322C23.8369 2.612 16.7069 12 -0.0390625 12.004' stroke-opacity='0.1' stroke='%2318181B'/%3E%3C/g%3E%3Cdefs%3E%3CclipPath id='clip0_4133_10133'%3E%3Crect width='140' height='16' fill='%23bfdbfe'/%3E%3C/clipPath%3E%3C/defs%3E%3C/svg%3E");
+		background-repeat: repeat;
+		width: 100%;
+		/* height: 100%; */
+	}
+	.dark .pattern-background-lp-1-example {
+		background-image: url("data:image/svg+xml,%3Csvg width='140' height='16' viewBox='0 0 140 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cg clip-path='url(%23clip0_4133_10133)'%3E%3Cpath d='M-0.0390625 44C16.7069 44 23.8369 34.61 32.6009 24.676C41.5709 14.516 51.4569 4 70.0009 4C88.5449 4 98.4309 14.516 107.401 24.676C116.165 34.61 123.295 44 140.041 44M-0.0390625 28.004C16.7069 28 23.8369 18.612 32.6009 8.678C41.5709 -1.484 51.4569 -12 70.0009 -12C88.5449 -12 98.4309 -1.484 107.401 8.678C116.165 18.612 123.295 28 140.041 28.006M140.001 12.008C123.255 12.006 116.165 2.612 107.401 -7.322C98.4309 -17.484 88.5449 -28 70.0009 -28C51.4569 -28 41.5709 -17.484 32.6009 -7.322C23.8369 2.612 16.7069 12 -0.0390625 12.004' stroke-opacity='0.1' stroke='%23ffffff'/%3E%3C/g%3E%3Cdefs%3E%3CclipPath id='clip0_4133_10133'%3E%3Crect width='140' height='16' fill='white'/%3E%3C/clipPath%3E%3C/defs%3E%3C/svg%3E");
+	}
+	button {
+		cursor: pointer;
+	}
+	.heading-xl {
+		font-family: var(--font-sans);
+		font-size: 3rem;
+		line-height: 1;
+		font-weight: 700;
+		letter-spacing: -0.01em;
+	}
+	.heading-lg {
+		font-family: var(--font-sans);
+		font-size: 2.25rem;
+		line-height: 1.111;
+		font-weight: 700;
+		letter-spacing: -0.01em;
+	}
+	.heading-md {
+		font-family: var(--font-sans);
+		font-size: 1.875rem;
+		line-height: 1.2;
+		font-weight: 700;
+		letter-spacing: -0.01em;
+	}
+	.heading-sm {
+		font-family: var(--font-sans);
+		font-size: 1.5rem;
+		line-height: 1.333;
+		font-weight: 700;
+		letter-spacing: -0.01em;
+	}
+	.container-padding-x {
+		padding-inline: 1.5rem;
+	}
+	.section-padding-y {
+		padding-block: 6rem;
+	}
+	.section-title-gap-xl {
+		gap: 1.5rem;
+	}
+	.section-title-gap-lg {
+		gap: 1.25rem;
+	}
+	.section-title-gap-md {
+		gap: 1.25rem;
+	}
+	.section-title-gap-sm {
+		gap: 1rem;
+	}
+}
+
+@media (max-width: 64rem) {
+	.heading-xl {
+		font-size: 1.875rem;
+		line-height: 1.2;
+	}
+	.heading-lg {
+		font-size: 1.875rem;
+		line-height: 1.2;
+	}
+	.heading-md {
+		font-size: 1.5rem;
+		line-height: 1.2;
+	}
+	.heading-sm {
+		font-size: 1.5rem;
+		line-height: 1.333;
+	}
+	.container-padding-x {
+		padding-inline: 1.5rem;
+	}
+	.section-padding-y {
+		padding-block: 4rem;
+	}
+	.section-title-gap-xl {
+		gap: 1rem;
+	}
+	.section-title-gap-lg {
+		gap: 1rem;
+	}
+	.section-title-gap-md {
+		gap: 1rem;
+	}
+	.section-title-gap-sm {
+		gap: 1rem;
+	}
+}
+
+html {
+	scroll-behavior: smooth;
+	height: 100%;
+}
+body {
+	min-height: 100%;
 }

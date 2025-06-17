@@ -23,7 +23,7 @@ export default function UserMenu() {
 	if (!session) {
 		return (
 			<Button variant="outline" asChild>
-				<Link href="/login">Sign In</Link>
+				<Link href="/login">Get Started</Link>
 			</Button>
 		);
 	}
@@ -36,7 +36,11 @@ export default function UserMenu() {
 			<DropdownMenuContent className="bg-card">
 				<DropdownMenuLabel>My Account</DropdownMenuLabel>
 				<DropdownMenuSeparator />
-				<DropdownMenuItem>{session.user.email}</DropdownMenuItem>
+				<DropdownMenuItem asChild>
+					<Link href="/settings" className="w-full">
+						Account Settings
+					</Link>
+				</DropdownMenuItem>
 				<DropdownMenuItem asChild>
 					<Button
 						variant="destructive"

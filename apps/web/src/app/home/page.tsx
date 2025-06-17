@@ -1,6 +1,5 @@
 "use client";
 
-import HomeLink from "@/components/home-link";
 import { Logomark } from "@/components/pro-blocks/logomark";
 import {
 	Accordion,
@@ -152,7 +151,7 @@ function HeroSection7() {
 					<div className="flex flex-col gap-4 md:gap-6 lg:flex-row lg:gap-8">
 						<h1
 							id="hero-heading"
-							className="heading-xl flex-1 text-balance text-foreground"
+							className="heading-xl flex-1 text-balance font-medium text-foreground antialiased"
 						>
 							Test your emails before you send them.
 						</h1>
@@ -685,9 +684,9 @@ function Footer2() {
 					<div className="flex flex-col gap-12 md:items-center md:justify-between lg:flex-row">
 						{/* Logo and Navigation */}
 						<div className="flex flex-col items-center gap-12 lg:flex-row">
-							<HomeLink id="top" aria-label="diff.email">
+							<Link href="/home#top" aria-label="diff.email">
 								<Logomark width={32} />
-							</HomeLink>
+							</Link>
 
 							{/* Main Navigation */}
 							<nav

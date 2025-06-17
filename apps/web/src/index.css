@@ -10,7 +10,7 @@
 
 html,
 body {
-	@apply bg-white dark:bg-gray-950;
+	@apply bg-white dark:bg-background;
 
 	@media (prefers-color-scheme: dark) {
 		color-scheme: dark;
@@ -147,7 +147,8 @@ body {
 		font-family: var(--font-sans);
 		font-size: 3rem;
 		line-height: 1;
-		font-weight: 700;
+		/* font-weight: 700; */
+		font-weight: 500;
 		letter-spacing: -0.01em;
 	}
 	.heading-lg {
@@ -161,7 +162,7 @@ body {
 		font-family: var(--font-sans);
 		font-size: 1.875rem;
 		line-height: 1.2;
-		font-weight: 700;
+		font-weight: 600;
 		letter-spacing: -0.01em;
 	}
 	.heading-sm {

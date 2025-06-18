@@ -93,34 +93,29 @@ export function FileExplorer({
 	// Render ---------------------------------------------------------
 	return (
 		<div className="flex h-full flex-col gap-2">
-			<div className="flex-1 overflow-y-auto">
-				<TreeView
-					data={decorateWithActions(files)}
-					initialSelectedItemId={activeId}
-					onSelectChange={handleSelectChange}
-					expandAll
-					defaultNodeIcon={undefined}
-					defaultLeafIcon={undefined}
-					onDocumentDrag={handleDocumentDrag}
-				/>
-			</div>
-			{/* Footer actions */}
-			<div className="flex gap-1">
-				<button
-					type="button"
-					className="flex flex-1 items-center justify-center gap-1 rounded border px-1 py-1 text-xs hover:bg-muted"
-					onClick={() => handleAddFile()}
-				>
-					<Plus className="size-3" /> File
-				</button>
-				<button
-					type="button"
-					className="flex flex-1 items-center justify-center gap-1 rounded border px-1 py-1 text-xs hover:bg-muted"
-					onClick={() => handleAddFolder()}
-				>
-					<Plus className="size-3" /> Folder
-				</button>
-			</div>
+			<ContextMenu>
+				<ContextMenuTrigger asChild>
+					<div className="flex-1 overflow-y-auto">
+						<TreeView
+							data={decorateWithActions(files)}
+							initialSelectedItemId={activeId}
+							onSelectChange={handleSelectChange}
+							expandAll
+							defaultNodeIcon={undefined}
+							defaultLeafIcon={undefined}
+							onDocumentDrag={handleDocumentDrag}
+						/>
+					</div>
+				</ContextMenuTrigger>
+				<ContextMenuContent>
+					<ContextMenuItem onSelect={() => handleAddFile()}>
+						New file
+					</ContextMenuItem>
+					<ContextMenuItem onSelect={() => handleAddFolder()}>
+						New directory
+					</ContextMenuItem>
+				</ContextMenuContent>
+			</ContextMenu>
 		</div>
 	);
 

@@ -1,6 +1,7 @@
 import {
 	boolean,
 	integer,
+	jsonb,
 	pgEnum,
 	pgTable,
 	text,
@@ -55,7 +56,8 @@ export const version = pgTable("versions", {
 	emailId: uuid("email_id")
 		.notNull()
 		.references(() => email.id, { onDelete: "cascade" }),
-	html: text("html").notNull(),
+	html: text("html"),
+	files: jsonb("files"),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.defaultNow()
 		.notNull(),

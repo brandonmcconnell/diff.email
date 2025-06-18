@@ -12,11 +12,23 @@ type Props = {
 	setMode: (m: "live" | "screenshot") => void;
 	dark: boolean;
 	setDark: (d: boolean) => void;
+	onSave: () => void;
+	onRun: () => void;
 };
 
 export function Toolbar(props: Props) {
-	const { engine, setEngine, client, setClient, mode, setMode, dark, setDark } =
-		props;
+	const {
+		engine,
+		setEngine,
+		client,
+		setClient,
+		mode,
+		setMode,
+		dark,
+		setDark,
+		onSave,
+		onRun,
+	} = props;
 
 	return (
 		<div className="flex items-center gap-2 border-b px-2 py-1 text-sm">
@@ -79,6 +91,24 @@ export function Toolbar(props: Props) {
 					title="Toggle dark mode"
 				>
 					{dark ? <Moon size={16} /> : <Sun size={16} />}
+				</button>
+
+				<button
+					type="button"
+					className="rounded border p-1"
+					onClick={onSave}
+					title="Save version"
+				>
+					💾
+				</button>
+
+				<button
+					type="button"
+					className="rounded border p-1"
+					onClick={onRun}
+					title="Generate screenshots"
+				>
+					<ImageIcon size={16} />
 				</button>
 			</div>
 		</div>

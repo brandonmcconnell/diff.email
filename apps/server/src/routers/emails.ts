@@ -56,7 +56,16 @@ export const emailsRouter = router({
 				.insert(email)
 				.values({ projectId, name, language })
 				.returning();
-			// Optionally create initial version if html provided (Phase 3)
+
+			if (language === "jsx") {
+				const starter = {
+					"index.tsx":
+						"export default function Email() {\n  return <p>Hello world!</p>;\n}",
+				};
+				await db.insert(version).values({ emailId: row.id, files: starter });
+			} else if (html) {
+				await db.insert(version).values({ emailId: row.id, html });
+			}
 			return row;
 		}),
 	/**
@@ -82,12 +91,16 @@ export const emailsRouter = router({
 				throw new Error("Version not found");
 			}
 
+			const htmlContent = v.html;
+			if (!htmlContent) {
+				throw new Error("Version does not contain HTML content");
+			}
 			// Send via Resend
 			const res: CreateEmailResponse = await resend.emails.send({
 				from: "Diff.email <noreply@diff.email>",
 				to,
 				subject,
-				html: v.html,
+				html: htmlContent,
 			});
 
 			if (!res.data) {
@@ -141,12 +154,14 @@ export const emailsRouter = router({
 			const subjectToken = randomUUID().slice(0, 8);
 			const subjectWithToken = `${subject} [${subjectToken}]`;
 
+			const htmlContent = v.html;
+			if (!htmlContent) throw new Error("Version does not contain HTML");
 			// Send email via Resend with the token appended to subject
 			const res: CreateEmailResponse = await resend.emails.send({
 				from: "Diff.email <noreply@diff.email>",
 				to,
 				subject: subjectWithToken,
-				html: v.html,
+				html: htmlContent,
 			});
 
 			if (!res.data) {
@@ -181,7 +196,7 @@ export const emailsRouter = router({
 						"screenshot",
 						{
 							runId: runRow.id,
-							html: v.html,
+							html: htmlContent,
 							client: c.client,
 							engine: c.engine,
 							dark,

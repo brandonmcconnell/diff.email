@@ -16,6 +16,7 @@ import type { Client, Engine } from "@diff-email/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export default function EmailEditorPage() {
 	const params = useParams<{ projectId: string; emailId: string }>();
@@ -80,22 +81,41 @@ export default function EmailEditorPage() {
 	const [files, setFiles] = useState<Record<string, string> | undefined>();
 	const [entry, setEntry] = useState<string | undefined>();
 
-	// Seed when language resolved and no versions yet
+	const latestQuery = useQuery({
+		...trpc.versions.getLatest.queryOptions({ emailId }),
+		enabled: !!emailId,
+	});
+
+	const versionsSave = useMutation(trpc.versions.save.mutationOptions({}));
+
 	useEffect(() => {
-		if (versionCount !== 0) return;
-		if (language === "jsx" && !files) {
-			const starter =
-				"export default function Email() {\n  return <p>Hello world!</p>;\n}";
-			setFiles({ "index.tsx": starter });
+		if (!latestQuery.data) return;
+		if (language === "html") {
+			setHtml(latestQuery.data.html ?? "");
+		} else if (latestQuery.data.files) {
+			setFiles(latestQuery.data.files as Record<string, string>);
 			setEntry("index.tsx");
-			setHtml("");
 		}
-		if (language === "html" && html === "<!-- start editing -->") {
-			setHtml(
-				`<!DOCTYPE html>\n<html>\n  <head>\n    <meta charset=\"utf-8\" />\n    <title>${emailName}</title>\n  </head>\n  <body>\n    <!-- start editing -->\n  </body>\n</html>`,
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [latestQuery.data]);
+
+	function handleSave() {
+		if (language === "html") {
+			versionsSave.mutate(
+				{ emailId, html },
+				{ onSuccess: () => toast.success("Version saved") },
+			);
+		} else if (files) {
+			versionsSave.mutate(
+				{ emailId, files },
+				{ onSuccess: () => toast.success("Version saved") },
 			);
 		}
-	}, [language, versionCount, files, html, emailName]);
+	}
+
+	function handleRun() {
+		// TODO run screenshots via trpc.runs.create
+	}
 
 	return (
 		<div className="flex h-[calc(100vh_-_3rem)] w-full flex-col">
@@ -143,6 +163,8 @@ export default function EmailEditorPage() {
 								setMode={setMode}
 								dark={dark}
 								setDark={setDark}
+								onSave={handleSave}
+								onRun={handleRun}
 							/>
 							<PreviewPane
 								html={html}

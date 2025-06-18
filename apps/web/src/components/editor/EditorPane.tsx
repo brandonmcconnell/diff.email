@@ -182,6 +182,7 @@ export function EditorPane({
 			{/* Editor */}
 			<div className="flex-1">
 				<MonacoEditor
+					// @ts-expect-error - onMount is a valid prop for MonacoEditor (https://github.com/suren-atoyan/monaco-react#usage)
 					onMount={handleMount}
 					theme={theme === "dark" ? "vs-dark" : "vs"}
 					language={language}

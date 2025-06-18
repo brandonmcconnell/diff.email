@@ -93,6 +93,7 @@ interface DataListProps<T extends BasicItem> {
 	createLabel: string;
 	createIcon?: React.ComponentType<{ className?: string }>;
 	columns?: Column<T>[];
+	view?: "grid" | "list"; // Desktop view mode
 }
 
 export function DataList<T extends BasicItem>({
@@ -106,6 +107,7 @@ export function DataList<T extends BasicItem>({
 	createLabel,
 	createIcon,
 	columns = [],
+	view = "grid",
 }: DataListProps<T>) {
 	if (items.length === 0) {
 		return renderEmpty({
@@ -125,7 +127,7 @@ export function DataList<T extends BasicItem>({
 		<>
 			{/* Card grid for mobile */}
 			<div
-				className="grid gap-4 md:hidden"
+				className={cn("grid gap-4", view === "list" && "md:hidden")}
 				style={{ gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))" }}
 			>
 				{items.map((item) => (
@@ -182,11 +184,11 @@ export function DataList<T extends BasicItem>({
 			</div>
 
 			<div
-				className="hidden md:block"
+				className={cn("hidden", view === "list" && "md:block")}
 				style={{ "--cols": colCount - 1 } as React.CSSProperties}
 			>
 				{/* header */}
-				{columns.length > 0 && (
+				{view === "list" && columns.length > 0 && (
 					<div className="mb-2 hidden grid-cols-[1fr_repeat(var(--cols),minmax(0,1fr))_64px] items-center gap-2 font-medium text-muted-foreground text-xs md:grid">
 						<span>Name</span>
 						{columns.map((c) => (

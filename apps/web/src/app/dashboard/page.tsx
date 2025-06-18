@@ -3,11 +3,19 @@ import { DataList, ListSkeleton } from "@/components/list";
 import { PageHeader } from "@/components/page-header";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { authClient } from "@/lib/auth-client";
 import { confirmDeletion } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
+import { usePersistentState } from "@/utils/usePersistentState";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Folder, FolderPlus, Search } from "lucide-react";
+import {
+	Folder,
+	FolderPlus,
+	LayoutGrid,
+	List as ListIcon,
+	Search,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useState } from "react";
 
@@ -50,6 +58,10 @@ export default function Dashboard() {
 	});
 
 	const [query, setQuery] = useState("");
+	const [view, setView] = usePersistentState<"grid" | "list">(
+		"ui-view",
+		"grid",
+	);
 	const filteredProjects = (projectsQuery.data ?? []).filter(
 		(p: { name: string }) => p.name.toLowerCase().includes(query.toLowerCase()),
 	);
@@ -115,7 +127,21 @@ export default function Dashboard() {
 				subtitle="Organize your projects and emails."
 				onCreate={handleCreate}
 			>
-				<div className="flex flex-col-reverse gap-3 md:flex-row">
+				<div className="flex flex-col-reverse gap-3 md:flex-row md:items-center">
+					<ToggleGroup
+						type="single"
+						value={view}
+						onValueChange={(v) => v && setView(v as "grid" | "list")}
+						variant="outline"
+						className="hidden h-9 md:flex"
+					>
+						<ToggleGroupItem value="grid" aria-label="Grid view">
+							<LayoutGrid className="h-4 w-4" />
+						</ToggleGroupItem>
+						<ToggleGroupItem value="list" aria-label="List view">
+							<ListIcon className="h-4 w-4" />
+						</ToggleGroupItem>
+					</ToggleGroup>
 					<div className="relative hidden md:block">
 						<Input
 							type="search"
@@ -174,6 +200,7 @@ export default function Dashboard() {
 							},
 						},
 					]}
+					view={view}
 				/>
 			</div>
 		</div>

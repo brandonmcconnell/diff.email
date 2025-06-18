@@ -3,11 +3,19 @@ import { DataList, ListSkeleton } from "@/components/list";
 import { PageHeader } from "@/components/page-header";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { authClient } from "@/lib/auth-client";
 import { confirmDeletion } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
+import { usePersistentState } from "@/utils/usePersistentState";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Mail, MailPlus, Search } from "lucide-react";
+import {
+	LayoutGrid,
+	List as ListIcon,
+	Mail,
+	MailPlus,
+	Search,
+} from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useState } from "react";
 
@@ -63,6 +71,10 @@ export default function ProjectPage() {
 	)?.name;
 
 	const [query, setQuery] = useState("");
+	const [view, setView] = usePersistentState<"grid" | "list">(
+		"ui-view",
+		"grid",
+	);
 	const filteredEmails = (emailsQuery.data ?? []).filter(
 		(e: { name: string }) => e.name.toLowerCase().includes(query.toLowerCase()),
 	);
@@ -156,15 +168,31 @@ export default function ProjectPage() {
 				}
 				onCreate={handleCreate}
 			>
-				<div className="relative hidden md:block">
-					<Input
-						type="search"
-						placeholder="Search emails"
-						className="pl-8"
-						value={query}
-						onChange={(e) => setQuery(e.target.value)}
-					/>
-					<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
+				<div className="flex flex-col gap-3 md:flex-row md:items-center">
+					<ToggleGroup
+						type="single"
+						value={view}
+						onValueChange={(v) => v && setView(v as "grid" | "list")}
+						variant="outline"
+						className="hidden h-9 md:flex"
+					>
+						<ToggleGroupItem value="grid" aria-label="Grid view">
+							<LayoutGrid className="h-4 w-4" />
+						</ToggleGroupItem>
+						<ToggleGroupItem value="list" aria-label="List view">
+							<ListIcon className="h-4 w-4" />
+						</ToggleGroupItem>
+					</ToggleGroup>
+					<div className="relative hidden md:block">
+						<Input
+							type="search"
+							placeholder="Search emails"
+							className="pl-8"
+							value={query}
+							onChange={(e) => setQuery(e.target.value)}
+						/>
+						<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
+					</div>
 				</div>
 			</PageHeader>
 
@@ -213,6 +241,7 @@ export default function ProjectPage() {
 							},
 						},
 					]}
+					view={view}
 				/>
 			</div>
 		</div>

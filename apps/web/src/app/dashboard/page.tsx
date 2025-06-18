@@ -8,11 +8,13 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { authClient } from "@/lib/auth-client";
 import { confirmDeletion } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { EllipsisVertical, Search } from "lucide-react";
+import { EllipsisVertical, Plus, Search } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -59,27 +61,44 @@ export default function Dashboard() {
 		(p: { name: string }) => p.name.toLowerCase().includes(query.toLowerCase()),
 	);
 
-	const [creating, setCreating] = useState(false);
-
-	function handleCreate() {
-		const name = window.prompt("Project name:");
-		if (name?.trim()) {
-			createProject.mutate({ name: name.trim() });
-		}
-	}
-
 	useEffect(() => {
 		if (!session && !isPending) router.push("/sign-in");
 	}, [session, isPending, router]);
 
-	if (isPending || projectsQuery.isPending)
+	if (isPending || projectsQuery.isPending) {
+		// Skeleton placeholder UI
 		return (
-			<div className="bg-background">
-				<div className="container mx-auto flex flex-col gap-6 px-4 pt-4 md:pt-6 lg:px-6">
-					<div className="p-4">Loading…</div>
+			<div className="animate-pulse bg-background">
+				{/* Header skeleton */}
+				<div className="border-border border-b bg-background py-4 md:py-6">
+					<div className="container mx-auto flex flex-col gap-6 px-4 lg:px-6">
+						{/* Breadcrumb */}
+						<div className="flex items-center gap-2">
+							<Skeleton className="h-3 w-16" />
+							<Skeleton className="h-3 w-3" />
+							<Skeleton className="h-3 w-24" />
+						</div>
+						{/* Title and controls */}
+						<div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
+							<Skeleton className="h-8 w-48" />
+							<div className="flex gap-2">
+								<Skeleton className="h-9 w-40" />
+								<Skeleton className="h-9 w-32" />
+							</div>
+						</div>
+					</div>
+				</div>
+
+				{/* Body skeleton list */}
+				<div className="container mx-auto space-y-2 px-4 py-6 lg:px-6">
+					{Array.from({ length: 5 }).map((_, i) => (
+						// biome-ignore lint/suspicious/noArrayIndexKey: allowed for skeleton
+						<Skeleton key={i} className="h-10 w-full" />
+					))}
 				</div>
 			</div>
 		);
+	}
 
 	return (
 		<div className="bg-background">
@@ -87,6 +106,12 @@ export default function Dashboard() {
 			<PageHeader
 				data={{ name: "Projects", type: "dashboard" }}
 				subtitle="Organize your projects and emails."
+				onCreate={() => {
+					const name = window.prompt("Project name:");
+					if (name?.trim()) {
+						createProject.mutate({ name: name.trim() });
+					}
+				}}
 			>
 				<div className="flex flex-col-reverse gap-3 md:flex-row">
 					<div className="relative hidden md:block">
@@ -99,7 +124,6 @@ export default function Dashboard() {
 						/>
 						<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
 					</div>
-					<Button onClick={handleCreate}>Create new</Button>
 				</div>
 			</PageHeader>
 
@@ -125,9 +149,9 @@ export default function Dashboard() {
 									<Button
 										variant="outline"
 										className="flex-1 justify-start"
-										onClick={() => router.push(`/dashboard/${p.id}`)}
+										asChild
 									>
-										{p.name}
+										<Link href={`/dashboard/${p.id}`}>{p.name}</Link>
 									</Button>
 									<DropdownMenu>
 										<DropdownMenuTrigger asChild>

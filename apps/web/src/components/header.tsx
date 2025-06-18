@@ -5,6 +5,7 @@ import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { ModeToggle } from "./mode-toggle";
 import { Button } from "./ui/button";
@@ -15,6 +16,8 @@ interface HeaderProps {
 }
 
 export default function Header({ className }: HeaderProps) {
+	const pathname = usePathname();
+	const isHome = pathname.startsWith("/home");
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 
 	// Get current auth session (client-side)
@@ -61,7 +64,10 @@ export default function Header({ className }: HeaderProps) {
 		>
 			<div className="container relative m-auto flex px-6 md:flex-row md:items-center md:gap-2">
 				<div className="flex flex-1 justify-between">
-					<Link href="/home#top" aria-label="diff.email">
+					<Link
+						href={session ? "/dashboard" : isHome ? "#top" : "/home"}
+						aria-label="diff.email"
+					>
 						<Logo width={128} />
 					</Link>
 					<Button

@@ -1,9 +1,8 @@
 "use client";
 
 import SignInForm from "@/components/sign-in-form";
-import { useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
 
 export default function SignInPage() {
-	const router = useRouter();
-	return <SignInForm onSwitchToSignUp={() => router.push("/sign-up")} />;
+	return <SignInForm onSwitchToSignUp={() => redirect("/sign-up")} />;
 }

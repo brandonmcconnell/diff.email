@@ -17,7 +17,14 @@ import {
 import { cn } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronsUpDown, Slash } from "lucide-react";
+import {
+	Check,
+	ChevronsUpDown,
+	FolderPlus,
+	MailPlus,
+	Plus,
+	Slash,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type * as React from "react";
@@ -37,6 +44,7 @@ interface Props {
 	subtitle?: React.ReactNode;
 	onRename?: () => void;
 	onDelete?: () => void;
+	onCreate?: () => void;
 	children?: React.ReactNode;
 	className?: string;
 }
@@ -46,11 +54,10 @@ export function PageHeader({
 	subtitle,
 	onRename,
 	onDelete,
+	onCreate,
 	children,
 	className,
 }: Props) {
-	const router = useRouter();
-
 	// Always fetch projects so we can render the project switcher—even on project pages.
 	const projectsQuery = useQuery({
 		...trpc.projects.list.queryOptions(),
@@ -75,17 +82,30 @@ export function PageHeader({
 	// Build breadcrumbs
 	const crumbs: React.ReactNode[] = [
 		<BreadcrumbItem key="home">
-			<BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+			<BreadcrumbLink asChild>
+				<Link href="/dashboard">Dashboard</Link>
+			</BreadcrumbLink>
 		</BreadcrumbItem>,
 	];
+
+	const createButtonIcon =
+		data.type === "project" ? <MailPlus /> : <FolderPlus />;
+	const createButtonText = data.type === "project" ? "email" : "project";
+	const createButton = (
+		<Button onClick={onCreate}>
+			{createButtonIcon} New {createButtonText}
+		</Button>
+	);
 
 	if (data.type === "project" || data.type === "email") {
 		// Current project id depends on context
 		const currentProjectId = data.type === "project" ? data.id : data.projectId;
 		const currentProjectName =
-			projectsQuery.data?.find(
-				(p: { id: string; name: string }) => p.id === currentProjectId,
-			)?.name || "Projects";
+			data.type === "project"
+				? data.name
+				: projectsQuery.data?.find(
+						(p: { id: string; name: string }) => p.id === currentProjectId,
+					)?.name || "Projects";
 
 		const projectCrumb = (
 			<BreadcrumbItem key="project">
@@ -107,8 +127,17 @@ export function PageHeader({
 						</DropdownMenuTrigger>
 						<DropdownMenuContent>
 							{projectsQuery.data?.map((p: { id: string; name: string }) => (
-								<DropdownMenuItem key={p.id} asChild>
-									<Link href={`/dashboard/${p.id}`}>{p.name}</Link>
+								<DropdownMenuItem
+									key={p.id}
+									className={cn(p.id === currentProjectId && "font-semibold")}
+									asChild
+								>
+									<Link href={`/dashboard/${p.id}`}>
+										{p.name}
+										{p.id === currentProjectId && (
+											<Check className="ml-auto text-foreground" />
+										)}
+									</Link>
 								</DropdownMenuItem>
 							))}
 						</DropdownMenuContent>
@@ -141,9 +170,16 @@ export function PageHeader({
 						</DropdownMenuTrigger>
 						<DropdownMenuContent>
 							{emailsQuery.data?.map((e: { id: string; name: string }) => (
-								<DropdownMenuItem key={e.id} asChild>
+								<DropdownMenuItem
+									key={e.id}
+									className={cn(e.id === data.id && "font-semibold")}
+									asChild
+								>
 									<Link href={`/dashboard/${data.projectId}/${e.id}`}>
 										{e.name}
+										{e.id === data.id && (
+											<Check className="ml-auto text-foreground" />
+										)}
 									</Link>
 								</DropdownMenuItem>
 							))}
@@ -203,6 +239,7 @@ export function PageHeader({
 								</DropdownMenuContent>
 							</DropdownMenu>
 						)}
+						{onCreate && createButton}
 					</div>
 				</div>
 			</div>

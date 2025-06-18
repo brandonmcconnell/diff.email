@@ -106,6 +106,16 @@ export function EditorPane({
 		onChange(v);
 	}
 
+	// When outer value changes (HTML emails), sync into internal state
+	useEffect(() => {
+		if (!showSidebar) {
+			setFiles((prev) =>
+				prev.map((f) => (f.id === "index.html" ? { ...f, content: value } : f)),
+			);
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [value]);
+
 	const activeFile = files.find((f) => f.id === activeId);
 
 	// Determine language based on extension

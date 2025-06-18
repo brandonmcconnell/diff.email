@@ -77,7 +77,7 @@ export default function EmailEditorPage() {
 		}),
 	);
 
-	const [html, setHtml] = useState<string>("<!-- start editing -->");
+	const [html, setHtml] = useState<string>("");
 	const [files, setFiles] = useState<Record<string, string> | undefined>();
 	const [entry, setEntry] = useState<string | undefined>();
 
@@ -86,7 +86,15 @@ export default function EmailEditorPage() {
 		enabled: !!emailId,
 	});
 
-	const versionsSave = useMutation(trpc.versions.save.mutationOptions({}));
+	const versionsSave = useMutation(
+		trpc.versions.save.mutationOptions({
+			onSuccess: () => {
+				queryClient.invalidateQueries({
+					queryKey: trpc.versions.getLatest.queryKey({ emailId }),
+				});
+			},
+		}),
+	);
 
 	useEffect(() => {
 		if (!latestQuery.data) return;
@@ -97,7 +105,7 @@ export default function EmailEditorPage() {
 			setEntry("index.tsx");
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [latestQuery.data]);
+	}, [language, latestQuery.data]);
 
 	function handleSave() {
 		if (language === "html") {
@@ -105,7 +113,7 @@ export default function EmailEditorPage() {
 				{ emailId, html },
 				{ onSuccess: () => toast.success("Version saved") },
 			);
-		} else if (files) {
+		} else if (files && Object.keys(files).length) {
 			versionsSave.mutate(
 				{ emailId, files },
 				{ onSuccess: () => toast.success("Version saved") },
@@ -139,17 +147,26 @@ export default function EmailEditorPage() {
 			{mounted && (
 				<ResizablePanelGroup direction="horizontal" className="flex-1 border-t">
 					<ResizablePanel defaultSize={50} minSize={25}>
-						<EditorPane
-							value={html}
-							onChange={(v) => setHtml(v ?? "")}
-							onFilesChange={(m, e) => {
-								setFiles(m);
-								setEntry(e);
-							}}
-							showSidebar={language === "jsx"}
-							initialFiles={files}
-							initialEntry={entry}
-						/>
+						{/* Render editor only when ready to avoid flash */}
+						{(() => {
+							const ready =
+								language === "html" ? latestQuery.isSuccess : !!files;
+							if (!ready) return null;
+							return (
+								<EditorPane
+									value={html}
+									onChange={(v) => setHtml(v ?? "")}
+									onFilesChange={(m, e) => {
+										setFiles(m);
+										setEntry(e);
+									}}
+									showSidebar={language === "jsx"}
+									{...(files
+										? { initialFiles: files, initialEntry: entry }
+										: {})}
+								/>
+							);
+						})()}
 					</ResizablePanel>
 					<ResizableHandle withHandle />
 					<ResizablePanel defaultSize={50} minSize={25}>

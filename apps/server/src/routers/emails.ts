@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { defaultHtmlTemplate, defaultJsxTemplate } from "@diff-email/shared";
 import { eq } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import type { CreateEmailResponse } from "resend";
@@ -48,23 +49,24 @@ export const emailsRouter = router({
 				name: z.string().min(1),
 				language: z.enum(["html", "jsx"]).default("html"),
 				html: z.string().optional(),
+				files: z.record(z.string(), z.string()).optional(),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
-			const { projectId, name, language, html } = input;
+			const { projectId, name, language, html, files: inputFiles } = input;
 			const [row] = await db
 				.insert(email)
 				.values({ projectId, name, language })
 				.returning();
 
 			if (language === "jsx") {
-				const starter = {
-					"index.tsx":
-						"export default function Email() {\n  return <p>Hello world!</p>;\n}",
-				};
-				await db.insert(version).values({ emailId: row.id, files: starter });
-			} else if (html) {
-				await db.insert(version).values({ emailId: row.id, html });
+				const content = inputFiles ?? { "index.tsx": defaultJsxTemplate };
+				await db.insert(version).values({ emailId: row.id, files: content });
+			} else {
+				// HTML email - seed initial version (blank or provided)
+				const content =
+					html && html.trim().length > 0 ? html : defaultHtmlTemplate(name);
+				await db.insert(version).values({ emailId: row.id, html: content });
 			}
 			return row;
 		}),

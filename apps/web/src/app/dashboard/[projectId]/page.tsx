@@ -1,20 +1,13 @@
 "use client";
+import { DataList, ListSkeleton } from "@/components/list";
 import { PageHeader } from "@/components/page-header";
-import { Button } from "@/components/ui/button";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { authClient } from "@/lib/auth-client";
 import { confirmDeletion } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { EllipsisVertical, Plus, Search } from "lucide-react";
-import Link from "next/link";
+import { Mail, MailPlus, Search } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useState } from "react";
 
@@ -74,6 +67,14 @@ export default function ProjectPage() {
 		(e: { name: string }) => e.name.toLowerCase().includes(query.toLowerCase()),
 	);
 
+	// helper create function
+	function handleCreate() {
+		const name = window.prompt("Email title");
+		if (name?.trim()) {
+			createEmail.mutate({ projectId, name: name.trim() });
+		}
+	}
+
 	// Prefetch email editor pages for performance
 	useLayoutEffect(() => {
 		for (const e of filteredEmails satisfies Array<{ id: string }>) {
@@ -129,12 +130,8 @@ export default function ProjectPage() {
 					</div>
 				</div>
 
-				{/* List skeleton */}
-				<div className="container mx-auto space-y-2 px-4 py-6 lg:px-6">
-					{Array.from({ length: 6 }).map((_, i) => (
-						// biome-ignore lint/suspicious/noArrayIndexKey: allowed for skeleton
-						<Skeleton key={i} className="h-10 w-full" />
-					))}
+				<div className="container mx-auto px-4 py-6 lg:px-6">
+					<ListSkeleton rows={5} />
 				</div>
 			</div>
 		);
@@ -157,12 +154,7 @@ export default function ProjectPage() {
 						deleteProject.mutate,
 					)
 				}
-				onCreate={() => {
-					const name = window.prompt("Email title");
-					if (name?.trim()) {
-						createEmail.mutate({ projectId, name: name.trim() });
-					}
-				}}
+				onCreate={handleCreate}
 			>
 				<div className="relative hidden md:block">
 					<Input
@@ -177,68 +169,32 @@ export default function ProjectPage() {
 			</PageHeader>
 
 			<div className="container mx-auto px-4 py-6 lg:px-6">
-				{filteredEmails.length === 0 ? (
-					<div className="flex flex-col items-center gap-6 rounded-md border border-border border-dashed p-6 text-center">
-						<p className="text-muted-foreground text-sm">No emails found</p>
-					</div>
-				) : (
-					<ul className="space-y-2">
-						{filteredEmails.map(
-							(e: {
-								id: string;
-								name: string;
-								count?: number;
-								type: "email";
-							}) => (
-								<li
-									key={e.id}
-									className="flex items-center justify-between gap-2"
-								>
-									<Button
-										variant="outline"
-										className="flex-1 justify-start"
-										asChild
-									>
-										<Link href={`/dashboard/${projectId}/${e.id}`}>
-											{e.name}
-										</Link>
-									</Button>
-									<DropdownMenu>
-										<DropdownMenuTrigger asChild>
-											<Button variant="outline" size="icon">
-												<EllipsisVertical className="h-4 w-4" />
-											</Button>
-										</DropdownMenuTrigger>
-										<DropdownMenuContent align="end">
-											<DropdownMenuItem
-												onSelect={() => {
-													const newTitle = window.prompt(
-														"Rename email",
-														e.name,
-													);
-													if (newTitle?.trim()) {
-														updateEmail.mutate({
-															id: e.id,
-															name: newTitle.trim(),
-														});
-													}
-												}}
-											>
-												Edit
-											</DropdownMenuItem>
-											<DropdownMenuItem
-												className="text-destructive focus:text-destructive"
-												onSelect={() => confirmDeletion(e, deleteEmail.mutate)}
-											>
-												Delete
-											</DropdownMenuItem>
-										</DropdownMenuContent>
-									</DropdownMenu>
-								</li>
-							),
-						)}
-					</ul>
-				)}
+				<DataList
+					items={filteredEmails}
+					href={(e) => `/dashboard/${projectId}/${e.id}`}
+					actions={[
+						{
+							label: "Edit",
+							onSelect: (item) => {
+								const newTitle = window.prompt("Rename email", item.name);
+								if (newTitle?.trim()) {
+									updateEmail.mutate({ id: item.id, name: newTitle.trim() });
+								}
+							},
+						},
+						{
+							label: "Delete",
+							className: "text-destructive focus:text-destructive",
+							onSelect: (item) => confirmDeletion(item, deleteEmail.mutate),
+						},
+					]}
+					onCreate={handleCreate}
+					emptyTitle="No emails yet"
+					emptyDescription="Create your first email for this project."
+					emptyIcon={Mail}
+					createLabel="New email"
+					createIcon={MailPlus}
+				/>
 			</div>
 		</div>
 	);

@@ -16,7 +16,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { EllipsisVertical, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 
 export default function Dashboard() {
 	const router = useRouter();
@@ -60,6 +60,16 @@ export default function Dashboard() {
 	const filteredProjects = (projectsQuery.data ?? []).filter(
 		(p: { name: string }) => p.name.toLowerCase().includes(query.toLowerCase()),
 	);
+
+	// Prefetch project pages for performance
+	useLayoutEffect(() => {
+		for (const p of filteredProjects satisfies Array<{ id: string }>) {
+			router.prefetch(`/dashboard/${p.id}`);
+			// Prefetch emails list to avoid skeleton on project page
+			const opts = trpc.emails.list.queryOptions({ projectId: p.id });
+			queryClient.prefetchQuery(opts);
+		}
+	}, [filteredProjects, router, queryClient.prefetchQuery]);
 
 	useEffect(() => {
 		if (!session && !isPending) router.push("/sign-in");

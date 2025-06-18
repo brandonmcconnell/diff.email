@@ -16,7 +16,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { EllipsisVertical, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 
 export default function ProjectPage() {
 	const router = useRouter();
@@ -73,6 +73,13 @@ export default function ProjectPage() {
 	const filteredEmails = (emailsQuery.data ?? []).filter(
 		(e: { name: string }) => e.name.toLowerCase().includes(query.toLowerCase()),
 	);
+
+	// Prefetch email editor pages for performance
+	useLayoutEffect(() => {
+		for (const e of filteredEmails satisfies Array<{ id: string }>) {
+			router.prefetch(`/dashboard/${projectId}/${e.id}`);
+		}
+	}, [filteredEmails, projectId, router]);
 
 	// Mutations for the project itself
 	const updateProject = useMutation(

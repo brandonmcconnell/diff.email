@@ -12,6 +12,19 @@ Reformat the results lists (when in list view) to operate like a true data-table
 
 Currently, all projects and emails are unique by their generated IDs. But for better user experience, we should put guards in place to ensure that project and email names are always unique to their scope. Also consider enforcing a specific file name structure like all lowercase alphanumeric and no spaces.
 
+## User-defined starter templates
+
+Currently new e-mails are seeded with a built-in boilerplate (simple HTML skeleton or a JSX `index.tsx` component).  We should let users save their own message as a reusable template and choose it when creating the next e-mail.
+
+Planned flow (not implemented):
+
+1. Editor gains a "Save as template..." action.
+2. Dialog asks **scope** → "This project only" vs "My account (all projects)".
+3. For HTML we store the raw `html` field; for JSX we store the serialised `files` map.
+4. New-e-mail dialog shows a "Template" selector whose default is "Built-in default".
+
+This implies adding a `templates` table and exposing CRUD via tRPC.  Until then the codepaths fall back to the bundled defaults using the `defaultHtmlTemplate` / `defaultJsxTemplate` helpers.
+
 ## Automatically route to project or email upon creation
 
 Consider if it would be generally valuable to automatically route into a project or email after creating it. For power users this may be more annoying than helpful though, if they are creating projects in bulk.
@@ -53,7 +66,7 @@ Use email client APIs/SDKs to check email details (in spam vs. not, etc.), email
 The MVP captures iCloud session cookies once (after a human approves the initial 2FA SMS) and reuses them for ~90 days. For uninterrupted, unattended operation, migrate to an SMS-automation flow using Twilio:
 
 1. Add a programmable SMS number (Twilio, Vonage, etc.) as a **trusted phone** on the Apple ID.
-2. Update the Playwright login helper to select “Text Message to +<TwilioNumber>”, then poll Twilio’s REST API for the six-digit code:
+2. Update the Playwright login helper to select "Text Message to +<TwilioNumber>", then poll Twilio's REST API for the six-digit code:
    ```ts
    const sms = await pollTwilioCode(env.TWILIO_SID, env.TWILIO_TOKEN, env.TWILIO_NUMBER);
    await page.fill('input[name="code"]', sms);
@@ -82,7 +95,7 @@ Add Prometheus (prom-client + /metrics + Grafana Cloud) for queue depth, screens
 
 ## Observability vision
 
-diff.email should feel like an APM tool for email screenshots. Each run emits structured logs, distributed traces, and high-cardinality metrics that flow into a unified Grafana + Tempo + Loki stack. Operators see real-time RED/USE dashboards (request rate, error rate, latency p50/p95) broken down by client engine and dark-mode flag, while power users can drill into per-project histograms (“Gmail Web p95 = 2.8 s this hour”) and click straight through to the raw Playwright trace or console log of any failed screenshot. Alert rules fire to Slack & PagerDuty on SLO breaches, and every metric label is correlated back to the exact Version / Run / Screenshot row, making root-cause analysis a two-click journey from chart to code diff.
+diff.email should feel like an APM tool for email screenshots. Each run emits structured logs, distributed traces, and high-cardinality metrics that flow into a unified Grafana + Tempo + Loki stack. Operators see real-time RED/USE dashboards (request rate, error rate, latency p50/p95) broken down by client engine and dark-mode flag, while power users can drill into per-project histograms ("Gmail Web p95 = 2.8 s this hour") and click straight through to the raw Playwright trace or console log of any failed screenshot. Alert rules fire to Slack & PagerDuty on SLO breaches, and every metric label is correlated back to the exact Version / Run / Screenshot row, making root-cause analysis a two-click journey from chart to code diff.
 
 ## CSS-support linter
 

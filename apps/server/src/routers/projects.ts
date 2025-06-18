@@ -1,6 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db";
+import { user } from "../db/schema/auth";
 import { email, project } from "../db/schema/core";
 import { protectedProcedure, router } from "../lib/trpc";
 
@@ -15,11 +16,14 @@ export const projectsRouter = router({
 				createdAt: project.createdAt,
 				count: sql<number>`count(${email.id})::int`.as("count"),
 				type: sql<"project">`'project'`.as("type"),
+				authorName: user.name,
+				authorEmail: user.email,
 			})
 			.from(project)
 			.leftJoin(email, eq(project.id, email.projectId))
+			.leftJoin(user, eq(project.userId, user.id))
 			.where(eq(project.userId, userId))
-			.groupBy(project.id);
+			.groupBy(project.id, user.name, user.email);
 		return rows;
 	}),
 	create: protectedProcedure

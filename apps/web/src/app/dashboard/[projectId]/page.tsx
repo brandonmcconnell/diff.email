@@ -194,6 +194,25 @@ export default function ProjectPage() {
 					emptyIcon={Mail}
 					createLabel="New email"
 					createIcon={MailPlus}
+					columns={[
+						// {
+						// 	label: "Versions",
+						// 	render: (item) => (item.count ?? 0).toString(),
+						// },
+						{
+							label: "Created",
+							render: (item) => new Date(item.createdAt).toLocaleDateString(),
+						},
+						{
+							label: "Author",
+							render: (item) => {
+								const name = item.authorName ?? "";
+								// const suffix = item.userId === session?.user.id ? " (you)" : "";
+								// return `${name}${suffix}`;
+								return name;
+							},
+						},
+					]}
 				/>
 			</div>
 		</div>

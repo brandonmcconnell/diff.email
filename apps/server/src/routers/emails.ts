@@ -4,6 +4,7 @@ import { sql } from "drizzle-orm";
 import type { CreateEmailResponse } from "resend";
 import { z } from "zod";
 import { db } from "../db";
+import { user } from "../db/schema/auth";
 import { email, project, run, sentEmail, version } from "../db/schema/core";
 import { screenshotsQueue } from "../lib/queue";
 import { resend } from "../lib/resend";
@@ -20,14 +21,17 @@ export const emailsRouter = router({
 					name: email.name,
 					userId: project.userId,
 					createdAt: email.createdAt,
+					authorName: user.name,
+					authorEmail: user.email,
 					count: sql<number>`count(${version.id})::int`.as("count"),
 					type: sql<"email">`'email'`.as("type"),
 				})
 				.from(email)
 				.leftJoin(version, eq(email.id, version.emailId))
 				.leftJoin(project, eq(email.projectId, project.id))
+				.leftJoin(user, eq(project.userId, user.id))
 				.where(eq(email.projectId, input.projectId))
-				.groupBy(email.id, project.userId);
+				.groupBy(email.id, project.userId, user.name, user.email);
 			return rows;
 		}),
 	create: protectedProcedure

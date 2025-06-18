@@ -14,7 +14,7 @@ export default function RootRedirect() {
 		} else {
 			redirect("/home");
 		}
-	}, [session, isPending, redirect]);
+	}, [session, isPending]);
 
 	return <Loader />;
 }

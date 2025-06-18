@@ -156,6 +156,24 @@ export default function Dashboard() {
 					emptyIcon={Folder}
 					createLabel="New project"
 					createIcon={FolderPlus}
+					columns={[
+						// {
+						// 	label: "Emails",
+						// 	render: (item) => (item.count ?? 0).toString(),
+						// },
+						{
+							label: "Created",
+							render: (item) => new Date(item.createdAt).toLocaleDateString(),
+						},
+						{
+							label: "Author",
+							render: (item) => {
+								const name = item.authorName ?? "";
+								const suffix = item.userId === session?.user.id ? " (you)" : "";
+								return `${name}${suffix}`;
+							},
+						},
+					]}
 				/>
 			</div>
 		</div>

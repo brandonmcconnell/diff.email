@@ -76,6 +76,12 @@ export interface ListAction<T extends BasicItem> {
 	className?: string;
 }
 
+interface Column<T> {
+	label: string;
+	render: (item: T) => React.ReactNode;
+	className?: string;
+}
+
 interface DataListProps<T extends BasicItem> {
 	items: T[];
 	href: (item: T) => string;
@@ -86,6 +92,7 @@ interface DataListProps<T extends BasicItem> {
 	emptyIcon?: React.ComponentType<{ className?: string }>;
 	createLabel: string;
 	createIcon?: React.ComponentType<{ className?: string }>;
+	columns?: Column<T>[];
 }
 
 export function DataList<T extends BasicItem>({
@@ -98,6 +105,7 @@ export function DataList<T extends BasicItem>({
 	emptyIcon,
 	createLabel,
 	createIcon,
+	columns = [],
 }: DataListProps<T>) {
 	if (items.length === 0) {
 		return renderEmpty({
@@ -110,22 +118,55 @@ export function DataList<T extends BasicItem>({
 		});
 	}
 
+	const hasActions = actions && actions.length > 0;
+	const colCount = 1 + columns.length;
+
 	return (
-		<ul className="space-y-2">
+		<div style={{ "--cols": colCount - 1 } as React.CSSProperties}>
+			{/* header */}
+			{columns.length > 0 && (
+				<div className="mb-2 hidden grid-cols-[1fr_repeat(var(--cols),minmax(0,1fr))_64px] items-center gap-2 font-medium text-muted-foreground text-xs md:grid">
+					<span>Name</span>
+					{columns.map((c) => (
+						<span key={c.label} className={c.className}>
+							{c.label}
+						</span>
+					))}
+					{hasActions && <span className="text-right">Actions</span>}
+				</div>
+			)}
 			{items.map((item) => (
-				<li key={item.id} className="flex items-center justify-between gap-2">
-					<Button variant="outline" className="flex-1 justify-start" asChild>
-						<Link href={href(item)}>{item.name}</Link>
+				<div
+					key={item.id}
+					className="grid grid-cols-[1fr_repeat(var(--cols),minmax(0,1fr))_64px] items-center justify-items-start gap-2 border-border py-2 text-sm md:border-t"
+				>
+					<Button
+						variant="secondary"
+						className="flex-1 p-0 px-4 text-left"
+						asChild
+					>
+						<Link href={href(item)}>
+							<span className="truncate font-medium">{item.name}</span>
+						</Link>
 					</Button>
-					{actions && actions.length > 0 && (
+					{columns.map((c) => (
+						<span key={c.label} className={cn("w-full truncate", c.className)}>
+							{c.render(item)}
+						</span>
+					))}
+					{hasActions && (
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
-								<Button variant="outline" size="icon">
-									<EllipsisVertical className="h-4 w-4" />
+								<Button
+									variant="outline"
+									size="icon"
+									className="justify-self-end"
+								>
+									<EllipsisVertical className="size-4" />
 								</Button>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end">
-								{actions.map((a) => (
+								{actions?.map((a) => (
 									<DropdownMenuItem
 										key={a.label}
 										className={a.className}
@@ -137,8 +178,8 @@ export function DataList<T extends BasicItem>({
 							</DropdownMenuContent>
 						</DropdownMenu>
 					)}
-				</li>
+				</div>
 			))}
-		</ul>
+		</div>
 	);
 }

@@ -15,7 +15,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Plus } from "lucide-react";
+import { FilePlus2, FolderPlus, MoreVertical } from "lucide-react";
 import { useCallback } from "react";
 
 export interface FileNode extends TreeDataItem {
@@ -92,7 +92,26 @@ export function FileExplorer({
 
 	// Render ---------------------------------------------------------
 	return (
-		<div className="flex h-full flex-col gap-2">
+		<div className="@container flex h-full flex-col gap-2">
+			{/* Top toolbar */}
+			<div className="flex gap-1">
+				<button
+					type="button"
+					className="flex flex-1 items-center gap-1 rounded border px-1 py-1 text-xs hover:bg-muted"
+					onClick={() => handleAddFile()}
+				>
+					<FilePlus2 className="size-5" />
+					File
+				</button>
+				<button
+					type="button"
+					className="flex flex-1 items-center gap-1 rounded border px-1 py-1 text-xs hover:bg-muted"
+					onClick={() => handleAddFolder()}
+				>
+					<FolderPlus className="size-5" />
+					Directory
+				</button>
+			</div>
 			<ContextMenu>
 				<ContextMenuTrigger asChild>
 					<div className="flex-1 overflow-y-auto">

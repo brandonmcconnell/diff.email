@@ -43,7 +43,7 @@ export function EditorPane({ value, onChange }: Props) {
 			{/* Sidebar */}
 			<div
 				className={cn(
-					"hidden h-full w-52 shrink-0 border-r bg-muted p-2 md:block",
+					"md:block! hidden h-full w-52 shrink-0 border-r bg-muted p-2",
 					sidebarOpen && "absolute top-0 left-0 z-20 block md:relative",
 				)}
 			>
@@ -58,7 +58,7 @@ export function EditorPane({ value, onChange }: Props) {
 			{/* Toggle button for mobile */}
 			<button
 				type="button"
-				className="absolute top-2 left-2 z-30 rounded border bg-background p-1 shadow md:hidden"
+				className="md:hidden! absolute top-2 left-2 z-30 rounded border bg-background p-1 shadow"
 				onClick={() => setSidebarOpen((s) => !s)}
 			>
 				<Menu className="size-4" />

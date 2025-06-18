@@ -3,6 +3,11 @@ import { EditorPane } from "@/components/editor/EditorPane";
 import { PreviewPane } from "@/components/editor/PreviewPane";
 import { Toolbar } from "@/components/editor/Toolbar";
 import { PageHeader } from "@/components/page-header";
+import {
+	ResizableHandle,
+	ResizablePanel,
+	ResizablePanelGroup,
+} from "@/components/ui/resizable";
 import { confirmDeletion } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
 import { usePersistentState } from "@/utils/usePersistentState";
@@ -84,30 +89,33 @@ export default function EmailEditorPage() {
 					)
 				}
 			/>
-			<div className="flex flex-1">
-				<div className="w-1/2">
+			<ResizablePanelGroup direction="horizontal" className="flex-1 border-t">
+				<ResizablePanel defaultSize={50} minSize={25}>
 					<EditorPane value={html} onChange={(v) => setHtml(v ?? "")} />
-				</div>
-				<div className="flex w-1/2 flex-col">
-					<Toolbar
-						engine={engine}
-						setEngine={setEngine}
-						client={client}
-						setClient={setClient}
-						mode={mode}
-						setMode={setMode}
-						dark={dark}
-						setDark={setDark}
-					/>
-					<PreviewPane
-						html={html}
-						engine={engine}
-						client={client}
-						mode={mode}
-						dark={dark}
-					/>
-				</div>
-			</div>
+				</ResizablePanel>
+				<ResizableHandle withHandle />
+				<ResizablePanel defaultSize={50} minSize={25}>
+					<div className="flex h-full flex-col">
+						<Toolbar
+							engine={engine}
+							setEngine={setEngine}
+							client={client}
+							setClient={setClient}
+							mode={mode}
+							setMode={setMode}
+							dark={dark}
+							setDark={setDark}
+						/>
+						<PreviewPane
+							html={html}
+							engine={engine}
+							client={client}
+							mode={mode}
+							dark={dark}
+						/>
+					</div>
+				</ResizablePanel>
+			</ResizablePanelGroup>
 		</div>
 	);
 }

@@ -225,7 +225,7 @@ function FeatureSection9() {
 								Live preview iframe
 							</h3>
 							<p className="text-balance text-muted-foreground">
-								See your HTML update instantly while you type—zero refreshes.
+								See your HTML update instantly while you type. Zero refreshes.
 							</p>
 						</div>
 					</div>
@@ -251,7 +251,7 @@ function FeatureSection9() {
 								CLI & API (coming soon)
 							</h3>
 							<p className="text-balance text-muted-foreground">
-								Trigger runs from CI or your editor—the pipeline is yours.
+								Trigger runs from CI or your editor. The pipeline is yours.
 							</p>
 						</div>
 					</div>
@@ -606,7 +606,7 @@ function FaqSection1() {
 						</AccordionTrigger>
 						<AccordionContent className="text-muted-foreground text-sm">
 							Yes! Our Free plan lets you run three screenshot batches every
-							month—no credit card required.
+							month. No credit card required.
 						</AccordionContent>
 					</AccordionItem>
 
@@ -636,8 +636,8 @@ function FaqSection1() {
 							Can I trigger screenshot runs from CI?
 						</AccordionTrigger>
 						<AccordionContent className="text-muted-foreground text-sm">
-							Absolutely. A REST API and Node.js CLI are in private beta—ping us
-							to get access.
+							Absolutely. A REST API and Node.js CLI are in private beta. Ping
+							us to get access.
 						</AccordionContent>
 					</AccordionItem>
 				</Accordion>

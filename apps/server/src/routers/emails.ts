@@ -1,9 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import type { CreateEmailResponse } from "resend";
 import { z } from "zod";
 import { db } from "../db";
-import { email, run, sentEmail, version } from "../db/schema/core";
+import { email, project, run, sentEmail, version } from "../db/schema/core";
 import { screenshotsQueue } from "../lib/queue";
 import { resend } from "../lib/resend";
 import { protectedProcedure, router } from "../lib/trpc";
@@ -13,24 +14,35 @@ export const emailsRouter = router({
 		.input(z.object({ projectId: z.string().uuid() }))
 		.query(async ({ ctx, input }) => {
 			const rows = await db
-				.select()
+				.select({
+					id: email.id,
+					projectId: email.projectId,
+					name: email.name,
+					userId: project.userId,
+					createdAt: email.createdAt,
+					count: sql<number>`count(${version.id})::int`.as("count"),
+					type: sql<"email">`'email'`.as("type"),
+				})
 				.from(email)
-				.where(eq(email.projectId, input.projectId));
+				.leftJoin(version, eq(email.id, version.emailId))
+				.leftJoin(project, eq(email.projectId, project.id))
+				.where(eq(email.projectId, input.projectId))
+				.groupBy(email.id, project.userId);
 			return rows;
 		}),
 	create: protectedProcedure
 		.input(
 			z.object({
 				projectId: z.string().uuid(),
-				title: z.string().min(1),
+				name: z.string().min(1),
 				html: z.string().optional(),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
-			const { projectId, title, html } = input;
+			const { projectId, name, html } = input;
 			const [row] = await db
 				.insert(email)
-				.values({ projectId, title })
+				.values({ projectId, name })
 				.returning();
 			// Optionally create initial version if html provided (Phase 3)
 			return row;
@@ -174,5 +186,33 @@ export const emailsRouter = router({
 			);
 
 			return { runId: runRow.id, resendId };
+		}),
+	update: protectedProcedure
+		.input(z.object({ id: z.string().uuid(), name: z.string().min(1) }))
+		.mutation(async ({ ctx, input }) => {
+			const { id, name } = input;
+			const [existing] = await db
+				.select({ id: email.id })
+				.from(email)
+				.where(eq(email.id, id));
+			if (!existing) throw new Error("Email not found");
+			const [row] = await db
+				.update(email)
+				.set({ name })
+				.where(eq(email.id, id))
+				.returning();
+			return row;
+		}),
+	delete: protectedProcedure
+		.input(z.object({ id: z.string().uuid() }))
+		.mutation(async ({ ctx, input }) => {
+			const { id } = input;
+			const [existing] = await db
+				.select({ id: email.id })
+				.from(email)
+				.where(eq(email.id, id));
+			if (!existing) throw new Error("Email not found");
+			await db.delete(email).where(eq(email.id, id));
+			return { success: true };
 		}),
 });

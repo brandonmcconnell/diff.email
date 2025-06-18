@@ -106,7 +106,8 @@ export default function Header({ className }: HeaderProps) {
 						</div>
 					)}
 				</div>
-				<ModeToggle />
+				{/* TODO: Add mode toggle back in, need to figure out the right style and placement */}
+				{/* <ModeToggle /> */}
 			</div>
 		</nav>
 	);

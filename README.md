@@ -2,7 +2,7 @@ _This README is a working draft_
 
 # diff.email
 
-> End-to-end playground for email developers — author, preview, screenshot and **diff** HTML emails across real web-mail engines.
+> End-to-end playground for email developers: author, preview, screenshot and **diff** HTML emails across real web-mail engines.
 
 ## Table of Contents
 - Overview
@@ -21,7 +21,8 @@ _This README is a working draft_
 - License
 
 ## Overview
-`diff.email` lets you see what an email really looks like in Gmail, Outlook Web, Yahoo, iCloud and more — light *and* dark mode.   
+`diff.email` lets you see what an email really looks like in Gmail, Outlook Web, Yahoo, iCloud and more across light *and* dark mode.   
+
 The workflow is simple:
 
 1. Write HTML (or React-Email) in the web editor.

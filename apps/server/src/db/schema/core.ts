@@ -41,7 +41,7 @@ export const email = pgTable("emails", {
 	projectId: uuid("project_id")
 		.notNull()
 		.references(() => project.id, { onDelete: "cascade" }),
-	title: text("title").notNull(),
+	name: text("name").notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.defaultNow()
 		.notNull(),

@@ -70,7 +70,7 @@ Add Prometheus (prom-client + /metrics + Grafana Cloud) for queue depth, screens
 
 ## Observability vision
 
-diff.email should feel like an APM tool for email screenshots. Each run emits structured logs, distributed traces, and high-cardinality metrics that flow into a unified Grafana + Tempo + Loki stack. Operators see real-time RED/USE dashboards (request rate, error rate, latency p50/p95) broken down by client engine and dark-mode flag, while power users can drill into per-project histograms (“Gmail Web p95 = 2.8 s this hour”) and click straight through to the raw Playwright trace or console log of any failed screenshot. Alert rules fire to Slack & PagerDuty on SLO breaches, and every metric label is correlated back to the exact Version / Run / Screenshot row—making root-cause analysis a two-click journey from chart to code diff.
+diff.email should feel like an APM tool for email screenshots. Each run emits structured logs, distributed traces, and high-cardinality metrics that flow into a unified Grafana + Tempo + Loki stack. Operators see real-time RED/USE dashboards (request rate, error rate, latency p50/p95) broken down by client engine and dark-mode flag, while power users can drill into per-project histograms (“Gmail Web p95 = 2.8 s this hour”) and click straight through to the raw Playwright trace or console log of any failed screenshot. Alert rules fire to Slack & PagerDuty on SLO breaches, and every metric label is correlated back to the exact Version / Run / Screenshot row, making root-cause analysis a two-click journey from chart to code diff.
 
 ## CSS-support linter
 

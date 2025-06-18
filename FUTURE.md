@@ -6,7 +6,15 @@ Once a issue management solution is set up for diff.email (Linear, GitHub, Jira)
 
 ## Data Table
 
-Reformat the results lists to operate like a true data-table with options for filtering, exporting, sorting, drag-and-drop, bulk CRUD actions etc.
+Reformat the results lists (when in list view) to operate like a true data-table with options for filtering, exporting, sorting, drag-and-drop, bulk CRUD actions etc.
+
+## Naming collisions countermeasures
+
+Currently, all projects and emails are unique by their generated IDs. But for better user experience, we should put guards in place to ensure that project and email names are always unique to their scope. Also consider enforcing a specific file name structure like all lowercase alphanumeric and no spaces.
+
+## Automatically route to project or email upon creation
+
+Consider if it would be generally valuable to automatically route into a project or email after creating it. For power users this may be more annoying than helpful though, if they are creating projects in bulk.
 
 ## Outlook Web deep-link via Graph / EWS
 

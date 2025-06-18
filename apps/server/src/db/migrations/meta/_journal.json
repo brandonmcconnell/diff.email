@@ -22,6 +22,13 @@
 			"when": 1749571582552,
 			"tag": "0002_even_lilith",
 			"breakpoints": true
+		},
+		{
+			"idx": 3,
+			"version": "7",
+			"when": 1750222655430,
+			"tag": "0003_clever_nemesis",
+			"breakpoints": true
 		}
 	]
 }

@@ -1,0 +1,1 @@
+ALTER TABLE emails RENAME COLUMN title TO name; 

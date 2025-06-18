@@ -24,8 +24,9 @@ export function deleteConfirmationMessage({
 	type: keyof typeof TYPES_SUBTYPES;
 }) {
 	count = count ?? 0;
+	const subtype = TYPES_SUBTYPES[type];
 	return `Delete the "${name}" ${type}${
-		count ? ` and its ${count} ${pluralize(count, TYPES_SUBTYPES[type])}` : ""
+		count ? ` and its ${count} ${pluralize(count, subtype)}` : ""
 	}? This action is irreversible.\n\nAre you sure you want to continue?`;
 }
 

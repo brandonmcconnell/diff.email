@@ -1,4 +1,5 @@
 "use client";
+import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -82,34 +83,25 @@ export default function Dashboard() {
 
 	return (
 		<div className="bg-background">
-			<div className="container mx-auto flex flex-col gap-6 px-4 pt-4 md:pt-6 lg:px-6">
-				{/* Header */}
-				<div className="flex flex-col justify-between gap-4 md:flex-row md:items-center md:gap-6">
-					<div className="space-y-1">
-						<h2 className="font-semibold text-xl">Projects</h2>
-						<p className="text-muted-foreground text-sm">
-							Organize your projects and emails.
-						</p>
+			{/* Header */}
+			<PageHeader
+				data={{ name: "Projects", type: "dashboard" }}
+				subtitle="Organize your projects and emails."
+			>
+				<div className="flex flex-col-reverse gap-3 md:flex-row">
+					<div className="relative hidden md:block">
+						<Input
+							type="search"
+							placeholder="Search projects"
+							className="pl-8"
+							value={query}
+							onChange={(e) => setQuery(e.target.value)}
+						/>
+						<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
 					</div>
-
-					{/* Search & Actions */}
-					<div className="flex flex-col-reverse gap-3 md:flex-row">
-						<div className="relative">
-							<Input
-								type="search"
-								placeholder="Search projects"
-								className="pl-8"
-								value={query}
-								onChange={(e) => setQuery(e.target.value)}
-							/>
-							<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
-						</div>
-						<div className="flex flex-row-reverse justify-end gap-2 md:flex-row">
-							<Button onClick={handleCreate}>Create new</Button>
-						</div>
-					</div>
+					<Button onClick={handleCreate}>Create new</Button>
 				</div>
-			</div>
+			</PageHeader>
 
 			{/* Body */}
 			<div className="container mx-auto px-4 py-6 lg:px-6">

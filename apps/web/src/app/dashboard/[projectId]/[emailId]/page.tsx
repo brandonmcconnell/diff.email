@@ -40,6 +40,7 @@ export default function EmailEditorPage() {
 	const language = emailData?.language ?? "html";
 	const versionCount = emailData?.count ?? 0;
 
+	const [isReady, setIsReady] = useState(false);
 	// persistent UI state
 	const [mounted, setMounted] = useState(false);
 	useEffect(() => setMounted(true), []);
@@ -99,8 +100,10 @@ export default function EmailEditorPage() {
 	useEffect(() => {
 		if (!latestQuery.data) return;
 		if (language === "html") {
+			if (latestQuery.isSuccess) setIsReady(true);
 			setHtml(latestQuery.data.html ?? "");
 		} else if (latestQuery.data.files) {
+			if (latestQuery.isSuccess) setIsReady(true);
 			setFiles(latestQuery.data.files as Record<string, string>);
 			setEntry("index.tsx");
 		}
@@ -149,9 +152,7 @@ export default function EmailEditorPage() {
 					<ResizablePanel defaultSize={50} minSize={25}>
 						{/* Render editor only when ready to avoid flash */}
 						{(() => {
-							const ready =
-								language === "html" ? latestQuery.isSuccess : !!files;
-							if (!ready) return null;
+							if (!isReady) return null;
 							return (
 								<EditorPane
 									value={html}

@@ -40,11 +40,12 @@ export type EmailHeader = {
 export type HeaderData = DashboardHeader | ProjectHeader | EmailHeader;
 
 interface Props {
-	data: HeaderData;
-	subtitle?: React.ReactNode;
+	data: { id: string; name: string; projectId?: string; type: string };
+	subtitle?: string;
 	onRename?: () => void;
 	onDelete?: () => void;
 	onCreate?: () => void;
+	afterTitle?: React.ReactNode;
 	children?: React.ReactNode;
 	className?: string;
 }
@@ -55,6 +56,7 @@ export function PageHeader({
 	onRename,
 	onDelete,
 	onCreate,
+	afterTitle,
 	children,
 	className,
 }: Props) {
@@ -66,7 +68,7 @@ export function PageHeader({
 
 	const emailsQuery = useQuery({
 		...trpc.emails.list.queryOptions({
-			projectId: data.type === "email" ? data.projectId : "",
+			projectId: data.type === "email" ? (data.projectId ?? "") : "",
 		}),
 		enabled: data.type === "email",
 	});
@@ -204,10 +206,9 @@ export function PageHeader({
 
 				<div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
 					<div className="space-y-2">
-						<h1 className="font-bold text-2xl tracking-tight md:text-3xl">
-							{data.type === "dashboard" && <>{data.name}</>}
-							{data.type === "project" && <>{data.name}</>}
-							{data.type === "email" && <>{data.name}</>}
+						<h1 className="flex items-center gap-2 font-bold text-2xl tracking-tight md:text-3xl">
+							<span>{data.name}</span>
+							{afterTitle}
 						</h1>
 						{subtitle && (
 							<p className="text-muted-foreground text-sm lg:text-base">

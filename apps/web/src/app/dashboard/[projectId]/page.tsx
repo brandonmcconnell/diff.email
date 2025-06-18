@@ -1,5 +1,6 @@
 "use client";
 import { DataList, ListSkeleton } from "@/components/list";
+import { NewEmailDialog } from "@/components/new-email-dialog";
 import { PageHeader } from "@/components/page-header";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -27,10 +28,12 @@ export default function ProjectPage() {
 
 	const queryClient = useQueryClient();
 
-	const emailsQuery = useQuery({
-		...trpc.emails.list.queryOptions({ projectId }),
-		enabled: !!session,
-	});
+	const emailsQuery = projectId
+		? useQuery({
+				...trpc.emails.list.queryOptions({ projectId }),
+				enabled: !!session,
+			})
+		: null;
 
 	const createEmail = useMutation(
 		trpc.emails.create.mutationOptions({
@@ -75,16 +78,14 @@ export default function ProjectPage() {
 		"ui-view",
 		"grid",
 	);
-	const filteredEmails = (emailsQuery.data ?? []).filter(
+	const filteredEmails = (emailsQuery?.data ?? []).filter(
 		(e: { name: string }) => e.name.toLowerCase().includes(query.toLowerCase()),
 	);
 
-	// helper create function
-	function handleCreate() {
-		const name = window.prompt("Email title");
-		if (name?.trim()) {
-			createEmail.mutate({ projectId, name: name.trim() });
-		}
+	const [createOpen, setCreateOpen] = useState(false);
+
+	function handleCreate(title: string, language: "html" | "jsx") {
+		createEmail.mutate({ projectId, name: title, language });
 	}
 
 	// Prefetch email editor pages for performance
@@ -119,7 +120,7 @@ export default function ProjectPage() {
 		if (!session && !isPending) router.push("/sign-in");
 	}, [session, isPending, router]);
 
-	if (isPending || emailsQuery.isPending) {
+	if (isPending || emailsQuery?.isPending) {
 		return (
 			<div className="animate-pulse bg-background">
 				{/* Header skeleton */}
@@ -166,7 +167,7 @@ export default function ProjectPage() {
 						deleteProject.mutate,
 					)
 				}
-				onCreate={handleCreate}
+				onCreate={() => setCreateOpen(true)}
 			>
 				<div className="flex flex-col gap-3 md:flex-row md:items-center">
 					<ToggleGroup
@@ -216,7 +217,7 @@ export default function ProjectPage() {
 							onSelect: (item) => confirmDeletion(item, deleteEmail.mutate),
 						},
 					]}
-					onCreate={handleCreate}
+					onCreate={() => setCreateOpen(true)}
 					emptyTitle="No emails yet"
 					emptyDescription="Create your first email for this project."
 					emptyIcon={Mail}
@@ -244,6 +245,12 @@ export default function ProjectPage() {
 					view={view}
 				/>
 			</div>
+
+			<NewEmailDialog
+				open={createOpen}
+				onOpenChange={setCreateOpen}
+				onCreate={handleCreate}
+			/>
 		</div>
 	);
 }

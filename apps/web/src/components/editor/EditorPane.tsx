@@ -11,33 +11,93 @@ import { FileExplorer, type FileNode } from "./FileExplorer";
 interface Props {
 	value: string;
 	onChange: (v: string | undefined) => void;
+	/** callback to provide full virtual FS and active entry path */
+	onFilesChange?: (files: Record<string, string>, entry: string) => void;
+	showSidebar?: boolean;
+	/** optional initial virtual FS map */
+	initialFiles?: Record<string, string>;
+	initialEntry?: string;
 }
 
-// Dynamically import Monaco editor (client-side only) and cast to `any`
-// so custom props like `onMount` are accepted without type errors.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const MonacoEditor = dynamic(
 	() => import("@monaco-editor/react").then((m) => m.default),
 	{ ssr: false },
 );
 
-export function EditorPane({ value, onChange }: Props) {
+export function EditorPane({
+	value,
+	onChange,
+	onFilesChange,
+	showSidebar = true,
+	initialFiles,
+	initialEntry,
+}: Props) {
 	const { theme } = useTheme();
 
-	const [files, setFiles] = useState<FileNode[]>([
-		{ id: "index.html", name: "index.html", content: value },
-	]);
-	const [activeId, setActiveId] = useState<string>("index.html");
+	const [files, setFiles] = useState<FileNode[]>(() => {
+		if (initialFiles && Object.keys(initialFiles).length) {
+			return Object.entries(initialFiles).map(([path, content]) => ({
+				id: path,
+				name: path,
+				content,
+				droppable: false,
+				draggable: true,
+			}));
+		}
+		return [{ id: "index.html", name: "index.html", content: value }];
+	});
+	const [activeId, setActiveId] = useState<string>(
+		initialEntry ??
+			(initialFiles ? Object.keys(initialFiles)[0] : "index.html"),
+	);
 	const [sidebarOpen, setSidebarOpen] = useState(false);
 
-	// Sync outer value when active file changes
+	const prevMapJson = React.useRef<string>("");
 	useEffect(() => {
 		const active = files.find((f) => f.id === activeId);
 		if (active) {
 			onChange(active.content);
 		}
+
+		if (onFilesChange) {
+			const map: Record<string, string> = {};
+			function walk(nodes: FileNode[], prefix = "") {
+				for (const n of nodes) {
+					const path = prefix + n.name;
+					if (n.content != null) map[path] = n.content;
+					if (n.children) walk(n.children as FileNode[], `${path}/`);
+				}
+			}
+			walk(files);
+			const mapJson = JSON.stringify(map);
+			const entryPath =
+				collectPath(files, activeId) ??
+				files.find((f) => f.id === activeId)?.name ??
+				"index.html";
+
+			if (prevMapJson.current !== mapJson) {
+				prevMapJson.current = mapJson;
+				onFilesChange(map, entryPath);
+			}
+		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [activeId, files, onChange]);
+	}, [activeId, files, onChange, onFilesChange]);
+
+	function collectPath(
+		nodes: FileNode[],
+		id: string,
+		prefix = "",
+	): string | null {
+		for (const n of nodes) {
+			const current = prefix + n.name;
+			if (n.id === id) return current;
+			if (n.children) {
+				const found = collectPath(n.children as FileNode[], id, `${current}/`);
+				if (found) return found;
+			}
+		}
+		return null;
+	}
 
 	function handleEditorChange(v?: string) {
 		setFiles((prev) =>
@@ -91,29 +151,33 @@ export function EditorPane({ value, onChange }: Props) {
 
 	return (
 		<div className="relative flex h-full w-full">
-			{/* Sidebar */}
-			<div
-				className={cn(
-					"md:block! hidden h-full w-52 shrink-0 border-r bg-muted p-2",
-					sidebarOpen && "absolute top-0 left-0 z-20 block md:relative",
-				)}
-			>
-				<FileExplorer
-					files={files}
-					activeId={activeId}
-					setActiveId={setActiveId}
-					setFiles={setFiles}
-				/>
-			</div>
+			{showSidebar && (
+				<>
+					{/* Sidebar */}
+					<div
+						className={cn(
+							"md:block! hidden h-full w-52 shrink-0 border-r bg-muted p-2",
+							sidebarOpen && "absolute top-0 left-0 z-20 block md:relative",
+						)}
+					>
+						<FileExplorer
+							files={files}
+							activeId={activeId}
+							setActiveId={setActiveId}
+							setFiles={setFiles}
+						/>
+					</div>
 
-			{/* Toggle button for mobile */}
-			<button
-				type="button"
-				className="md:hidden! absolute top-2 left-2 z-30 rounded border bg-background p-1 shadow"
-				onClick={() => setSidebarOpen((s) => !s)}
-			>
-				<Menu className="size-4" />
-			</button>
+					{/* Toggle button for mobile */}
+					<button
+						type="button"
+						className="md:hidden! absolute top-2 left-2 z-30 rounded border bg-background p-1 shadow"
+						onClick={() => setSidebarOpen((s) => !s)}
+					>
+						<Menu className="size-4" />
+					</button>
+				</>
+			)}
 
 			{/* Editor */}
 			<div className="flex-1">

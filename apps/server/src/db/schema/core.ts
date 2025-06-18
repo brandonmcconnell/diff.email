@@ -25,6 +25,8 @@ export const clientEnum = pgEnum("client", [
 
 export const engineEnum = pgEnum("engine", ["chromium", "firefox", "webkit"]);
 
+export const emailLanguageEnum = pgEnum("email_language", ["html", "jsx"]);
+
 // Tables
 export const project = pgTable("projects", {
 	id: uuid("id").defaultRandom().primaryKey(),
@@ -45,6 +47,7 @@ export const email = pgTable("emails", {
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.defaultNow()
 		.notNull(),
+	language: emailLanguageEnum("language").default("html").notNull(),
 });
 
 export const version = pgTable("versions", {

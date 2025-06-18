@@ -25,13 +25,20 @@ export const emailsRouter = router({
 					authorEmail: user.email,
 					count: sql<number>`count(${version.id})::int`.as("count"),
 					type: sql<"email">`'email'`.as("type"),
+					language: email.language,
 				})
 				.from(email)
 				.leftJoin(version, eq(email.id, version.emailId))
 				.leftJoin(project, eq(email.projectId, project.id))
 				.leftJoin(user, eq(project.userId, user.id))
 				.where(eq(email.projectId, input.projectId))
-				.groupBy(email.id, project.userId, user.name, user.email);
+				.groupBy(
+					email.id,
+					project.userId,
+					user.name,
+					user.email,
+					email.language,
+				);
 			return rows;
 		}),
 	create: protectedProcedure
@@ -39,14 +46,15 @@ export const emailsRouter = router({
 			z.object({
 				projectId: z.string().uuid(),
 				name: z.string().min(1),
+				language: z.enum(["html", "jsx"]).default("html"),
 				html: z.string().optional(),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
-			const { projectId, name, html } = input;
+			const { projectId, name, language, html } = input;
 			const [row] = await db
 				.insert(email)
-				.values({ projectId, name })
+				.values({ projectId, name, language })
 				.returning();
 			// Optionally create initial version if html provided (Phase 3)
 			return row;
@@ -192,9 +200,15 @@ export const emailsRouter = router({
 			return { runId: runRow.id, resendId };
 		}),
 	update: protectedProcedure
-		.input(z.object({ id: z.string().uuid(), name: z.string().min(1) }))
+		.input(
+			z.object({
+				id: z.string().uuid(),
+				name: z.string().min(1),
+				language: z.enum(["html", "jsx"]).optional(),
+			}),
+		)
 		.mutation(async ({ ctx, input }) => {
-			const { id, name } = input;
+			const { id, name, language } = input;
 			const [existing] = await db
 				.select({ id: email.id })
 				.from(email)
@@ -202,7 +216,7 @@ export const emailsRouter = router({
 			if (!existing) throw new Error("Email not found");
 			const [row] = await db
 				.update(email)
-				.set({ name })
+				.set({ name, ...(language ? { language } : {}) })
 				.where(eq(email.id, id))
 				.returning();
 			return row;

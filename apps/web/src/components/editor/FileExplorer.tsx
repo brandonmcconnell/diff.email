@@ -53,7 +53,7 @@ export function FileExplorer({
 	});
 
 	function handleAddFile(parentId?: string) {
-		const name = window.prompt("File name", "untitled.html");
+		const name = window.prompt("File name", "");
 		if (!name?.trim()) return;
 		const node = newFileNode(name.trim());
 		if (!parentId) {
@@ -65,7 +65,7 @@ export function FileExplorer({
 	}
 
 	function handleAddFolder(parentId?: string) {
-		const name = window.prompt("Directory name", "directories");
+		const name = window.prompt("Directory name", "");
 		if (!name?.trim()) return;
 		const node = newFolderNode(name.trim());
 		if (!parentId) {

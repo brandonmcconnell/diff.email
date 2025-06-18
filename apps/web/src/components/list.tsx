@@ -122,64 +122,130 @@ export function DataList<T extends BasicItem>({
 	const colCount = 1 + columns.length;
 
 	return (
-		<div style={{ "--cols": colCount - 1 } as React.CSSProperties}>
-			{/* header */}
-			{columns.length > 0 && (
-				<div className="mb-2 hidden grid-cols-[1fr_repeat(var(--cols),minmax(0,1fr))_64px] items-center gap-2 font-medium text-muted-foreground text-xs md:grid">
-					<span>Name</span>
-					{columns.map((c) => (
-						<span key={c.label} className={c.className}>
-							{c.label}
-						</span>
-					))}
-					{hasActions && <span className="text-right">Actions</span>}
-				</div>
-			)}
-			{items.map((item) => (
-				<div
-					key={item.id}
-					className="grid grid-cols-[1fr_repeat(var(--cols),minmax(0,1fr))_64px] items-center justify-items-start gap-2 border-border py-2 text-sm md:border-t"
-				>
-					<Button
-						variant="secondary"
-						className="flex-1 p-0 px-4 text-left"
-						asChild
+		<>
+			{/* Card grid for mobile */}
+			<div
+				className="grid gap-4 md:hidden"
+				style={{ gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))" }}
+			>
+				{items.map((item) => (
+					<div
+						key={item.id}
+						className="grid grid-cols-[1fr_auto] grid-rows-[auto_auto_auto] gap-y-1 rounded-md border p-4"
 					>
-						<Link href={href(item)}>
-							<span className="truncate font-medium">{item.name}</span>
+						{/* Name link */}
+						<Link
+							href={href(item)}
+							className="col-start-1 row-start-1 truncate font-medium"
+						>
+							{item.name}
 						</Link>
-					</Button>
-					{columns.map((c) => (
-						<span key={c.label} className={cn("w-full truncate", c.className)}>
-							{c.render(item)}
-						</span>
-					))}
-					{hasActions && (
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button
-									variant="outline"
-									size="icon"
-									className="justify-self-end"
-								>
-									<EllipsisVertical className="size-4" />
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end">
-								{actions?.map((a) => (
-									<DropdownMenuItem
-										key={a.label}
-										className={a.className}
-										onSelect={() => a.onSelect(item)}
+						{/* Actions */}
+						{hasActions && (
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button
+										variant="outline"
+										size="icon"
+										className="justify-self-end"
 									>
-										{a.label}
-									</DropdownMenuItem>
-								))}
-							</DropdownMenuContent>
-						</DropdownMenu>
-					)}
-				</div>
-			))}
-		</div>
+										<EllipsisVertical className="size-4" />
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end">
+									{actions?.map((a) => (
+										<DropdownMenuItem
+											key={a.label}
+											className={a.className}
+											onSelect={() => a.onSelect(item)}
+										>
+											{a.label}
+										</DropdownMenuItem>
+									))}
+								</DropdownMenuContent>
+							</DropdownMenu>
+						)}
+						{/* Created / Modified date */}
+						{columns[0] && (
+							<span className="col-span-2 row-start-2 text-muted-foreground text-xs">
+								{columns[0].render(item)}
+							</span>
+						)}
+						{/* Author */}
+						{columns[1] && (
+							<span className="col-span-2 row-start-3 text-sm">
+								{columns[1].render(item)}
+							</span>
+						)}
+					</div>
+				))}
+			</div>
+
+			<div
+				className="hidden md:block"
+				style={{ "--cols": colCount - 1 } as React.CSSProperties}
+			>
+				{/* header */}
+				{columns.length > 0 && (
+					<div className="mb-2 hidden grid-cols-[1fr_repeat(var(--cols),minmax(0,1fr))_64px] items-center gap-2 font-medium text-muted-foreground text-xs md:grid">
+						<span>Name</span>
+						{columns.map((c) => (
+							<span key={c.label} className={c.className}>
+								{c.label}
+							</span>
+						))}
+						{hasActions && <span className="text-right">Actions</span>}
+					</div>
+				)}
+				{items.map((item) => (
+					<div
+						key={item.id}
+						className="grid grid-cols-[1fr_repeat(var(--cols),minmax(0,1fr))_64px] items-center justify-items-start gap-2 border-border py-2 text-sm md:border-t"
+					>
+						<Button
+							variant="secondary"
+							className="flex-1 p-0 px-4 text-left"
+							asChild
+						>
+							<Link href={href(item)}>
+								<span className="truncate font-medium">{item.name}</span>
+							</Link>
+						</Button>
+						{columns.map((c) => (
+							<span
+								key={c.label}
+								className={cn("w-full truncate", c.className)}
+							>
+								{c.render(item)}
+							</span>
+						))}
+						{hasActions && (
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button
+										variant="outline"
+										size="icon"
+										className="justify-self-end"
+									>
+										<EllipsisVertical className="size-4" />
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end">
+									{actions?.map((a) => (
+										<DropdownMenuItem
+											key={a.label}
+											className={a.className}
+											onSelect={() => a.onSelect(item)}
+										>
+											{a.label}
+										</DropdownMenuItem>
+									))}
+								</DropdownMenuContent>
+							</DropdownMenu>
+						)}
+					</div>
+				))}
+			</div>
+		</>
 	);
 }

@@ -144,7 +144,7 @@ const TreeView = React.forwardRef<HTMLDivElement, TreeProps>(
 					onDrop={(e) => {
 						handleDrop({ id: "", name: "parent_div" });
 					}}
-				></div>
+				/>
 			</div>
 		);
 	},
@@ -300,7 +300,9 @@ const TreeNode = ({
 						isOpen={value.includes(item.id)}
 						default={defaultNodeIcon}
 					/>
-					<span className="flex-1 truncate text-sm">{item.name}</span>
+					<span className="ml-1 justify-start truncate text-sm">
+						{item.name}
+					</span>
 					<TreeActions isSelected={selectedItemId === item.id}>
 						{item.actions}
 					</TreeActions>

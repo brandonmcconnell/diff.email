@@ -6,6 +6,7 @@ import {
 	ContextMenu,
 	ContextMenuContent,
 	ContextMenuItem,
+	ContextMenuSeparator,
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import {
@@ -22,7 +23,7 @@ export interface FileNode extends TreeDataItem {
 }
 
 interface Props {
-	files: FileNode[]; // root level nodes (can be folders or files)
+	files: FileNode[]; // root level nodes (can be directories or files)
 	activeId: string;
 	setActiveId: (id: string) => void;
 	setFiles: (files: FileNode[]) => void;
@@ -64,7 +65,7 @@ export function FileExplorer({
 	}
 
 	function handleAddFolder(parentId?: string) {
-		const name = window.prompt("Folder name", "folder");
+		const name = window.prompt("Directory name", "directories");
 		if (!name?.trim()) return;
 		const node = newFolderNode(name.trim());
 		if (!parentId) {
@@ -231,6 +232,17 @@ export function FileExplorer({
 				),
 				contextMenu: (
 					<ContextMenuContent>
+						{n.children && (
+							<>
+								<ContextMenuItem onSelect={() => handleAddFile(n.id)}>
+									New file
+								</ContextMenuItem>
+								<ContextMenuItem onSelect={() => handleAddFolder(n.id)}>
+									New directory
+								</ContextMenuItem>
+								<ContextMenuSeparator />
+							</>
+						)}
 						<ContextMenuItem onSelect={() => renameNode(n.id)}>
 							Rename
 						</ContextMenuItem>

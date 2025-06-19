@@ -236,3 +236,7 @@ html {
 body {
 	min-height: 100%;
 }
+
+[monaco-visible-content-widget] {
+	z-index: 1000;
+}

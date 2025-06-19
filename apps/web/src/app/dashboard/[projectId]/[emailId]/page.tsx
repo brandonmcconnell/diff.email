@@ -108,7 +108,7 @@ export default function EmailEditorPage() {
 			setEntry("index.tsx");
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [language, latestQuery.data]);
+	}, [language, latestQuery.data, latestQuery.isSuccess]);
 
 	function handleSave() {
 		if (language === "html") {
@@ -148,8 +148,15 @@ export default function EmailEditorPage() {
 				}
 			/>
 			{mounted && (
-				<ResizablePanelGroup direction="horizontal" className="flex-1 border-t">
-					<ResizablePanel defaultSize={50} minSize={25}>
+				<ResizablePanelGroup
+					direction="horizontal"
+					className="overflow-visible! flex-1 border-t"
+				>
+					<ResizablePanel
+						defaultSize={50}
+						minSize={25}
+						className="overflow-visible!"
+					>
 						{/* Render editor only when ready to avoid flash */}
 						{(() => {
 							if (!isReady) return null;

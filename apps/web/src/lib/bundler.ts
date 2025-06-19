@@ -44,6 +44,22 @@ export async function bundle(
 	const inMemPlugin: esbuild.Plugin = {
 		name: "in-memory-files",
 		setup(build: esbuild.PluginBuild) {
+			// jsx-runtime shim
+			build.onResolve({ filter: /^react$/ }, () => ({
+				path: "https://esm.sh/react@18",
+				external: true,
+			}));
+
+			build.onResolve({ filter: /^react-dom$/ }, () => ({
+				path: "https://esm.sh/react-dom@18",
+				external: true,
+			}));
+
+			build.onResolve({ filter: /^react\/jsx-runtime$/ }, () => ({
+				path: "https://esm.sh/react@18/jsx-runtime",
+				external: true,
+			}));
+
 			// Resolve relative imports to other in-memory files
 			build.onResolve(
 				{ filter: /.*/ },

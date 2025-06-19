@@ -1,8 +1,8 @@
 "use client";
+import { useComputedTheme } from "@/hooks/useComputedTheme";
 import { cn } from "@/lib/utils";
 import { Menu } from "lucide-react";
 import type * as Monaco from "monaco-editor";
-import { useTheme } from "next-themes";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import React from "react";
@@ -32,7 +32,7 @@ export function EditorPane({
 	initialFiles,
 	initialEntry,
 }: Props) {
-	const { theme } = useTheme();
+	const { theme } = useComputedTheme();
 
 	const [files, setFiles] = useState<FileNode[]>(() => {
 		if (initialFiles && Object.keys(initialFiles).length) {
@@ -160,7 +160,7 @@ export function EditorPane({
 	);
 
 	return (
-		<div className="relative flex h-full w-full">
+		<div className="relative flex h-full w-full min-w-0">
 			{showSidebar && (
 				<>
 					{/* Sidebar */}
@@ -190,11 +190,11 @@ export function EditorPane({
 			)}
 
 			{/* Editor */}
-			<div className="flex-1">
+			<div className="min-w-0 flex-1">
 				<MonacoEditor
 					// @ts-expect-error - onMount is a valid prop for MonacoEditor (https://github.com/suren-atoyan/monaco-react#usage)
 					onMount={handleMount}
-					theme={theme === "dark" ? "vs-dark" : "vs"}
+					theme={theme === "dark" ? "vs-dark" : "light"}
 					language={language}
 					value={activeFile?.content ?? ""}
 					onChange={handleEditorChange}

@@ -50,27 +50,30 @@ export function PreviewPane({ html, files, entry, mode, dark }: Props) {
 		(async () => {
 			try {
 				const js = await bundle(entry, files);
-				// Create a blob URL for the bundle so we can import it
 				const blobUrl = URL.createObjectURL(
 					new Blob([js], { type: "text/javascript" }),
 				);
-				const doc = `<!DOCTYPE html><html><head><meta charset=\"utf-8\" /></head><body${
-					dark ? ' class="dark"' : ""
-				}><div id=\"root\"></div>
-				<script type="module">
-				import React from 'https://esm.sh/react@18';
-				import ReactDOM from 'https://esm.sh/react-dom@18/client';
-				(async () => {
-					const mod = await import('${blobUrl}');
-					const App = mod.default ?? mod;
-					if(!App){
-						document.body.innerHTML = '<pre style="color:red">index file must have a default export</pre>';
-						return;
-					}
-					const root = ReactDOM.createRoot(document.getElementById('root'));
-					root.render(React.createElement(App));
-				})();
-				</script></body></html>`;
+
+				const doc = `<!DOCTYPE html><html><body>
+					<div id="root"></div>
+					<script type="module">
+						import React from 'https://esm.sh/react@18';
+						import * as ReactJsx from 'https://esm.sh/react@18/jsx-runtime';
+						import * as ReactDOMClient from 'https://esm.sh/react-dom@18/client';
+
+						// make jsx-runtime available globally so the next dynamic import resolves it
+						window["react/jsx-runtime"] = ReactJsx;
+
+						(async () => {
+							const mod  = await import('${blobUrl}');
+							const App  = mod.default ?? mod;
+							const root = ReactDOMClient.createRoot(document.getElementById('root'));
+							root.render(React.createElement(App));
+						})().catch(err => {
+							document.body.innerHTML = '<pre style="color:red;padding:1rem">'+err+'</pre>';
+						});
+					</script>
+				</body></html>`;
 				if (iframeRef.current) {
 					iframeRef.current.srcdoc = doc;
 					// Revoke URL when iframe reloads next time
@@ -87,7 +90,7 @@ export function PreviewPane({ html, files, entry, mode, dark }: Props) {
 				}
 			}
 		})();
-	}, [html, files, entry, mode, dark]);
+	}, [html, files, entry, mode]);
 
 	if (mode === "screenshot") {
 		return (

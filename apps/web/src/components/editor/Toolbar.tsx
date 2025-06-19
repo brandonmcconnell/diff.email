@@ -95,7 +95,7 @@ export function Toolbar(props: Props) {
 				</Select.DropdownMenuContent>
 			</Select.DropdownMenu>
 
-			<div className="ml-auto flex items-center gap-4">
+			<div className="ml-auto flex items-center gap-1.5">
 				{/* Mode Toggle */}
 				<button
 					type="button"
@@ -118,9 +118,18 @@ export function Toolbar(props: Props) {
 
 				<button
 					type="button"
+					className="rounded border p-1"
+					onClick={onRun}
+					title="Generate screenshots"
+				>
+					<ImageIcon size={16} />
+				</button>
+
+				<button
+					type="button"
 					className={cn(
 						"flex items-center gap-1 rounded border p-1",
-						consoleVisible && "bg-border",
+						consoleVisible ? "bg-border" : "hover:bg-muted",
 					)}
 					onClick={() => setConsoleVisible(!consoleVisible)}
 					title="Toggle console"
@@ -143,15 +152,6 @@ export function Toolbar(props: Props) {
 					title="Save version"
 				>
 					<Save size={16} />
-				</button>
-
-				<button
-					type="button"
-					className="rounded border p-1"
-					onClick={onRun}
-					title="Generate screenshots"
-				>
-					<ImageIcon size={16} />
 				</button>
 			</div>
 		</div>

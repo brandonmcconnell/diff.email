@@ -144,7 +144,7 @@ export function FileExplorer({
 
 	// Render ---------------------------------------------------------
 	return (
-		<div className="@container flex h-full flex-col gap-2">
+		<div className="@container flex h-full flex-col">
 			{/* Top toolbar */}
 			<div className="flex gap-1">
 				<button

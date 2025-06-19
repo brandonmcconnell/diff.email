@@ -1,4 +1,5 @@
 "use client";
+import { useComputedTheme } from "@/hooks/useComputedTheme";
 import { bundle } from "@/lib/bundler";
 import type { Client, Engine } from "@diff-email/shared";
 import { Console } from "console-feed";
@@ -33,6 +34,7 @@ export function PreviewPane({
 	showConsole = false,
 	onLogsChange,
 }: Props) {
+	const { theme } = useComputedTheme();
 	const iframeRef = useRef<HTMLIFrameElement>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [logs, setLogs] = useState<
@@ -188,8 +190,8 @@ export function PreviewPane({
 				/>
 			</div>
 			{showConsole && (
-				<div className="h-40 overflow-y-auto border-t bg-[#242424]">
-					<Console logs={logs} variant="dark" />
+				<div className="h-40 overflow-y-auto border-t bg-muted">
+					<Console logs={logs} variant={theme} />
 				</div>
 			)}
 		</div>

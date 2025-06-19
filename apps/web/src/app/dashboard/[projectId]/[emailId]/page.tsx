@@ -136,7 +136,7 @@ export default function EmailEditorPage() {
 	}
 
 	return (
-		<div className="flex h-[calc(100vh_-_3rem)] w-full flex-col">
+		<div className="flex h-[calc(100vh_-_4rem)] w-full flex-col">
 			<PageHeader
 				data={{ id: emailId, name: emailName, projectId, type: "email" }}
 				subtitle="Edit email document"
@@ -168,7 +168,7 @@ export default function EmailEditorPage() {
 			{mounted && (
 				<ResizablePanelGroup
 					direction="horizontal"
-					className="overflow-visible! flex-1 border-t"
+					className="min-h-0 flex-1 overflow-hidden border-t"
 				>
 					<ResizablePanel
 						defaultSize={50}

@@ -143,7 +143,7 @@ export function EditorPane({
 					{/* Sidebar */}
 					<div
 						className={cn(
-							"md:block! hidden h-full w-52 shrink-0 border-r bg-muted p-2",
+							"md:block! hidden h-full w-52 shrink-0 border-r bg-muted p-2 pb-0",
 							sidebarOpen && "absolute top-0 left-0 z-20 block md:relative",
 						)}
 					>

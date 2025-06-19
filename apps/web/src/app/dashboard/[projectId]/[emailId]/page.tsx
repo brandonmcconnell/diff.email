@@ -55,6 +55,13 @@ export default function EmailEditorPage() {
 		"live",
 	);
 	const [dark, setDark] = usePersistentState<boolean>("ui-dark", false);
+	const [consoleVisible, setConsoleVisible] = useState(false);
+	const [consoleLogs, setConsoleLogs] = useState<
+		Array<{
+			data: string[];
+			method: "error" | "warn";
+		}>
+	>([]);
 
 	const updateEmail = useMutation(
 		trpc.emails.update.mutationOptions({
@@ -199,6 +206,9 @@ export default function EmailEditorPage() {
 								setMode={setMode}
 								dark={dark}
 								setDark={setDark}
+								consoleVisible={consoleVisible}
+								consoleLogs={consoleLogs}
+								setConsoleVisible={setConsoleVisible}
 								onSave={handleSave}
 								onRun={handleRun}
 							/>
@@ -210,6 +220,8 @@ export default function EmailEditorPage() {
 								client={client}
 								mode={mode}
 								dark={dark}
+								showConsole={consoleVisible}
+								onLogsChange={setConsoleLogs}
 							/>
 						</div>
 					</ResizablePanel>

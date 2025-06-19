@@ -1,7 +1,8 @@
 "use client";
 import * as Select from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 import { CLIENTS, type Client, ENGINES, type Engine } from "@diff-email/shared";
-import { ImageIcon, Moon, PlayIcon, Sun } from "lucide-react";
+import { ImageIcon, Moon, PlayIcon, Save, Sun, Terminal } from "lucide-react";
 
 type Props = {
 	engine: Engine;
@@ -14,6 +15,12 @@ type Props = {
 	setDark: (d: boolean) => void;
 	onSave: () => void;
 	onRun: () => void;
+	consoleVisible: boolean;
+	setConsoleVisible: (v: boolean) => void;
+	consoleLogs: Array<{
+		data: string[];
+		method: "error" | "warn";
+	}>;
 };
 
 export function Toolbar(props: Props) {
@@ -28,7 +35,23 @@ export function Toolbar(props: Props) {
 		setDark,
 		onSave,
 		onRun,
+		consoleVisible,
+		setConsoleVisible,
+		consoleLogs,
 	} = props;
+
+	const errorCount = consoleLogs.filter((l) => l.method === "error").length;
+	const warnCount = consoleLogs.filter((l) => l.method === "warn").length;
+	const infoCount = consoleLogs.filter(
+		(l) => l.method !== "error" && l.method !== "warn",
+	).length;
+	const consoleBadgeCounts: [number, string][] = [
+		[infoCount, "bg-blue-600"],
+		[errorCount, "bg-red-600"],
+		[warnCount, "bg-amber-600"],
+	];
+	const consoleBadgeClasses =
+		"flex h-4 min-w-4 px-1 items-center justify-center rounded-full text-[10px] text-white";
 
 	return (
 		<div className="flex items-center gap-2 border-b px-2 py-1 text-sm">
@@ -95,11 +118,31 @@ export function Toolbar(props: Props) {
 
 				<button
 					type="button"
+					className={cn(
+						"flex items-center gap-1 rounded border p-1",
+						consoleVisible && "bg-border",
+					)}
+					onClick={() => setConsoleVisible(!consoleVisible)}
+					title="Toggle console"
+				>
+					<Terminal size={16} />
+					{consoleBadgeCounts.map(
+						([count, color]) =>
+							count > 0 && (
+								<span key={color} className={cn(consoleBadgeClasses, color)}>
+									{count}
+								</span>
+							),
+					)}
+				</button>
+
+				<button
+					type="button"
 					className="rounded border p-1"
 					onClick={onSave}
 					title="Save version"
 				>
-					💾
+					<Save size={16} />
 				</button>
 
 				<button

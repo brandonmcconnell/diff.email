@@ -118,16 +118,29 @@ export async function bundle(
 		},
 	};
 
-	const result = await esbuild.build({
-		entryPoints: [entry],
-		bundle: true,
-		write: false,
-		format: "esm",
-		sourcemap: "inline",
-		plugins: [inMemPlugin],
-		jsx: "automatic",
-		minify: false,
-	});
+	try {
+		const result = await esbuild.build({
+			entryPoints: [entry],
+			bundle: true,
+			write: false,
+			format: "esm",
+			sourcemap: "inline",
+			plugins: [inMemPlugin],
+			jsx: "automatic",
+			minify: false,
+		});
 
-	return result.outputFiles[0].text;
+		return result.outputFiles[0].text;
+	} catch (_error: unknown) {
+		const error = _error as Error & { errors: esbuild.PartialMessage[] };
+		// Format esbuild's error array into a readable message
+		if ("errors" in error) {
+			const formatted = await esbuild.formatMessages(error.errors, {
+				kind: "error",
+				color: false,
+			});
+			throw new Error(formatted.join("\n"));
+		}
+		throw error;
+	}
 }

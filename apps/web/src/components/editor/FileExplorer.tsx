@@ -1,7 +1,12 @@
 "use client";
 
 // Rebuilt FileExplorer using the installed TreeView extension
-import { type TreeDataItem, TreeView } from "@/components/tree-view";
+import {
+	type FileNode,
+	type TreeDataItem,
+	TreeView,
+	buildFileTree,
+} from "@/components/tree-view";
 import {
 	ContextMenu,
 	ContextMenuContent,
@@ -16,11 +21,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { FilePlus2, FolderPlus, MoreVertical } from "lucide-react";
-import { useCallback } from "react";
-
-export interface FileNode extends TreeDataItem {
-	content?: string; // only for leaf nodes (files)
-}
+import { useCallback, useMemo } from "react";
 
 interface Props {
 	files: FileNode[]; // root level nodes (can be directories or files)
@@ -35,18 +36,21 @@ export function FileExplorer({
 	setActiveId,
 	setFiles,
 }: Props) {
+	console.log("files", files);
+	const tree = useMemo(() => buildFileTree(files), [files]);
+	console.log("tree", tree);
 	// Helpers --------------------------------------------------------
-	const newFileNode = (name: string): FileNode => ({
-		id: crypto.randomUUID(),
-		name,
+	const newFileNode = (fullPath: string): FileNode => ({
+		id: fullPath,
+		name: fullPath.split("/").pop() ?? "",
 		draggable: true,
 		droppable: false,
 		content: "",
 	});
 
-	const newFolderNode = (name: string): FileNode => ({
-		id: crypto.randomUUID(),
-		name,
+	const newFolderNode = (fullPath: string): FileNode => ({
+		id: fullPath,
+		name: fullPath.split("/").pop() ?? "",
 		draggable: true,
 		droppable: true,
 		children: [],
@@ -55,34 +59,82 @@ export function FileExplorer({
 	function handleAddFile(parentId?: string) {
 		const name = window.prompt("File name", "");
 		if (!name?.trim()) return;
-		const node = newFileNode(name.trim());
-		if (!parentId) {
-			setFiles([...files, node]);
-		} else {
-			setFiles(addChild(files, parentId, node));
+		const trimmed = name.trim();
+		const fullPath = parentId ? `${parentId}/${trimmed}` : trimmed;
+
+		if (files.some((f) => f.id === fullPath)) {
+			window.alert("A file with that name already exists in this directory.");
+			return;
 		}
-		setActiveId(node.id);
+
+		const node = newFileNode(fullPath);
+		setFiles([...files, node]);
+		setActiveId(fullPath);
 	}
 
 	function handleAddFolder(parentId?: string) {
 		const name = window.prompt("Directory name", "");
 		if (!name?.trim()) return;
-		const node = newFolderNode(name.trim());
-		if (!parentId) {
-			setFiles([...files, node]);
-		} else {
-			setFiles(addChild(files, parentId, node));
+		const trimmed = name.trim();
+		const fullPath = parentId ? `${parentId}/${trimmed}` : trimmed;
+
+		if (files.some((f) => f.id === fullPath)) {
+			window.alert("A folder with that name already exists in this directory.");
+			return;
 		}
+
+		const node = newFolderNode(fullPath);
+		setFiles([...files, node]);
 	}
 
-	// Drag & drop ----------------------------------------------------
+	// Drag & drop — rewrite paths in the flat list ------------------
 	const handleDocumentDrag = useCallback(
 		(source: TreeDataItem, target: TreeDataItem) => {
-			// prevent dropping on itself
+			console.log("source", source);
+			console.log("target", target);
 			if (source.id === target.id) return;
-			setFiles(moveNode(files, source.id, target.id));
+
+			const baseName = source.id.split("/").pop() ?? "";
+			const destinationPrefix = target.id; // "" ⇢ root
+			const destination = destinationPrefix
+				? `${destinationPrefix}/${baseName}`
+				: baseName;
+
+			// If moving to same directory (no path change), ignore
+			const sourceParent = source.id.split("/").slice(0, -1).join("/");
+			if (sourceParent === destinationPrefix) return; // noop
+
+			// duplicate safeguard
+			if (files.some((f) => f.id === destination)) {
+				window.alert(
+					"An item with that name already exists in the target directory.",
+				);
+				return;
+			}
+
+			function flatten(nodes: FileNode[]): FileNode[] {
+				return nodes.flatMap((n) => [
+					n,
+					...(n.children ? flatten(n.children as FileNode[]) : []),
+				]);
+			}
+
+			const flat = flatten(files);
+			const updated = flat.map((n) =>
+				n.id === source.id || n.id.startsWith(`${source.id}/`)
+					? { ...n, id: destination + n.id.slice(source.id.length) }
+					: n,
+			);
+
+			// preserve folder status
+			const cleaned = updated.map((n) =>
+				n.droppable ? { ...n, children: [] } : { ...n, children: undefined },
+			);
+
+			setFiles(cleaned);
+			setActiveId(destination);
 		},
-		[files, setFiles],
+		[files, setFiles, setActiveId],
 	);
 
 	// Selection change ----------------------------------------------
@@ -116,7 +168,7 @@ export function FileExplorer({
 				<ContextMenuTrigger asChild>
 					<div className="flex-1 overflow-y-auto">
 						<TreeView
-							data={decorateWithActions(files)}
+							data={decorateWithActions(tree)}
 							initialSelectedItemId={activeId}
 							onSelectChange={handleSelectChange}
 							expandAll
@@ -159,67 +211,46 @@ export function FileExplorer({
 		});
 	}
 
-	function moveNode(
-		tree: FileNode[],
-		sourceId: string,
-		targetId: string,
-	): FileNode[] {
-		let sourceNode: FileNode | null = null;
-
-		// Remove source node from tree
-		function removeNode(nodes: FileNode[]): FileNode[] {
-			return nodes.filter((n) => {
-				if (n.id === sourceId) {
-					sourceNode = n;
-					return false;
-				}
-				if (n.children) {
-					n.children = removeNode(n.children as FileNode[]);
-				}
-				return true;
-			});
-		}
-
-		const withoutSource = removeNode([...tree]);
-
-		if (!sourceNode) return tree; // not found
-
-		// Add to new parent (target)
-		function insertNode(nodes: FileNode[]): FileNode[] {
-			return nodes.map((n) => {
-				if (sourceNode && n.id === targetId) {
-					if (n.children) {
-						n.children.push(sourceNode);
-					} else {
-						n.children = [sourceNode];
-					}
-					return n;
-				}
-				if (n.children) {
-					n.children = insertNode(n.children as FileNode[]);
-				}
-				return n;
-			});
-		}
-
-		const inserted = targetId
-			? insertNode(withoutSource)
-			: [...withoutSource, ...(sourceNode ? [sourceNode] : [])];
-		return inserted;
-	}
-
 	function renameNode(id: string) {
-		const node = findNode(files, id);
+		const node = files.find((f) => f.id === id);
 		if (!node) return;
 		const newName = window.prompt("Rename", node.name);
 		if (!newName?.trim()) return;
-		setFiles(updateNode(files, id, { name: newName.trim() }));
+
+		const trimmed = newName.trim();
+		if (trimmed === node.name) return; // no change
+
+		const parts = id.split("/");
+		parts[parts.length - 1] = trimmed;
+		const newId = parts.join("/");
+
+		// collision check
+		if (files.some((f) => f.id === newId)) {
+			window.alert("An item with that name already exists in this directory.");
+			return;
+		}
+
+		const updated = files.map((n) =>
+			n.id === id || n.id.startsWith(`${id}/`)
+				? {
+						...n,
+						id: newId + n.id.slice(id.length),
+						name: n.id === id ? trimmed : n.name,
+					}
+				: n,
+		);
+		setFiles(updated);
+		setActiveId(newId);
 	}
 
 	function deleteNode(id: string) {
 		if (!window.confirm("Delete?")) return;
-		setFiles(removeNode(files, id));
-		if (activeId === id) setActiveId("index.html");
+		const remaining = files.filter(
+			(f) => !(f.id === id || f.id.startsWith(`${id}/`)),
+		);
+		setFiles(remaining);
+		if (activeId === id || activeId.startsWith(`${id}/`))
+			setActiveId("index.html");
 	}
 
 	function decorateWithActions(nodes: FileNode[]): FileNode[] {
@@ -301,16 +332,6 @@ export function FileExplorer({
 				};
 			}
 			return n;
-		});
-	}
-
-	function removeNode(nodes: FileNode[], id: string): FileNode[] {
-		return nodes.filter((n) => {
-			if (n.id === id) return false;
-			if (n.children) {
-				n.children = removeNode(n.children as FileNode[], id);
-			}
-			return true;
 		});
 	}
 }

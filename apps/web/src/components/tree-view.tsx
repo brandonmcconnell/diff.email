@@ -139,9 +139,11 @@ const TreeView = React.forwardRef<HTMLDivElement, TreeProps>(
 					draggedItem={draggedItem}
 					{...props}
 				/>
+				{/* Root drop zone – enlarged height for easier drop to root */}
 				<div
-					className="h-[48px] w-full"
-					onDrop={(e) => {
+					className="h-[96px] w-full"
+					onDragOver={(e) => e.preventDefault()}
+					onDrop={() => {
 						handleDrop({ id: "", name: "parent_div" });
 					}}
 				/>
@@ -520,3 +522,74 @@ const TreeActions = ({
 };
 
 export { TreeView, type TreeDataItem };
+
+export interface FileNode extends TreeDataItem {
+	content?: string;
+}
+
+export function buildFileTree(nodes: FileNode[]): FileNode[] {
+	const root: FileNode[] = [];
+	const folderByPath = new Map<string, FileNode>();
+
+	const ensureFolder = (
+		path: string,
+		name: string,
+		container: FileNode[],
+	): FileNode => {
+		let folder = folderByPath.get(path) || container.find((c) => c.id === path);
+		if (folder && !folder.children) {
+			folder.children = [];
+		}
+		if (!folder) {
+			folder = {
+				id: path,
+				name,
+				droppable: true,
+				draggable: false,
+				children: [],
+			};
+			folderByPath.set(path, folder);
+			container.push(folder);
+		}
+		return folder;
+	};
+
+	for (const n of nodes) {
+		const parts = n.id.split("/");
+		let currContainer = root;
+		let currPath = "";
+
+		for (let i = 0; i < parts.length; i++) {
+			const part = parts[i];
+			currPath = currPath ? `${currPath}/${part}` : part;
+			const isLeaf = i === parts.length - 1;
+
+			if (isLeaf) {
+				// avoid duplicate leaf entries
+				if (!currContainer.find((c) => c.id === currPath)) {
+					currContainer.push({ ...n, id: currPath, name: part });
+				}
+			} else {
+				const folder = ensureFolder(currPath, part, currContainer);
+				currContainer = folder.children ?? [];
+			}
+		}
+	}
+
+	const collator = new Intl.Collator(undefined, {
+		numeric: true,
+		sensitivity: "base",
+	});
+	const sortFolders = (items: FileNode[]) => {
+		items.sort((a, b) => {
+			const aFolder = !!a.children;
+			const bFolder = !!b.children;
+			if (aFolder !== bFolder) return aFolder ? -1 : 1;
+			return collator.compare(a.name, b.name);
+		});
+		for (const child of items) if (child.children) sortFolders(child.children);
+	};
+
+	sortFolders(root);
+	return root;
+}

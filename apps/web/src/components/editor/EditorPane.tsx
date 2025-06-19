@@ -1,4 +1,5 @@
 "use client";
+import type { FileNode } from "@/components/tree-view";
 import { useComputedTheme } from "@/hooks/useComputedTheme";
 import { cn } from "@/lib/utils";
 import { Menu } from "lucide-react";
@@ -6,7 +7,7 @@ import type * as Monaco from "monaco-editor";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import React from "react";
-import { FileExplorer, type FileNode } from "./FileExplorer";
+import { FileExplorer } from "./FileExplorer";
 
 interface Props {
 	value: string;
@@ -61,19 +62,11 @@ export function EditorPane({
 
 		if (onFilesChange) {
 			const map: Record<string, string> = {};
-			function walk(nodes: FileNode[], prefix = "") {
-				for (const n of nodes) {
-					const path = prefix + n.name;
-					if (n.content != null) map[path] = n.content;
-					if (n.children) walk(n.children as FileNode[], `${path}/`);
-				}
+			for (const n of files) {
+				if (n.content != null) map[n.id] = n.content;
 			}
-			walk(files);
 			const mapJson = JSON.stringify(map);
-			const entryPath =
-				collectPath(files, activeId) ??
-				files.find((f) => f.id === activeId)?.name ??
-				"index.html";
+			const entryPath = activeId;
 
 			if (prevMapJson.current !== mapJson) {
 				prevMapJson.current = mapJson;
@@ -82,22 +75,6 @@ export function EditorPane({
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [activeId, files, onChange, onFilesChange]);
-
-	function collectPath(
-		nodes: FileNode[],
-		id: string,
-		prefix = "",
-	): string | null {
-		for (const n of nodes) {
-			const current = prefix + n.name;
-			if (n.id === id) return current;
-			if (n.children) {
-				const found = collectPath(n.children as FileNode[], id, `${current}/`);
-				if (found) return found;
-			}
-		}
-		return null;
-	}
 
 	function handleEditorChange(v?: string) {
 		setFiles((prev) =>
@@ -114,7 +91,7 @@ export function EditorPane({
 			);
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [value]);
+	}, [value, showSidebar]);
 
 	const activeFile = files.find((f) => f.id === activeId);
 

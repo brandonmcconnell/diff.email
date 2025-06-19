@@ -9,7 +9,7 @@ import {
 	ResizablePanel,
 	ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import { confirmDeletion } from "@/lib/utils";
+import { cn, confirmDeletion } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
 import { usePersistentState } from "@/utils/usePersistentState";
 import type { Client, Engine } from "@diff-email/shared";
@@ -133,7 +133,18 @@ export default function EmailEditorPage() {
 			<PageHeader
 				data={{ id: emailId, name: emailName, projectId, type: "email" }}
 				subtitle="Edit email document"
-				afterTitle={<Badge variant="secondary">{language.toUpperCase()}</Badge>}
+				afterTitle={
+					<Badge
+						variant="secondary"
+						className={cn(
+							"bg-current/15 font-mono font-semibold tracking-wide dark:bg-current/25",
+							language === "html" && "text-teal-600 dark:text-teal-400",
+							language === "jsx" && "text-purple-600 dark:text-purple-400",
+						)}
+					>
+						{language.toUpperCase()}
+					</Badge>
+				}
 				onRename={() => {
 					const newTitle = window.prompt("Rename email", emailName);
 					if (newTitle?.trim()) {

@@ -79,8 +79,11 @@ export async function bundle(
 						if (found) {
 							return { path: found, namespace: "mem" };
 						}
-						// otherwise treat as external (npm/cdn)
-						return { external: true };
+						// Treat as external npm package fetched from esm.sh
+						return {
+							path: `https://esm.sh/${path}`,
+							external: true,
+						};
 					}
 					// Resolve relative path within our virtual FS
 					const baseDir = resolveDir || "/";

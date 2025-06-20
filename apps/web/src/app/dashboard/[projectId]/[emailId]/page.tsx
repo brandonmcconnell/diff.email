@@ -2,14 +2,14 @@
 import { EditorPane } from "@/components/editor/EditorPane";
 import { PreviewPane } from "@/components/editor/PreviewPane";
 import { Toolbar } from "@/components/editor/Toolbar";
+import { LanguageBadge } from "@/components/language-badge";
 import { PageHeader } from "@/components/page-header";
-import { Badge } from "@/components/ui/badge";
 import {
 	ResizableHandle,
 	ResizablePanel,
 	ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import { cn, confirmDeletion } from "@/lib/utils";
+import { confirmDeletion } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
 import { usePersistentState } from "@/utils/usePersistentState";
 import type { Client, Engine } from "@diff-email/shared";
@@ -140,18 +140,7 @@ export default function EmailEditorPage() {
 			<PageHeader
 				data={{ id: emailId, name: emailName, projectId, type: "email" }}
 				subtitle="Edit email document"
-				afterTitle={
-					<Badge
-						variant="secondary"
-						className={cn(
-							"bg-current/15 font-mono font-semibold tracking-wide dark:bg-current/25",
-							language === "html" && "text-teal-600 dark:text-teal-400",
-							language === "jsx" && "text-purple-600 dark:text-purple-400",
-						)}
-					>
-						{language.toUpperCase()}
-					</Badge>
-				}
+				afterTitle={<LanguageBadge language={language} size="md" />}
 				onRename={() => {
 					const newTitle = window.prompt("Rename email", emailName);
 					if (newTitle?.trim()) {

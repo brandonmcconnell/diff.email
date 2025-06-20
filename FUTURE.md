@@ -4,6 +4,10 @@ This document captures ideas or enhancements that are currently **out-of-scope**
 
 Once a issue management solution is set up for diff.email (Linear, GitHub, Jira), consider moving these into issues.
 
+## Improve sign in / sign up flow
+
+See https://www.shadcndesign.com/pro-blocks/sign-in for design inspiration.
+
 ## Data Table
 
 Reformat the results lists (when in list view) to operate like a true data-table with options for filtering, exporting, sorting, drag-and-drop, bulk CRUD actions etc.

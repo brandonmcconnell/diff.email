@@ -7,6 +7,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
+import { getGravatarUrl } from "@/lib/gravatar";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
@@ -28,35 +29,52 @@ export default function UserMenu() {
 		);
 	}
 
+	// Build absolute URL for placeholder (required by Gravatar)
+	const placeholderUrl =
+		typeof window !== "undefined"
+			? `${window.location.origin}/avatar-placeholder.svg`
+			: "/avatar-placeholder.svg"; // SSR fallback (will be rewritten on client)
+	const avatarUrl = getGravatarUrl(session.user.email, 128, placeholderUrl);
+
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<Button variant="outline">{session.user.name}</Button>
+				<Button
+					variant="outline"
+					className="flex items-center gap-2.5 py-0 pr-2.5 pl-0.5"
+				>
+					<img
+						src={avatarUrl}
+						alt={session.user.name ?? "avatar"}
+						className="size-7.5 rounded-sm border border-border object-cover"
+						onError={(e) => {
+							e.currentTarget.onerror = null;
+							e.currentTarget.src = "/avatar-placeholder.svg";
+							e.currentTarget.classList.remove("border");
+						}}
+					/>
+					<span>{session.user.name}</span>
+				</Button>
 			</DropdownMenuTrigger>
-			<DropdownMenuContent className="bg-card">
+			<DropdownMenuContent align="end" className="w-48">
 				<DropdownMenuLabel>My Account</DropdownMenuLabel>
 				<DropdownMenuSeparator />
 				<DropdownMenuItem asChild>
-					<Link href="/settings" className="w-full">
-						Account Settings
-					</Link>
+					<Link href="/settings">Account Settings</Link>
 				</DropdownMenuItem>
-				<DropdownMenuItem asChild>
-					<Button
-						variant="destructive"
-						className="w-full"
-						onClick={() => {
-							authClient.signOut({
-								fetchOptions: {
-									onSuccess: () => {
-										router.push("/");
-									},
+				<DropdownMenuItem
+					variant="destructive"
+					onSelect={() => {
+						authClient.signOut({
+							fetchOptions: {
+								onSuccess: () => {
+									router.push("/");
 								},
-							});
-						}}
-					>
-						Sign Out
-					</Button>
+							},
+						});
+					}}
+				>
+					Sign Out
 				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>

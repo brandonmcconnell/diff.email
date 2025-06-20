@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    .avatar-placeholder-fill {
+      fill: #aaa;
+    }
+    @media (prefers-color-scheme: dark) {
+      .avatar-placeholder-fill {
+        fill: #555;
+      }
+    }
+  </style>
+  <circle cx="16" cy="12" r="8" class="avatar-placeholder-fill"/>
+  <path d="M16 22c-7 0-13 3.6-13 8v2h26v-2c0-4.4-6-8-13-8z" class="avatar-placeholder-fill"/>
+</svg> 

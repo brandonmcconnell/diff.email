@@ -196,13 +196,17 @@ export function PageHeader({
 		<div
 			className={cn(
 				"border-border border-b bg-background py-4 md:py-6",
+				"bg-linear-to-b from-background to-[color-mix(in_srgb,var(--background)_90%,transparent)]",
 				className,
 			)}
 		>
 			<div className="container mx-auto flex flex-col gap-6 px-4 lg:px-6">
-				<Breadcrumb>
-					<BreadcrumbList>{crumbs}</BreadcrumbList>
-				</Breadcrumb>
+				<div className="flex h-5 items-center justify-between gap-2 overflow-visible">
+					<Breadcrumb>
+						<BreadcrumbList>{crumbs}</BreadcrumbList>
+					</Breadcrumb>
+					{children}
+				</div>
 
 				<div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
 					<div className="space-y-2">
@@ -217,7 +221,6 @@ export function PageHeader({
 						)}
 					</div>
 					<div className="flex flex-row-reverse justify-end gap-2 md:flex-row">
-						{children}
 						{(onRename || onDelete) && (
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>

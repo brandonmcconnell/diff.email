@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/resizable";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { VersionHistoryDialog } from "@/components/version-history-dialog";
 import { prompt } from "@/lib/dialogs";
 import { confirmDeletion } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
@@ -231,7 +232,9 @@ export default function EmailEditorPage() {
 						deleteEmail.mutate,
 					)
 				}
-			/>
+			>
+				<VersionHistoryDialog emailId={emailId} versionCount={versionCount} />
+			</PageHeader>
 			{mounted && (
 				<>
 					{/* Desktop (md+) split view */}

@@ -62,4 +62,16 @@ export const versionsRouter = router({
 				createdAt: new Date(),
 			} as const;
 		}),
+
+	list: protectedProcedure
+		.input(z.object({ emailId: z.string().uuid() }))
+		.query(async ({ input }) => {
+			const rows = await db
+				.select()
+				.from(version)
+				.where(eq(version.emailId, input.emailId))
+				.orderBy(desc(version.createdAt), desc(version.id));
+
+			return rows;
+		}),
 });

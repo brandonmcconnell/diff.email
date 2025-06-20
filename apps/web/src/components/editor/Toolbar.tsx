@@ -65,7 +65,7 @@ export function Toolbar(props: Props) {
 		"flex h-4 min-w-4 px-1 items-center justify-center rounded-full text-[10px] text-white";
 
 	return (
-		<div className="flex items-center gap-2 border-b px-2 py-1 text-sm">
+		<div className="flex items-center gap-2 border-b px-2 py-1 text-sm max-md:pb-safe-offset-1">
 			{/* Engine Select */}
 			<Select.DropdownMenu>
 				<Select.DropdownMenuTrigger asChild>

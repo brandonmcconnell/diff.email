@@ -1,5 +1,5 @@
 import { defaultHtmlTemplate, defaultJsxTemplate } from "@diff-email/shared";
-import { eq, sql } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { z } from "zod/v4";
 import { db } from "../db";
 import { version } from "../db/schema/core";
@@ -31,7 +31,7 @@ export const versionsRouter = router({
 				.select()
 				.from(version)
 				.where(eq(version.emailId, input.emailId))
-				.orderBy(({ createdAt }) => sql`${createdAt} DESC`)
+				.orderBy(desc(version.createdAt), desc(version.id))
 				.limit(1);
 
 			if (row) return row;

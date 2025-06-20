@@ -18,7 +18,7 @@ import { usePersistentState } from "@/utils/usePersistentState";
 import type { Client, Engine } from "@diff-email/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 export default function EmailEditorPage() {
@@ -89,7 +89,9 @@ export default function EmailEditorPage() {
 	);
 
 	const [html, setHtml] = useState<string>("");
+	const htmlRef = useRef<string>("");
 	const [files, setFiles] = useState<Record<string, string> | undefined>();
+	const filesRef = useRef<Record<string, string> | undefined>(undefined);
 	const [entry, setEntry] = useState<string | undefined>();
 
 	// Track last saved snapshot for dirty detection
@@ -120,11 +122,13 @@ export default function EmailEditorPage() {
 			if (latestQuery.isSuccess) setIsReady(true);
 			const initialHtml = latestQuery.data.html ?? "";
 			setHtml(initialHtml);
+			htmlRef.current = initialHtml;
 			setLastSavedHtml(initialHtml);
 		} else if (latestQuery.data.files) {
 			if (latestQuery.isSuccess) setIsReady(true);
 			const initialFiles = latestQuery.data.files as Record<string, string>;
 			setFiles(initialFiles);
+			filesRef.current = initialFiles;
 			setLastSavedFiles(initialFiles);
 			setEntry("index.tsx");
 		}
@@ -133,23 +137,25 @@ export default function EmailEditorPage() {
 
 	function handleSave() {
 		if (language === "html") {
+			const currentHtml = htmlRef.current;
 			versionsSave.mutate(
-				{ emailId, html },
+				{ emailId, html: currentHtml },
 				{
 					onSuccess: () => {
 						toast.success("Version saved");
-						setLastSavedHtml(html);
+						setLastSavedHtml(currentHtml);
 						setSaveCounter((c) => c + 1);
 					},
 				},
 			);
-		} else if (files && Object.keys(files).length) {
+		} else if (filesRef.current && Object.keys(filesRef.current).length) {
+			const currentFiles = filesRef.current;
 			versionsSave.mutate(
-				{ emailId, files },
+				{ emailId, files: currentFiles },
 				{
 					onSuccess: () => {
 						toast.success("Version saved");
-						setLastSavedFiles(files);
+						setLastSavedFiles(currentFiles);
 						setSaveCounter((c) => c + 1);
 					},
 				},
@@ -229,15 +235,15 @@ export default function EmailEditorPage() {
 			{mounted && (
 				<>
 					{/* Desktop (md+) split view */}
-					<div className="hidden min-h-0 flex-1 overflow-hidden border-t md:flex">
+					<div className="hidden min-h-0 flex-1 overflow-hidden rounded-t-md border-t md:flex">
 						<ResizablePanelGroup
 							direction="horizontal"
-							className="flex flex-1 overflow-hidden"
+							className="flex flex-1 overflow-hidden rounded-t-md"
 						>
 							<ResizablePanel
 								defaultSize={50}
 								minSize={25}
-								className="overflow-visible!"
+								className="overflow-visible! rounded-tl-md"
 							>
 								{/* Render editor only when ready to avoid flash */}
 								{(() => {
@@ -245,9 +251,13 @@ export default function EmailEditorPage() {
 									return (
 										<EditorPane
 											value={html}
-											onChange={(v) => setHtml(v ?? "")}
+											onChange={(v) => {
+												setHtml(v ?? "");
+												htmlRef.current = v ?? "";
+											}}
 											onFilesChange={(m, e) => {
 												setFiles(m);
+												filesRef.current = m;
 												setEntry(e);
 											}}
 											showSidebar={language === "jsx"}
@@ -296,18 +306,25 @@ export default function EmailEditorPage() {
 					</div>
 
 					{/* Mobile (tabs) */}
-					<div className="flex flex-1 flex-col overflow-hidden border-t md:hidden">
+					<div className="flex min-h-0 flex-1 flex-col overflow-hidden border-t md:hidden">
 						<Tabs
 							defaultValue="editor"
-							className="relative flex-1 overflow-hidden"
+							className="relative flex h-full flex-col overflow-hidden"
 						>
-							<TabsContent value="editor" className="h-full overflow-hidden">
+							<TabsContent
+								value="editor"
+								className="flex min-h-0 flex-1 flex-col overflow-hidden"
+							>
 								{isReady && (
 									<EditorPane
 										value={html}
-										onChange={(v) => setHtml(v ?? "")}
+										onChange={(v) => {
+											setHtml(v ?? "");
+											htmlRef.current = v ?? "";
+										}}
 										onFilesChange={(m, e) => {
 											setFiles(m);
+											filesRef.current = m;
 											setEntry(e);
 										}}
 										showSidebar={language === "jsx"}
@@ -319,7 +336,10 @@ export default function EmailEditorPage() {
 									/>
 								)}
 							</TabsContent>
-							<TabsContent value="preview" className="h-full overflow-hidden">
+							<TabsContent
+								value="preview"
+								className="flex min-h-0 flex-1 flex-col overflow-hidden"
+							>
 								<PreviewPane
 									html={html}
 									files={files}
@@ -334,7 +354,7 @@ export default function EmailEditorPage() {
 							</TabsContent>
 
 							{/* Floating tab buttons bottom-right */}
-							<TabsList className="fixed right-2 bottom-12 flex gap-1 rounded-lg bg-muted p-1 shadow-lg backdrop-blur">
+							<TabsList className="fixed right-2 bottom-12 flex gap-1 rounded-lg bg-muted p-1 shadow-lg backdrop-blur max-md:bottom-[calc(env(safe-area-inset-bottom)+--spacing(12))]!">
 								<TabsTrigger value="editor">Code</TabsTrigger>
 								<TabsTrigger value="preview">Preview</TabsTrigger>
 							</TabsList>

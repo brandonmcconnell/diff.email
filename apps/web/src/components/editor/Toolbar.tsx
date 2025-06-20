@@ -38,6 +38,12 @@ type Props = {
 	/** Whether there are unsaved changes */
 	isDirty: boolean;
 	readOnly?: boolean;
+	/** Custom entry file path override */
+	entryPath?: string;
+	setEntryPath?: (p: string | undefined) => void;
+	/** Export name to render with @react-email/render */
+	exportName?: string;
+	setExportName?: (e: string) => void;
 };
 
 export function Toolbar(props: Props) {
@@ -53,6 +59,10 @@ export function Toolbar(props: Props) {
 		consoleLogs,
 		isDirty,
 		readOnly = false,
+		entryPath,
+		setEntryPath,
+		exportName,
+		setExportName,
 	} = props;
 
 	const errorCount = consoleLogs.filter((l) => l.method === "error").length;
@@ -117,6 +127,28 @@ export function Toolbar(props: Props) {
 					<Images size={14} />
 				</ToggleGroupItem>
 			</ToggleGroup>
+
+			{/* Email entry & export inputs (shown only if setters provided) */}
+			{setEntryPath && setExportName && (
+				<div className="flex items-center gap-1.5 max-md:hidden">
+					<input
+						type="text"
+						className="h-7 w-40 rounded border border-input bg-background px-2 text-xs"
+						placeholder="Entry file (e.g. index.tsx)"
+						value={entryPath ?? ""}
+						onChange={(e) => setEntryPath?.(e.target.value || undefined)}
+						title="File to import and bundle"
+					/>
+					<input
+						type="text"
+						className="h-7 w-28 rounded border border-input bg-background px-2 text-xs"
+						placeholder="Export name"
+						value={exportName ?? ""}
+						onChange={(e) => setExportName?.(e.target.value || "default")}
+						title="Named export to render"
+					/>
+				</div>
+			)}
 
 			<div className="ml-auto flex items-center gap-1.5">
 				<button

@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import type { Client, Engine } from "@diff-email/shared";
 import { Console } from "console-feed";
 import { useEffect, useRef, useState } from "react";
+import * as React from "react";
 
 interface Props {
 	html: string;
@@ -12,6 +13,7 @@ interface Props {
 	files?: Record<string, string>;
 	/** Entry file path inside `files` (e.g. "index.tsx") */
 	entry?: string;
+	exportName?: string;
 	engine: Engine;
 	client: Client;
 	mode: "live" | "screenshot";
@@ -37,6 +39,7 @@ export function PreviewPane({
 	html,
 	files,
 	entry,
+	exportName = "default",
 	mode,
 	dark,
 	showConsole = false,
@@ -80,6 +83,9 @@ export function PreviewPane({
 		onLogsChangeRef.current?.(logs);
 	}, [logs]);
 
+	// Resolve effective entry (default to index.tsx)
+	const effectiveEntry = entry ?? "index.tsx";
+
 	useEffect(() => {
 		if (!iframeRef.current) return;
 
@@ -87,29 +93,21 @@ export function PreviewPane({
 		if (mode !== "live") return;
 
 		// If no module files or the entry is .html treat as raw HTML
-		if (!files || !entry || entry.endsWith(".html")) {
+		if (!files || !effectiveEntry || effectiveEntry.endsWith(".html")) {
 			iframeRef.current.srcdoc = html;
 			return;
 		}
 
-		// JSX/TSX email – validate entry exists
-		const indexCandidates = ["index.tsx", "index.jsx", "index.ts", "index.js"];
-		const indexCount = indexCandidates.filter((f) => files[f]).length;
-		if (indexCount === 0) {
-			setError("Missing index.* file with default export");
-			return;
-		}
-		if (indexCount > 1) {
-			setError(
-				"Multiple index.* files found. Exactly one index.* file (js/ts/jsx/tsx) with a default export is required.",
-			);
+		// Validate entry exists in the provided virtual file map
+		if (!files[effectiveEntry]) {
+			setError(`Entry file "${effectiveEntry}" not found in project`);
 			return;
 		}
 
 		// JSX/TSX email – bundle then inject
 		(async () => {
 			try {
-				const js = await bundle(entry, files);
+				const js = await bundle(effectiveEntry, files);
 				const blobUrl = URL.createObjectURL(
 					new Blob([js], { type: "text/javascript" }),
 				);
@@ -118,6 +116,7 @@ export function PreviewPane({
 					<script>
 						// Inform parent to clear previous logs
 						window.parent.postMessage({type:'console_clear'}, '*');
+
 						(function(){
 							const METHODS=['log','info','warn','error','debug'];
 							METHODS.forEach((m)=>{
@@ -131,7 +130,7 @@ export function PreviewPane({
 
 						window.addEventListener('error', function(e){
 							const info = e.filename + ':' + e.lineno + ':' + e.colno;
-							const stack = e.error?.stack ? '\n' + e.error.stack : '';
+							const stack = e.error?.stack ? '\\n' + e.error.stack : '';
 							window.parent.postMessage({
 								type:'console',
 								method:'error',
@@ -140,7 +139,7 @@ export function PreviewPane({
 						});
 						window.addEventListener('unhandledrejection', function(e){
 							const msg = e.reason?.message || String(e.reason);
-							const stack = e.reason?.stack ? '\n' + e.reason.stack : '';
+							const stack = e.reason?.stack ? '\\n' + e.reason.stack : '';
 							window.parent.postMessage({
 								type:'console',
 								method:'error',
@@ -150,21 +149,67 @@ export function PreviewPane({
 					</script>
 					<div id="root"></div>
 					<script type="module">
-						import React from 'https://esm.sh/react@18';
-						import * as ReactJsx from 'https://esm.sh/react@18/jsx-runtime';
-						import * as ReactDOMClient from 'https://esm.sh/react-dom@18/client';
-
-						// make jsx-runtime available globally so the next dynamic import resolves it
-						window["react/jsx-runtime"] = ReactJsx;
-
 						(async () => {
-							const mod  = await import('${blobUrl}');
-							const App  = mod.default ?? mod;
-							const root = ReactDOMClient.createRoot(document.getElementById('root'));
-							root.render(React.createElement(App));
-						})().catch(err => {
-							document.body.innerHTML = '<pre style="color:red;padding:1rem">'+err+'</pre>';
-						});
+							try {
+								// Import React modules first
+								const React = (await import('https://esm.sh/react@18')).default || (await import('https://esm.sh/react@18'));
+								const ReactJSXRuntime = await import('https://esm.sh/react@18/jsx-runtime');
+								
+								// Import React Email components package
+								const ReactEmailComponents = await import('https://esm.sh/@react-email/components@0.0.31');
+								
+								// Make everything available globally before importing the component
+								window.React = React;
+								window['react'] = React;
+								window['react/jsx-runtime'] = ReactJSXRuntime;
+								window['@react-email/components'] = ReactEmailComponents;
+								
+								// Also expose individual components
+								Object.entries(ReactEmailComponents).forEach(([key, value]) => {
+									window[key] = value;
+								});
+
+								// Now import the user's component
+								console.log('Importing user component from blob...');
+								const mod = await import('${blobUrl}');
+								const Component = mod['${exportName}'] || mod.default;
+								
+								if (!Component) {
+									throw new Error('No component found with export: ${exportName}');
+								}
+								
+								console.log('Component loaded:', Component);
+
+								// Use preview props if available
+								const props = Component.PreviewProps || {};
+								
+								// Import the render function from React Email
+								const { render } = await import('https://esm.sh/@react-email/render@1.0.1');
+								
+								// Create element and render with React Email's render function
+								console.log('Creating element with props:', props);
+								const element = React.createElement(Component, props);
+								
+								// Use React Email's render function
+								console.log('Rendering with React Email render function...');
+								const htmlOutput = await render(element, { pretty: true });
+								
+								console.log('Rendered HTML length:', htmlOutput.length);
+								
+								// Replace document with rendered HTML
+								document.open();
+								document.write(htmlOutput);
+								document.close();
+							} catch (err) {
+								console.error('Preview error:', err);
+								const errorHtml = '<div style="padding: 20px; font-family: monospace;">' +
+									'<h3 style="color: red;">Preview Error</h3>' +
+									'<pre style="white-space: pre-wrap; color: #333;">' + 
+									(err.stack || err.message || String(err)).replace(/</g, '&lt;').replace(/>/g, '&gt;') + 
+									'</pre></div>';
+								document.body.innerHTML = errorHtml;
+							}
+						})();
 					</script>
 				</body></html>`;
 				if (iframeRef.current) {
@@ -183,7 +228,7 @@ export function PreviewPane({
 				}
 			}
 		})();
-	}, [html, files, entry, mode]);
+	}, [html, files, effectiveEntry, mode, exportName]);
 
 	// Convert internal logs to console-feed messages
 	const consoleMessages: ConsoleMessage[] = logs.map(

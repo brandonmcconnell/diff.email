@@ -60,11 +60,23 @@ export async function bundle(
 				external: true,
 			}));
 
+			// Handle @react-email packages
+			build.onResolve({ filter: /^@react-email\// }, (args) => ({
+				path: `https://esm.sh/${args.path}`,
+				external: true,
+			}));
+
 			// Resolve relative imports to other in-memory files
 			build.onResolve(
 				{ filter: /.*/ },
 				(args: esbuild.OnResolveArgs): esbuild.OnResolveResult => {
 					const { path, importer, resolveDir } = args;
+
+					// Handle react imports specially
+					if (path === "react" || path === "react/jsx-runtime") {
+						return { path, external: true };
+					}
+
 					// entry file (no importer) – leave as is
 					if (!importer) {
 						return { path, namespace: "mem", pluginData: { dir: "/" } };
@@ -127,13 +139,56 @@ export async function bundle(
 			bundle: true,
 			write: false,
 			format: "esm",
-			sourcemap: "inline",
+			sourcemap: false, // Disable source maps entirely
 			plugins: [inMemPlugin],
 			jsx: "automatic",
 			minify: false,
+			banner: {
+				js: "", // Explicitly disable banner
+			},
+			legalComments: "none", // Remove all legal comments
+			logLevel: "error", // Only show errors
 		});
 
-		return result.outputFiles[0].text;
+		let output = result.outputFiles[0].text;
+
+		// Clean up the output to ensure it's valid for <script> injection
+		// Remove UTF-8 BOM and other invisible characters one by one
+		output = output.replace(/^\uFEFF/, ""); // BOM
+		output = output.replace(/^[\u200B\u200C\u2028\u2029]+/, ""); // Other invisible chars
+		// Remove zero-width joiner separately since it can create sequences
+		output = output.replace(/^\u200D+/, "");
+
+		// Remove all comments (both single-line and multi-line)
+		// But preserve sourceMappingURL if needed
+		output = output.replace(/\/\*[\s\S]*?\*\//g, ""); // Block comments
+		output = output.replace(/\/\/[^\n]*$/gm, (match) => {
+			// Keep sourceMappingURL comments
+			if (match.includes("sourceMappingURL")) return "";
+			return "";
+		});
+
+		// Remove any remaining source map references
+		output = output.replace(/\/\/#\s*sourceMappingURL[^\n]*/g, "");
+		output = output.replace(/\/\/\@\s*sourceMappingURL[^\n]*/g, "");
+
+		// Final trim to remove any leading/trailing whitespace
+		output = output.trim();
+
+		// Ensure output starts with valid JavaScript
+		if (!output || output.length === 0) {
+			throw new Error("Bundle produced empty output");
+		}
+
+		// Prepend process.env polyfill to handle templates that reference it at module scope
+		const processPolyfill = `
+// Process.env polyfill for React Email templates
+if (typeof process === 'undefined') {
+	globalThis.process = { env: { VERCEL_URL: 'localhost:3000', NODE_ENV: 'development' } };
+}
+`;
+
+		return processPolyfill + output;
 	} catch (_error: unknown) {
 		const error = _error as Error & { errors: esbuild.PartialMessage[] };
 		// Format esbuild's error array into a readable message

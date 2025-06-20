@@ -99,6 +99,7 @@ export default function EmailEditorPage() {
 	const [files, setFiles] = useState<Record<string, string> | undefined>();
 	const filesRef = useRef<Record<string, string> | undefined>(undefined);
 	const [entry, setEntry] = useState<string | undefined>();
+	const [exportName, setExportName] = useState<string>("default");
 
 	// Track last saved snapshot for dirty detection
 	const [lastSavedHtml, setLastSavedHtml] = useState<string>("");
@@ -467,6 +468,10 @@ export default function EmailEditorPage() {
 										onSave={handleSave}
 										isDirty={isDirty}
 										readOnly={isReadOnly}
+										entryPath={entry}
+										setEntryPath={setEntry}
+										exportName={exportName}
+										setExportName={setExportName}
 										onRun={handleRun}
 									/>
 									<PreviewPane
@@ -479,6 +484,7 @@ export default function EmailEditorPage() {
 										dark={dark}
 										showConsole={consoleVisible}
 										onLogsChange={setConsoleLogs}
+										exportName={exportName}
 									/>
 								</div>
 							</ResizablePanel>
@@ -531,6 +537,7 @@ export default function EmailEditorPage() {
 									dark={dark}
 									showConsole={consoleVisible}
 									onLogsChange={setConsoleLogs}
+									exportName={exportName}
 								/>
 							</TabsContent>
 
@@ -557,6 +564,10 @@ export default function EmailEditorPage() {
 							onSave={handleSave}
 							isDirty={isDirty}
 							readOnly={isReadOnly}
+							entryPath={entry}
+							setEntryPath={setEntry}
+							exportName={exportName}
+							setExportName={setExportName}
 							onRun={handleRun}
 						/>
 					</div>

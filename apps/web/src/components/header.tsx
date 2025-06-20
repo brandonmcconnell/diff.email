@@ -62,7 +62,7 @@ export default function Header({ className }: HeaderProps) {
 				className,
 			)}
 		>
-			<div className="container relative m-auto flex px-6 md:flex-row md:items-center md:gap-2">
+			<div className="container relative m-auto flex px-4 md:flex-row md:items-center md:gap-2 lg:px-6">
 				<div className="flex flex-1 justify-between">
 					<Link
 						href={session ? "/dashboard" : isHome ? "#top" : "/home"}

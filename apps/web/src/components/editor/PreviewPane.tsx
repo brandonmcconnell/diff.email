@@ -127,7 +127,22 @@ export function PreviewPane({
 							METHODS.forEach((m)=>{
 								const orig = console[m];
 								console[m] = function(...args){
-									window.parent.postMessage({type:'console', method:m, args}, '*');
+									// Convert args to serializable format
+									const serializableArgs = args.map(arg => {
+										if (typeof arg === 'function') {
+											return '[Function: ' + (arg.name || 'anonymous') + ']';
+										} else if (typeof arg === 'object' && arg !== null) {
+											try {
+												// Try to stringify, but catch circular references
+												JSON.stringify(arg);
+												return arg;
+											} catch (e) {
+												return '[Object: ' + (arg.constructor?.name || 'Object') + ']';
+											}
+										}
+										return arg;
+									});
+									window.parent.postMessage({type:'console', method:m, args: serializableArgs}, '*');
 									orig.apply(console, args);
 								};
 							});
@@ -194,14 +209,23 @@ export function PreviewPane({
 
 								// Now import the user's component
 								console.log('Importing user component from blob...');
-								const mod = await import('${blobUrl}');
+								let mod;
+								try {
+									mod = await import('${blobUrl}');
+									console.log('Module imported successfully');
+								} catch (importErr) {
+									console.error('Failed to import module:', importErr);
+									throw importErr;
+								}
+								
 								const Component = mod['${exportName}'] || mod.default;
 								
 								if (!Component) {
+									console.error('Available exports:', Object.keys(mod));
 									throw new Error('No component found with export: ${exportName}');
 								}
 								
-								console.log('Component loaded:', Component);
+								console.log('Component loaded:', typeof Component);
 
 								// Use preview props if available
 								const props = Component.PreviewProps || {};

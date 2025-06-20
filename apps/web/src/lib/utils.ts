@@ -1,3 +1,4 @@
+import { confirm, prompt } from "@/lib/dialogs";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -37,17 +38,32 @@ type GenericDataType = {
 	type: keyof typeof TYPES_SUBTYPES;
 };
 
-export function confirmDeletion<DataType extends GenericDataType>(
+export async function confirmDeletion<DataType extends GenericDataType>(
 	data: DataType,
-	deleteMutation: (data: DataType) => void,
+	deleteMutation: (data: DataType) => void | Promise<void>,
 ) {
-	if (!window.confirm(deleteConfirmationMessage(data))) return;
-	let name: string | null = "";
+	// First confirmation (yes/no)
+	const proceed = await confirm({
+		title: `Delete ${data.type}`,
+		description: deleteConfirmationMessage(data),
+		confirmText: "Delete",
+		cancelText: "Cancel",
+		variant: "destructive",
+	});
+
+	if (!proceed) return;
+
+	// Second typed confirmation
 	while (true) {
-		name = window.prompt(`Type "${data.name}" to confirm project deletion`);
-		if (name === null) return;
-		if (name === data.name) {
-			deleteMutation(data);
+		const typed = await prompt({
+			title: "Confirm deletion",
+			description: `Type "${data.name}" to confirm deletion`,
+			placeholder: data.name,
+		});
+
+		if (typed === null) return; // user cancelled prompt
+		if (typed === data.name) {
+			await deleteMutation(data);
 			return;
 		}
 	}

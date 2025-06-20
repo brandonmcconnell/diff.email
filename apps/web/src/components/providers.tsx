@@ -1,5 +1,6 @@
 "use client";
 
+import { DialogProvider } from "@/components/dialog-provider";
 import { queryClient } from "@/utils/trpc";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
@@ -19,7 +20,7 @@ export default function Providers({
 			disableTransitionOnChange
 		>
 			<QueryClientProvider client={queryClient}>
-				{children}
+				<DialogProvider>{children}</DialogProvider>
 				<ReactQueryDevtools />
 			</QueryClientProvider>
 			<Toaster richColors />

@@ -1,5 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
+import { prompt } from "@/lib/dialogs";
 import { trpc } from "@/utils/trpc";
 import { useMutation } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
@@ -14,9 +15,12 @@ export function SendTestButton({ versionId, defaultSubject }: Props) {
 	const sendTestMutation = useMutation(trpc.emails.sendTest.mutationOptions());
 
 	async function handleClick() {
-		const to = window.prompt("Send test email to:");
+		const to = await prompt({ title: "Send test email to:" });
 		if (!to) return;
-		const subject = window.prompt("Subject:", defaultSubject ?? "Test email");
+		const subject = await prompt({
+			title: "Subject:",
+			defaultValue: defaultSubject ?? "Test email",
+		});
 		toast.promise(
 			async () => {
 				await sendTestMutation.mutateAsync({

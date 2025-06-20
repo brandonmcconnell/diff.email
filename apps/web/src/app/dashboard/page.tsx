@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { authClient } from "@/lib/auth-client";
+import { prompt } from "@/lib/dialogs";
 import { confirmDeletion } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
 import { usePersistentState } from "@/utils/usePersistentState";
@@ -67,8 +68,8 @@ export default function Dashboard() {
 	);
 
 	// helper create function
-	function handleCreate() {
-		const name = window.prompt("Project name:");
+	async function handleCreate() {
+		const name = await prompt({ title: "Project name:" });
 		if (name?.trim()) {
 			createProject.mutate({ name: name.trim() });
 		}
@@ -163,8 +164,11 @@ export default function Dashboard() {
 					actions={[
 						{
 							label: "Edit",
-							onSelect: (item) => {
-								const newName = window.prompt("Rename project", item.name);
+							onSelect: async (item) => {
+								const newName = await prompt({
+									title: "Rename project",
+									defaultValue: item.name,
+								});
 								if (newName?.trim()) {
 									updateProject.mutate({ id: item.id, name: newName.trim() });
 								}

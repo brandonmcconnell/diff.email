@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { authClient } from "@/lib/auth-client";
+import { prompt } from "@/lib/dialogs";
 import { confirmDeletion } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
 import { usePersistentState } from "@/utils/usePersistentState";
@@ -156,8 +157,11 @@ export default function ProjectPage() {
 			<PageHeader
 				data={{ id: projectId, name: projectName ?? "", type: "project" }}
 				subtitle="Manage versioned email documents for this project."
-				onRename={() => {
-					const newName = window.prompt("Rename project", projectName ?? "");
+				onRename={async () => {
+					const newName = await prompt({
+						title: "Rename project",
+						defaultValue: projectName ?? "",
+					});
 					if (newName?.trim()) {
 						updateProject.mutate({ id: projectId, name: newName.trim() });
 					}
@@ -223,8 +227,11 @@ export default function ProjectPage() {
 					actions={[
 						{
 							label: "Edit",
-							onSelect: (item) => {
-								const newTitle = window.prompt("Rename email", item.name);
+							onSelect: async (item) => {
+								const newTitle = await prompt({
+									title: "Rename email",
+									defaultValue: item.name,
+								});
 								if (newTitle?.trim()) {
 									updateEmail.mutate({ id: item.id, name: newTitle.trim() });
 								}

@@ -65,7 +65,7 @@ export function NewEmailDialog({ open, onOpenChange, onCreate }: Props) {
 			const next = bagRef.current.pop() as string;
 			setPlaceholder(next);
 		}
-	}, [open]);
+	}, [open, placeholders]);
 
 	function handleCreate() {
 		if (!title.trim()) return;

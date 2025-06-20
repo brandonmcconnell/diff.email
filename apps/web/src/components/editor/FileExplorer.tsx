@@ -20,6 +20,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { confirm, prompt } from "@/lib/dialogs";
 import { FilePlus2, FolderPlus, MoreVertical } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
@@ -56,8 +57,8 @@ export function FileExplorer({
 		children: [],
 	});
 
-	function handleAddFile(parentId?: string) {
-		const name = window.prompt("File name", "");
+	async function handleAddFile(parentId?: string) {
+		const name = await prompt({ title: "File name" });
 		if (!name?.trim()) return;
 		const trimmed = name.trim();
 		const fullPath = parentId ? `${parentId}/${trimmed}` : trimmed;
@@ -72,8 +73,8 @@ export function FileExplorer({
 		setActiveId(fullPath);
 	}
 
-	function handleAddFolder(parentId?: string) {
-		const name = window.prompt("Directory name", "");
+	async function handleAddFolder(parentId?: string) {
+		const name = await prompt({ title: "Directory name" });
 		if (!name?.trim()) return;
 		const trimmed = name.trim();
 		const fullPath = parentId ? `${parentId}/${trimmed}` : trimmed;
@@ -211,10 +212,10 @@ export function FileExplorer({
 		});
 	}
 
-	function renameNode(id: string) {
+	async function renameNode(id: string) {
 		const node = files.find((f) => f.id === id);
 		if (!node) return;
-		const newName = window.prompt("Rename", node.name);
+		const newName = await prompt({ title: "Rename", defaultValue: node.name });
 		if (!newName?.trim()) return;
 
 		const trimmed = newName.trim();
@@ -243,14 +244,16 @@ export function FileExplorer({
 		setActiveId(newId);
 	}
 
-	function deleteNode(id: string) {
-		if (!window.confirm("Delete?")) return;
+	async function deleteNode(id: string) {
+		const proceed = await confirm({ title: "Delete?", variant: "destructive" });
+		if (!proceed) return;
 		const remaining = files.filter(
 			(f) => !(f.id === id || f.id.startsWith(`${id}/`)),
 		);
 		setFiles(remaining);
-		if (activeId === id || activeId.startsWith(`${id}/`))
+		if (activeId === id || activeId.startsWith(`${id}/`)) {
 			setActiveId("index.html");
+		}
 	}
 
 	function decorateWithActions(nodes: FileNode[]): FileNode[] {

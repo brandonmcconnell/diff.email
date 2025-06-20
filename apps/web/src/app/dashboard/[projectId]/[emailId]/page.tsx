@@ -9,6 +9,7 @@ import {
 	ResizablePanel,
 	ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import { prompt } from "@/lib/dialogs";
 import { confirmDeletion } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
 import { usePersistentState } from "@/utils/usePersistentState";
@@ -141,8 +142,11 @@ export default function EmailEditorPage() {
 				data={{ id: emailId, name: emailName, projectId, type: "email" }}
 				subtitle="Edit email document"
 				afterTitle={<LanguageBadge language={language} size="md" />}
-				onRename={() => {
-					const newTitle = window.prompt("Rename email", emailName);
+				onRename={async () => {
+					const newTitle = await prompt({
+						title: "Rename email",
+						defaultValue: emailName,
+					});
 					if (newTitle?.trim()) {
 						updateEmail.mutate({ id: emailId, name: newTitle.trim() });
 					}

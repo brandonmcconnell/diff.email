@@ -18,6 +18,8 @@ interface Props {
 	/** optional initial virtual FS map */
 	initialFiles?: Record<string, string>;
 	initialEntry?: string;
+	/** Called when user triggers a save via keyboard shortcut */
+	onSave?: () => void;
 }
 
 const MonacoEditor = dynamic(
@@ -32,6 +34,7 @@ export function EditorPane({
 	showSidebar = true,
 	initialFiles,
 	initialEntry,
+	onSave,
 }: Props) {
 	const { theme } = useComputedTheme();
 
@@ -117,7 +120,8 @@ export function EditorPane({
 
 	// Configure compiler options once Monaco is mounted
 	const handleMount = React.useCallback(
-		(_editor: Monaco.editor.IStandaloneCodeEditor, monaco: typeof Monaco) => {
+		(editor: Monaco.editor.IStandaloneCodeEditor, monaco: typeof Monaco) => {
+			// Configure TS/JS compiler options
 			monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
 				target: monaco.languages.typescript.ScriptTarget.ESNext,
 				allowNonTsExtensions: true,
@@ -132,8 +136,15 @@ export function EditorPane({
 				allowNonTsExtensions: true,
 				jsx: monaco.languages.typescript.JsxEmit.React,
 			});
+
+			// Register save shortcut (Cmd/Ctrl+S) to propagate save action upstream
+			if (onSave) {
+				editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+					onSave();
+				});
+			}
 		},
-		[],
+		[onSave],
 	);
 
 	return (

@@ -218,6 +218,7 @@ export default function EmailEditorPage() {
 										setEntry(e);
 									}}
 									showSidebar={language === "jsx"}
+									onSave={handleSave}
 									{...(files
 										? { initialFiles: files, initialEntry: entry }
 										: {})}

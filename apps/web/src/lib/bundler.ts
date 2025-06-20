@@ -160,18 +160,12 @@ export async function bundle(
 		// Remove zero-width joiner separately since it can create sequences
 		output = output.replace(/^\u200D+/, "");
 
-		// Remove all comments (both single-line and multi-line)
-		// But preserve sourceMappingURL if needed
-		output = output.replace(/\/\*[\s\S]*?\*\//g, ""); // Block comments
-		output = output.replace(/\/\/[^\n]*$/gm, (match) => {
-			// Keep sourceMappingURL comments
-			if (match.includes("sourceMappingURL")) return "";
-			return "";
-		});
+		// Only remove block comments (/* ... */), not single-line comments
+		// Single-line comment removal is dangerous because it can break URLs in strings
+		output = output.replace(/\/\*[\s\S]*?\*\//g, "");
 
-		// Remove any remaining source map references
-		output = output.replace(/\/\/#\s*sourceMappingURL[^\n]*/g, "");
-		output = output.replace(/\/\/\@\s*sourceMappingURL[^\n]*/g, "");
+		// Remove source map comments specifically (these are safe to remove)
+		output = output.replace(/\/\/[#@]\s*sourceMappingURL[^\n]*/g, "");
 
 		// Final trim to remove any leading/trailing whitespace
 		output = output.trim();

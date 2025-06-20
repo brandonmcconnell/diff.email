@@ -10,6 +10,7 @@ import {
 	ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { prompt } from "@/lib/dialogs";
 import { confirmDeletion } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
@@ -226,69 +227,138 @@ export default function EmailEditorPage() {
 				}
 			/>
 			{mounted && (
-				<ResizablePanelGroup
-					direction="horizontal"
-					className="min-h-0 flex-1 overflow-hidden border-t"
-				>
-					<ResizablePanel
-						defaultSize={50}
-						minSize={25}
-						className="overflow-visible!"
-					>
-						{/* Render editor only when ready to avoid flash */}
-						{(() => {
-							if (!isReady) return null;
-							return (
-								<EditorPane
-									value={html}
-									onChange={(v) => setHtml(v ?? "")}
-									onFilesChange={(m, e) => {
-										setFiles(m);
-										setEntry(e);
-									}}
-									showSidebar={language === "jsx"}
-									onSave={handleSave}
-									saveCounter={saveCounter}
-									{...(files
-										? { initialFiles: files, initialEntry: entry }
-										: {})}
+				<>
+					{/* Desktop (md+) split view */}
+					<div className="hidden min-h-0 flex-1 overflow-hidden border-t md:flex">
+						<ResizablePanelGroup
+							direction="horizontal"
+							className="flex flex-1 overflow-hidden"
+						>
+							<ResizablePanel
+								defaultSize={50}
+								minSize={25}
+								className="overflow-visible!"
+							>
+								{/* Render editor only when ready to avoid flash */}
+								{(() => {
+									if (!isReady) return null;
+									return (
+										<EditorPane
+											value={html}
+											onChange={(v) => setHtml(v ?? "")}
+											onFilesChange={(m, e) => {
+												setFiles(m);
+												setEntry(e);
+											}}
+											showSidebar={language === "jsx"}
+											onSave={handleSave}
+											saveCounter={saveCounter}
+											{...(files
+												? { initialFiles: files, initialEntry: entry }
+												: {})}
+										/>
+									);
+								})()}
+							</ResizablePanel>
+							<ResizableHandle withHandle />
+							<ResizablePanel defaultSize={50} minSize={25}>
+								<div className="flex h-full flex-col">
+									<Toolbar
+										engine={engine}
+										setEngine={setEngine}
+										client={client}
+										setClient={setClient}
+										mode={mode}
+										setMode={setMode}
+										dark={dark}
+										setDark={setDark}
+										consoleVisible={consoleVisible}
+										consoleLogs={consoleLogs}
+										setConsoleVisible={setConsoleVisible}
+										onSave={handleSave}
+										isDirty={isDirty}
+										onRun={handleRun}
+									/>
+									<PreviewPane
+										html={html}
+										files={files}
+										entry={entry}
+										engine={engine}
+										client={client}
+										mode={mode}
+										dark={dark}
+										showConsole={consoleVisible}
+										onLogsChange={setConsoleLogs}
+									/>
+								</div>
+							</ResizablePanel>
+						</ResizablePanelGroup>
+					</div>
+
+					{/* Mobile (tabs) */}
+					<div className="flex flex-1 flex-col overflow-hidden border-t md:hidden">
+						<Tabs
+							defaultValue="editor"
+							className="relative flex-1 overflow-hidden"
+						>
+							<TabsContent value="editor" className="h-full overflow-hidden">
+								{isReady && (
+									<EditorPane
+										value={html}
+										onChange={(v) => setHtml(v ?? "")}
+										onFilesChange={(m, e) => {
+											setFiles(m);
+											setEntry(e);
+										}}
+										showSidebar={language === "jsx"}
+										onSave={handleSave}
+										saveCounter={saveCounter}
+										{...(files
+											? { initialFiles: files, initialEntry: entry }
+											: {})}
+									/>
+								)}
+							</TabsContent>
+							<TabsContent value="preview" className="h-full overflow-hidden">
+								<PreviewPane
+									html={html}
+									files={files}
+									entry={entry}
+									engine={engine}
+									client={client}
+									mode={mode}
+									dark={dark}
+									showConsole={consoleVisible}
+									onLogsChange={setConsoleLogs}
 								/>
-							);
-						})()}
-					</ResizablePanel>
-					<ResizableHandle withHandle />
-					<ResizablePanel defaultSize={50} minSize={25}>
-						<div className="flex h-full flex-col">
-							<Toolbar
-								engine={engine}
-								setEngine={setEngine}
-								client={client}
-								setClient={setClient}
-								mode={mode}
-								setMode={setMode}
-								dark={dark}
-								setDark={setDark}
-								consoleVisible={consoleVisible}
-								consoleLogs={consoleLogs}
-								setConsoleVisible={setConsoleVisible}
-								onSave={handleSave}
-								isDirty={isDirty}
-								onRun={handleRun}
-							/>
-							<PreviewPane
-								html={html}
-								files={files}
-								entry={entry}
-								engine={engine}
-								client={client}
-								mode={mode}
-								dark={dark}
-								showConsole={consoleVisible}
-								onLogsChange={setConsoleLogs}
-							/>
-						</div>
-					</ResizablePanel>
-				</ResizablePanelGroup>
+							</TabsContent>
+
+							{/* Floating tab buttons bottom-right */}
+							<TabsList className="fixed right-2 bottom-12 flex gap-1 rounded-lg bg-muted p-1 shadow-lg backdrop-blur">
+								<TabsTrigger value="editor">Code</TabsTrigger>
+								<TabsTrigger value="preview">Preview</TabsTrigger>
+							</TabsList>
+						</Tabs>
+
+						{/* Toolbar at very bottom */}
+						<Toolbar
+							engine={engine}
+							setEngine={setEngine}
+							client={client}
+							setClient={setClient}
+							mode={mode}
+							setMode={setMode}
+							dark={dark}
+							setDark={setDark}
+							consoleVisible={consoleVisible}
+							consoleLogs={consoleLogs}
+							setConsoleVisible={setConsoleVisible}
+							onSave={handleSave}
+							isDirty={isDirty}
+							onRun={handleRun}
+						/>
+					</div>
+				</>
 			)}
 		</div>
 	);

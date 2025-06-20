@@ -206,15 +206,15 @@ export function FileExplorer({
 	return (
 		<div className="@container flex h-full flex-col">
 			{/* Top toolbar */}
-			<div className="flex gap-1">
+			<div className="flex justify-end gap-0.5">
 				{/* New File Button with Tooltip */}
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<Button
-							variant="outline"
+							variant="ghost"
 							onClick={() => handleAddFile()}
 							size="icon"
-							className="size-7"
+							className="size-7 text-foreground/50 transition-colors hover:text-foreground"
 						>
 							<FilePlus2 className="size-4.5" />
 						</Button>
@@ -228,10 +228,10 @@ export function FileExplorer({
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<Button
-							variant="outline"
+							variant="ghost"
 							onClick={() => handleAddFolder()}
 							size="icon"
-							className="size-7"
+							className="size-7 text-foreground/50 transition-colors hover:text-foreground"
 						>
 							<FolderPlus className="size-4.5" />
 						</Button>
@@ -246,10 +246,10 @@ export function FileExplorer({
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button
-								variant="outline"
+								variant="ghost"
 								onClick={collapseAllVisible}
 								size="icon"
-								className="size-7"
+								className="size-7 text-foreground/50 transition-colors hover:text-foreground"
 							>
 								<CopyMinus className="size-4.5" />
 							</Button>
@@ -263,10 +263,10 @@ export function FileExplorer({
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button
-								variant="outline"
+								variant="ghost"
 								onClick={expandAllVisible}
 								size="icon"
-								className="size-7"
+								className="size-7 text-foreground/50 transition-colors hover:text-foreground"
 							>
 								<CopyPlus className="size-4.5" />
 							</Button>

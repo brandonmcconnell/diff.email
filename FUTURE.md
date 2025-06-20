@@ -4,6 +4,10 @@ This document captures ideas or enhancements that are currently **out-of-scope**
 
 Once a issue management solution is set up for diff.email (Linear, GitHub, Jira), consider moving these into issues.
 
+## Version Diff Visualization
+
+Add the ability to check diffs between versions or groups of versions. Use either Monaco Editor or Shiki for this.
+
 ## Improve sign in / sign up flow
 
 See https://www.shadcndesign.com/pro-blocks/sign-in for design inspiration.

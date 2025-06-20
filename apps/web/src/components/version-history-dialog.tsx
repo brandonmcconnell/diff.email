@@ -17,7 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
 import { useQuery } from "@tanstack/react-query";
-import { GitCompareArrows } from "lucide-react";
+import { GitCompareArrows, RotateCw } from "lucide-react";
 import { useState } from "react";
 
 export type ReadOnlyVersion = {
@@ -103,9 +103,29 @@ export function VersionHistoryDialog({
 					</span>
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="pb-0 sm:max-w-xs" showCloseButton>
-				<DialogHeader>
+			<DialogContent className="pb-0 sm:max-w-xs" showCloseButton={false}>
+				<DialogHeader className="flex flex-row items-center justify-between gap-0.5">
 					<DialogTitle>Version History</DialogTitle>
+					{readOnlyVersion?.id && (
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="outline"
+									size="icon"
+									onClick={() => {
+										exitReadOnly?.();
+										setOpen(false);
+									}}
+								>
+									<RotateCw className="size-5 text-amber-600" aria-hidden />
+									<span className="sr-only">Exit read-only</span>
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent side="bottom">
+								Reset to latest version
+							</TooltipContent>
+						</Tooltip>
+					)}
 				</DialogHeader>
 				<div className="relative">
 					<div className="absolute top-0 left-0 h-5 w-full border-none bg-gradient-to-b from-background to-transparent" />

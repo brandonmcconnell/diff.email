@@ -26,6 +26,13 @@ interface Props {
 	) => void;
 }
 
+type ConsoleMethod = "log" | "info" | "warn" | "error" | "debug";
+interface ConsoleMessage {
+	id: string;
+	method: ConsoleMethod;
+	data: unknown[];
+}
+
 export function PreviewPane({
 	html,
 	files,
@@ -45,24 +52,33 @@ export function PreviewPane({
 		}>
 	>([]);
 
-	// Listen for console events from iframe
+	// Keep a stable ref to the callback so effects don't need it in deps
+	const onLogsChangeRef = useRef<typeof onLogsChange | undefined>(undefined);
+	useEffect(() => {
+		onLogsChangeRef.current = onLogsChange;
+	}, [onLogsChange]);
+
+	// Listen for console events
 	useEffect(() => {
 		function handleMessage(e: MessageEvent) {
 			if (!e.data) return;
 			if (e.data.type === "console") {
-				setLogs((prev) => {
-					const next = [...prev, { method: e.data.method, data: e.data.args }];
-					onLogsChange?.(next);
-					return next;
-				});
+				setLogs((prev) => [
+					...prev,
+					{ method: e.data.method as "error" | "warn", data: e.data.args },
+				]);
 			} else if (e.data.type === "console_clear") {
 				setLogs([]);
-				onLogsChange?.([]);
 			}
 		}
 		window.addEventListener("message", handleMessage);
 		return () => window.removeEventListener("message", handleMessage);
-	}, [onLogsChange]);
+	}, []);
+
+	// Notify parent on logs change
+	useEffect(() => {
+		onLogsChangeRef.current?.(logs);
+	}, [logs]);
 
 	useEffect(() => {
 		if (!iframeRef.current) return;
@@ -161,17 +177,23 @@ export function PreviewPane({
 				const msg = (err as Error).message ?? String(err);
 				console.error(err);
 				setError(msg);
-				setLogs((prev) => {
-					const next = [...prev, { method: "error", data: [msg] }];
-					onLogsChange?.(next);
-					return next;
-				});
+				setLogs((prev) => [...prev, { method: "error", data: [msg] }]);
 				if (iframeRef.current) {
 					iframeRef.current.srcdoc = `<pre style="color:red;padding:1rem;white-space:pre-wrap">${msg}</pre>`;
 				}
 			}
 		})();
-	}, [html, files, entry, mode, onLogsChange]);
+	}, [html, files, entry, mode]);
+
+	// Convert internal logs to console-feed messages
+	const consoleMessages: ConsoleMessage[] = logs.map(
+		(l, idx) =>
+			({
+				id: String(idx),
+				method: l.method as ConsoleMethod,
+				data: l.data,
+			}) as ConsoleMessage,
+	);
 
 	if (mode === "screenshot") {
 		return (
@@ -210,7 +232,7 @@ export function PreviewPane({
 						"[&_.css-k2zzbo]:before:text-base! [&_.css-k2zzbo]:before:text-white!",
 					)}
 				>
-					<Console logs={logs} variant={theme} />
+					<Console logs={consoleMessages} variant={theme} />
 				</div>
 			)}
 		</div>

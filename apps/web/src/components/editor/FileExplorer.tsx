@@ -141,13 +141,27 @@ export function FileExplorer({
 		children: [],
 	});
 
+	// Utility helper to flatten the entire tree (folders + files) into a single list
+	const flattenNodes = (nodes: FileNode[]): FileNode[] =>
+		nodes.flatMap((n) => [
+			n,
+			...(n.children ? flattenNodes(n.children as FileNode[]) : []),
+		]);
+
+	// Returns true if any existing node would collide with the given path.
+	// For folders we must also consider children like "foo/bar.txt" colliding with new folder "foo".
+	const hasCollision = (candidatePath: string): boolean =>
+		flattenNodes(files).some(
+			(n) => n.id === candidatePath || n.id.startsWith(`${candidatePath}/`),
+		);
+
 	async function handleAddFile(parentId?: string) {
 		const name = await prompt({ title: "File name" });
 		if (!name?.trim()) return;
 		const trimmed = name.trim();
 		const fullPath = parentId ? `${parentId}/${trimmed}` : trimmed;
 
-		if (files.some((f) => f.id === fullPath)) {
+		if (hasCollision(fullPath)) {
 			window.alert("A file with that name already exists in this directory.");
 			return;
 		}
@@ -163,7 +177,7 @@ export function FileExplorer({
 		const trimmed = name.trim();
 		const fullPath = parentId ? `${parentId}/${trimmed}` : trimmed;
 
-		if (files.some((f) => f.id === fullPath)) {
+		if (hasCollision(fullPath)) {
 			window.alert("A folder with that name already exists in this directory.");
 			return;
 		}
@@ -190,7 +204,7 @@ export function FileExplorer({
 			if (sourceParent === destinationPrefix) return; // noop
 
 			// duplicate safeguard
-			if (files.some((f) => f.id === destination)) {
+			if (hasCollision(destination)) {
 				window.alert(
 					"An item with that name already exists in the target directory.",
 				);
@@ -428,7 +442,7 @@ export function FileExplorer({
 		const newId = parts.join("/");
 
 		// collision check
-		if (files.some((f) => f.id === newId)) {
+		if (hasCollision(newId)) {
 			window.alert("An item with that name already exists in this directory.");
 			return;
 		}

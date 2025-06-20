@@ -235,21 +235,31 @@ export function PreviewPane({
 								
 								// Create element with the component
 								console.log('Creating element with props:', props);
-								const element = React.createElement(Component, props);
+								
+								// Check what the component returns
+								const componentResult = Component(props);
+								console.log('Component result type:', typeof componentResult);
+								console.log('Component result:', componentResult);
 								
 								// First, try to render with ReactDOMServer to get the HTML
 								console.log('Rendering with ReactDOMServer...');
 								let htmlOutput;
 								
 								try {
-									// Render to static markup (no React IDs)
-									htmlOutput = ReactDOMServer.renderToStaticMarkup(element);
+									// For React Email components, we need to handle them differently
+									// They return React elements that should be rendered directly
+									if (componentResult && typeof componentResult === 'object' && componentResult.$$typeof) {
+										console.log('Detected React element, rendering directly');
+										htmlOutput = ReactDOMServer.renderToStaticMarkup(componentResult);
+									} else {
+										// For regular components, create element normally
+										const element = React.createElement(Component, props);
+										htmlOutput = ReactDOMServer.renderToStaticMarkup(element);
+									}
 									console.log('Successfully rendered with ReactDOMServer');
 								} catch (renderError) {
 									console.error('ReactDOMServer render error:', renderError);
-									// If direct rendering fails, try wrapping in a fragment
-									const wrappedElement = React.createElement(React.Fragment, {}, element);
-									htmlOutput = ReactDOMServer.renderToStaticMarkup(wrappedElement);
+									throw renderError;
 								}
 								
 								console.log('Rendered HTML length:', htmlOutput.length);

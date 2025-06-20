@@ -13,6 +13,30 @@ import { cn } from "@/lib/utils";
 import { Atom, CodeXml } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+// New stable placeholder list (module scope)
+const PLACEHOLDERS = [
+	"Go ahead, make my day",
+	"May the Force be with you",
+	"Here's looking at you, kid",
+	"You talking to me?",
+	"Show me the money!",
+	"Hasta la vista, baby",
+	"I'm the king of the world!",
+	"Why so serious?",
+	"Bond. James Bond.",
+	"To infinity and beyond!",
+	"I see dead people",
+	"E.T. phone home",
+	"You're gonna need a bigger boat",
+	"Nobody puts Baby in a corner",
+	"Houston, we have a problem",
+	"I am your father",
+	"Say hello to my little friend!",
+	"Just keep swimming",
+	"There's no place like home",
+	"Life is like a box of chocolates",
+] as const;
+
 interface Props {
 	open: boolean;
 	onOpenChange: (v: boolean) => void;
@@ -22,30 +46,6 @@ interface Props {
 export function NewEmailDialog({ open, onOpenChange, onCreate }: Props) {
 	const [title, setTitle] = useState("");
 	const [lang, setLang] = useState<"html" | "jsx">("html");
-
-	// Fun placeholder suggestions
-	const placeholders = [
-		"Go ahead, make my day",
-		"May the Force be with you",
-		"Here's looking at you, kid",
-		"You talking to me?",
-		"Show me the money!",
-		"Hasta la vista, baby",
-		"I'm the king of the world!",
-		"Why so serious?",
-		"Bond. James Bond.",
-		"To infinity and beyond!",
-		"I see dead people",
-		"E.T. phone home",
-		"You're gonna need a bigger boat",
-		"Nobody puts Baby in a corner",
-		"Houston, we have a problem",
-		"I am your father",
-		"Say hello to my little friend!",
-		"Just keep swimming",
-		"There's no place like home",
-		"Life is like a box of chocolates",
-	] as const;
 
 	// Shuffle-bag to cycle through all quotes before repeating
 	const bagRef = useRef<string[]>([]);
@@ -59,13 +59,13 @@ export function NewEmailDialog({ open, onOpenChange, onCreate }: Props) {
 
 			// Refill and shuffle bag when empty
 			if (bagRef.current.length === 0) {
-				bagRef.current = [...placeholders].sort(() => Math.random() - 0.5);
+				bagRef.current = [...PLACEHOLDERS].sort(() => Math.random() - 0.5);
 			}
 
 			const next = bagRef.current.pop() as string;
 			setPlaceholder(next);
 		}
-	}, [open, placeholders]);
+	}, [open]);
 
 	function handleCreate() {
 		if (!title.trim()) return;

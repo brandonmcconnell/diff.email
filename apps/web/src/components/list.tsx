@@ -58,7 +58,7 @@ function renderEmpty({
 			</div>
 			<Button onClick={onCreate}>
 				{CreateIcon && <CreateIcon className="size-4" />}
-				{createLabel}
+				<span className="max-md:hidden">{createLabel}</span>
 			</Button>
 		</div>
 	);

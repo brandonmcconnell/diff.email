@@ -148,13 +148,13 @@ export default function Dashboard() {
 				subtitle="Organize your projects and emails."
 				onCreate={handleCreate}
 			>
-				<div className="flex flex-col-reverse gap-3 md:flex-row md:items-center">
+				<div className="contents flex-col gap-3 md:flex md:flex-row md:items-center">
 					<ToggleGroup
 						type="single"
 						value={view}
 						onValueChange={(v) => v && setView(v as "grid" | "list")}
 						variant="outline"
-						className="hidden h-9 md:flex"
+						className="order-1 flex h-9"
 					>
 						<ToggleGroupItem value="grid" aria-label="Grid view">
 							<LayoutGrid className="h-4 w-4" />
@@ -163,7 +163,7 @@ export default function Dashboard() {
 							<ListIcon className="h-4 w-4" />
 						</ToggleGroupItem>
 					</ToggleGroup>
-					<div className="relative hidden md:block">
+					<div className="relative block">
 						<Input
 							type="search"
 							placeholder="Search projects"

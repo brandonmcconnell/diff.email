@@ -23,6 +23,7 @@ import {
 	FolderPlus,
 	MailPlus,
 	Plus,
+	Settings2,
 	Slash,
 } from "lucide-react";
 import Link from "next/link";
@@ -94,7 +95,13 @@ export function PageHeader({
 		data.type === "project" ? <MailPlus /> : <FolderPlus />;
 	const createButtonText = data.type === "project" ? "email" : "project";
 	const createButton = (
-		<Button onClick={onCreate}>
+		<Button
+			onClick={onCreate}
+			className={cn(
+				"max-md:fixed max-md:right-4 max-md:bottom-4 max-md:rounded-full",
+				"max-md:origin-bottom-right max-md:scale-115",
+			)}
+		>
 			{createButtonIcon} New {createButtonText}
 		</Button>
 	);
@@ -202,49 +209,74 @@ export function PageHeader({
 			)}
 		>
 			<div className="container mx-auto flex flex-col gap-6 px-4 lg:px-6">
-				<div className="flex h-5 items-center justify-between gap-2 overflow-visible">
-					<Breadcrumb>
-						<BreadcrumbList>{crumbs}</BreadcrumbList>
-					</Breadcrumb>
-					{children}
-				</div>
+				{/* Two-column layout (stacks on < md) */}
+				<div className="flex flex-col gap-6 md:flex-row">
+					{/* Left column – breadcrumbs + title */}
+					<div className="flex flex-1 flex-col gap-4">
+						{/* Breadcrumbs */}
+						<div className="flex h-5 items-center gap-2 overflow-visible">
+							<Breadcrumb>
+								<BreadcrumbList>{crumbs}</BreadcrumbList>
+							</Breadcrumb>
+						</div>
 
-				<div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
-					<div className="space-y-2">
-						<h1 className="flex items-center gap-2 font-bold text-2xl tracking-tight md:text-3xl">
-							<span>{data.name}</span>
-							{afterTitle}
-						</h1>
-						{subtitle && (
-							<p className="text-muted-foreground text-sm lg:text-base">
-								{subtitle}
-							</p>
-						)}
+						{/* Title / subtitle */}
+						<div className="space-y-2">
+							<h1 className="flex items-center gap-2 font-bold text-2xl tracking-tight md:text-3xl">
+								<span>{data.name}</span>
+								{afterTitle}
+							</h1>
+							{subtitle && (
+								<p className="text-muted-foreground text-sm lg:text-base">
+									{subtitle}
+								</p>
+							)}
+						</div>
 					</div>
-					<div className="flex flex-row-reverse justify-end gap-2 md:flex-row">
-						{(onRename || onDelete) && (
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<Button variant="outline">Edit</Button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent align="end">
-									{onRename && (
-										<DropdownMenuItem onSelect={onRename}>
-											Rename
-										</DropdownMenuItem>
-									)}
-									{onDelete && (
-										<DropdownMenuItem
-											className="text-destructive"
-											onSelect={onDelete}
-										>
-											Delete
-										</DropdownMenuItem>
-									)}
-								</DropdownMenuContent>
-							</DropdownMenu>
-						)}
-						{onCreate && createButton}
+
+					{/* Right column – version history dialog & actions */}
+					<div className="flex justify-start gap-2 md:w-fit md:flex-none md:flex-col md:items-end md:gap-4">
+						{/* Children (e.g., VersionHistoryDialog) */}
+						{children}
+
+						{/* Action buttons */}
+						<div className="contents flex-row-reverse gap-[inherit] md:flex md:w-full">
+							{(onRename || onDelete) && (
+								<DropdownMenu>
+									<DropdownMenuTrigger asChild>
+										<div>
+											<Button variant="outline" className="max-md:hidden">
+												Edit
+											</Button>
+											<Button
+												variant="outline"
+												size="icon"
+												className="md:hidden"
+												title="Edit"
+											>
+												<Settings2 aria-label="Edit" />
+											</Button>
+										</div>
+									</DropdownMenuTrigger>
+									<DropdownMenuContent align="end">
+										{onRename && (
+											<DropdownMenuItem onSelect={onRename}>
+												Rename
+											</DropdownMenuItem>
+										)}
+										{onDelete && (
+											<DropdownMenuItem
+												className="text-destructive"
+												onSelect={onDelete}
+											>
+												Delete
+											</DropdownMenuItem>
+										)}
+									</DropdownMenuContent>
+								</DropdownMenu>
+							)}
+							{onCreate && createButton}
+						</div>
 					</div>
 				</div>
 			</div>

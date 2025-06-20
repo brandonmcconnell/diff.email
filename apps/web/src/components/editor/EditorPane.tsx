@@ -304,19 +304,21 @@ export function EditorPane({
 							setFiles={setFiles}
 							onCollapse={() => {
 								if (sidebarOpen) {
-									setSidebarOpen(false); // close mobile overlay
+									// On mobile overlay: just close overlay
+									setSidebarOpen(false);
 								} else {
-									setSidebarCollapsed(true); // collapse desktop sidebar
+									// Desktop: collapse sidebar
+									setSidebarCollapsed(true);
 								}
 							}}
 						/>
 					</div>
 
-					{/* Mobile open sidebar button (overlay) */}
+					{/* Mobile overlay button – hidden on md+ */}
 					{!sidebarOpen && (
 						<button
 							type="button"
-							className="absolute bottom-2 left-2 z-30 rounded border bg-background p-1 shadow md:top-2 md:bottom-auto dark:bg-white/10"
+							className="absolute bottom-2 left-2 z-30 rounded border bg-background p-1 shadow md:hidden dark:bg-white/10"
 							onClick={() => setSidebarOpen(true)}
 						>
 							<PanelLeftOpen className="size-4.5" />
@@ -353,14 +355,8 @@ export function EditorPane({
 						minimap: { enabled: false },
 						readOnly,
 					}}
+					className="max-md:w-svw!"
 				/>
-				{/* <Editor
-					height="80vh"
-					theme="vs-dark"
-					path={file.name}
-					defaultLanguage={file.language}
-					defaultValue={file.value}
-				/> */}
 			</div>
 		</div>
 	);

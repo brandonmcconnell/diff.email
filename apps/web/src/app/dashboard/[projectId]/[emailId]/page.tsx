@@ -338,7 +338,7 @@ export default function EmailEditorPage() {
 			{mounted && (
 				<>
 					{/* Desktop (md+) split view */}
-					<div className="overflow-visible! hidden min-h-0 flex-1 border-t md:flex">
+					<div className="overflow-visible! hidden min-h-0 max-w-svw flex-1 border-t md:flex">
 						<ResizablePanelGroup
 							direction="horizontal"
 							className="overflow-visible! flex flex-1"

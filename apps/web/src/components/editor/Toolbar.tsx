@@ -1,14 +1,16 @@
 "use client";
 import * as Select from "@/components/ui/dropdown-menu";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import { CLIENTS, type Client, ENGINES, type Engine } from "@diff-email/shared";
 import {
 	Check,
+	Globe,
 	ImageIcon,
+	Images,
 	Maximize2,
 	Minimize2,
 	Moon,
-	PlayIcon,
 	Save,
 	Sun,
 	Terminal,
@@ -16,10 +18,6 @@ import {
 import { useCallback, useEffect, useState } from "react";
 
 type Props = {
-	engine: Engine;
-	setEngine: (e: Engine) => void;
-	client: Client;
-	setClient: (c: Client) => void;
 	mode: "live" | "screenshot";
 	setMode: (m: "live" | "screenshot") => void;
 	dark: boolean;
@@ -39,10 +37,6 @@ type Props = {
 
 export function Toolbar(props: Props) {
 	const {
-		engine,
-		setEngine,
-		client,
-		setClient,
 		mode,
 		setMode,
 		dark,
@@ -100,76 +94,26 @@ export function Toolbar(props: Props) {
 				"bg-muted/50 text-sm max-md:pb-safe-offset-1",
 			)}
 		>
-			{/* Engine Select */}
-			<Select.DropdownMenu>
-				<Select.DropdownMenuTrigger asChild>
-					<button
-						type="button"
-						className="rounded border border-neutral-800/15 px-2 py-1"
-					>
-						{engine}
-					</button>
-				</Select.DropdownMenuTrigger>
-				<Select.DropdownMenuContent className="w-32">
-					{ENGINES.map((e: Engine) => (
-						<Select.DropdownMenuItem
-							key={e}
-							className="capitalize"
-							onSelect={() => setEngine(e)}
-						>
-							{e}
-						</Select.DropdownMenuItem>
-					))}
-				</Select.DropdownMenuContent>
-			</Select.DropdownMenu>
-
-			{/* Client Select */}
-			<Select.DropdownMenu>
-				<Select.DropdownMenuTrigger asChild>
-					<button
-						type="button"
-						className="rounded border border-neutral-800/15 px-2 py-1"
-					>
-						{client}
-					</button>
-				</Select.DropdownMenuTrigger>
-				<Select.DropdownMenuContent className="w-32">
-					{CLIENTS.map((c: Client) => (
-						<Select.DropdownMenuItem
-							key={c}
-							className="capitalize"
-							onSelect={() => setClient(c)}
-						>
-							{c}
-						</Select.DropdownMenuItem>
-					))}
-				</Select.DropdownMenuContent>
-			</Select.DropdownMenu>
+			{/* View Toggle (Web vs Screenshots) */}
+			<ToggleGroup
+				type="single"
+				value={mode === "live" ? "web" : "screenshots"}
+				onValueChange={(val) => {
+					if (!val) return;
+					setMode(val === "web" ? "live" : "screenshot");
+				}}
+				variant="outline"
+				size="sm"
+			>
+				<ToggleGroupItem value="web" aria-label="Web preview">
+					<Globe size={14} />
+				</ToggleGroupItem>
+				<ToggleGroupItem value="screenshots" aria-label="Screenshots grid">
+					<Images size={14} />
+				</ToggleGroupItem>
+			</ToggleGroup>
 
 			<div className="ml-auto flex items-center gap-1.5">
-				{/* Mode Toggle */}
-				<button
-					type="button"
-					className={cn(
-						"rounded border border-neutral-800/15 p-1",
-						mode === "live" ? "bg-border" : "hover:bg-muted",
-					)}
-					onClick={() => setMode(mode === "live" ? "screenshot" : "live")}
-					title="Toggle live/screenshot"
-				>
-					{mode === "live" ? <PlayIcon size={16} /> : <ImageIcon size={16} />}
-				</button>
-
-				<button
-					type="button"
-					className="rounded border border-neutral-800/15 p-1"
-					onClick={onRun}
-					title="Generate screenshots"
-				>
-					<ImageIcon size={16} />
-				</button>
-
-				{/* Dark/light toggle */}
 				<button
 					type="button"
 					className={cn(

@@ -17,6 +17,9 @@ body {
 	@media (prefers-color-scheme: dark) {
 		color-scheme: dark;
 	}
+
+	@apply bg-background text-foreground;
+	overflow-x: hidden;
 }
 
 @custom-variant zen (&:where(.zen-mode, .zen-mode *));

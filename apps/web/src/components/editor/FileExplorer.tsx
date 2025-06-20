@@ -20,9 +20,15 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { confirm, prompt } from "@/lib/dialogs";
 import { FilePlus2, FolderPlus, MoreVertical } from "lucide-react";
 import { useCallback, useMemo } from "react";
+import { Button } from "../ui/button";
 
 interface Props {
 	files: FileNode[]; // root level nodes (can be directories or files)
@@ -149,22 +155,39 @@ export function FileExplorer({
 		<div className="@container flex h-full flex-col">
 			{/* Top toolbar */}
 			<div className="flex gap-1">
-				<button
-					type="button"
-					className="flex flex-1 items-center gap-1 rounded border px-1 py-1 text-xs hover:bg-muted"
-					onClick={() => handleAddFile()}
-				>
-					<FilePlus2 className="size-5" />
-					File
-				</button>
-				<button
-					type="button"
-					className="flex flex-1 items-center gap-1 rounded border px-1 py-1 text-xs hover:bg-muted"
-					onClick={() => handleAddFolder()}
-				>
-					<FolderPlus className="size-5" />
-					Directory
-				</button>
+				{/* New File Button with Tooltip */}
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							variant="outline"
+							onClick={() => handleAddFile()}
+							size="icon"
+							className="size-7"
+						>
+							<FilePlus2 className="size-4.5" />
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>
+						<p>New file</p>
+					</TooltipContent>
+				</Tooltip>
+
+				{/* New Directory Button with Tooltip */}
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							variant="outline"
+							onClick={() => handleAddFolder()}
+							size="icon"
+							className="size-7"
+						>
+							<FolderPlus className="size-4.5" />
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>
+						<p>New directory</p>
+					</TooltipContent>
+				</Tooltip>
 			</div>
 			<ContextMenu>
 				<ContextMenuTrigger asChild>

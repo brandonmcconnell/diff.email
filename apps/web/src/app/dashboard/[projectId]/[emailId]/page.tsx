@@ -213,9 +213,10 @@ export default function EmailEditorPage() {
 		}
 	}
 
-	function exitReadOnly() {
-		// Reload latest version to restore editors
-		if (latestQuery.data) {
+	function exitReadOnly(options?: { preserveContent?: boolean }) {
+		const { preserveContent = false } = options ?? {};
+
+		if (!preserveContent && latestQuery.data) {
 			if (latestQuery.data.files) {
 				setFiles(latestQuery.data.files as Record<string, string>);
 				filesRef.current = latestQuery.data.files as Record<string, string>;
@@ -226,6 +227,7 @@ export default function EmailEditorPage() {
 				htmlRef.current = h;
 			}
 		}
+
 		setReadOnlyVersion(null);
 	}
 
@@ -315,7 +317,7 @@ export default function EmailEditorPage() {
 						<Button
 							variant="ghost"
 							size="sm"
-							onClick={exitReadOnly}
+							onClick={() => exitReadOnly()}
 							title="Exit read-only"
 							className="flex items-center gap-1 text-[inherit]! hover:bg-amber-500/25 dark:hover:bg-amber-900! dark:hover:text-white!"
 						>
@@ -325,7 +327,80 @@ export default function EmailEditorPage() {
 						<Button
 							variant="ghost"
 							size="sm"
-							onClick={() => {}}
+							onClick={async () => {
+								if (!readOnlyVersion) return;
+
+								// Determine whether to copy HTML or multi-file JSX project
+								const hasFiles =
+									readOnlyVersion.files &&
+									Object.keys(readOnlyVersion.files).length > 0;
+
+								const payload = hasFiles
+									? {
+											emailId,
+											files: readOnlyVersion.files as Record<string, string>,
+										}
+									: {
+											emailId,
+											html: readOnlyVersion.html ?? "",
+										};
+
+								try {
+									// Save and get the new version ID returned from the server
+									const newVersionId = await versionsSave.mutateAsync(payload);
+
+									// Optimistically bump version count in emails list cache
+									const emailsListKey = trpc.emails.list.queryKey({
+										projectId,
+									});
+									queryClient.setQueryData(emailsListKey, (old) => {
+										if (!Array.isArray(old)) return old;
+										const updatedList = old.map((item) => {
+											const record = item as Record<string, unknown>;
+											if (record.id === emailId) {
+												const currentCount =
+													(record.count as number | undefined) ?? 0;
+												return { ...record, count: currentCount + 1 };
+											}
+											return record;
+										});
+										return updatedList as typeof old;
+									});
+
+									// Exit read-only immediately to prevent label flash
+									exitReadOnly({ preserveContent: true });
+
+									// Now refresh queries in background
+									await Promise.all([
+										queryClient.invalidateQueries({
+											queryKey: trpc.versions.getLatest.queryKey({ emailId }),
+										}),
+										queryClient.invalidateQueries({
+											queryKey: trpc.versions.list.queryKey({ emailId }),
+										}),
+										queryClient.invalidateQueries({
+											queryKey: trpc.emails.list.queryKey({ projectId }),
+										}),
+									]);
+
+									// Ensure counts updated
+									await queryClient.refetchQueries({
+										queryKey: trpc.emails.list.queryKey({ projectId }),
+										exact: true,
+									});
+
+									await queryClient.refetchQueries({
+										queryKey: trpc.versions.getLatest.queryKey({ emailId }),
+										exact: true,
+									});
+
+									toast.success("Branched into new version");
+								} catch (err: unknown) {
+									const message =
+										err instanceof Error ? err.message : String(err);
+									toast.error(`Failed to branch: ${message}`);
+								}
+							}}
 							title="Branch from this version (coming soon)"
 							className="flex items-center gap-1 text-[inherit]! hover:bg-amber-500/25 dark:hover:bg-amber-900! dark:hover:text-white!"
 						>

@@ -18,6 +18,11 @@ import {
 import { useCallback, useEffect, useState } from "react";
 
 type Props = {
+	// Currently unused, but passed down from parent for future expansion.
+	engine?: Engine;
+	setEngine?: (e: Engine) => void;
+	client?: Client;
+	setClient?: (c: Client) => void;
 	mode: "live" | "screenshot";
 	setMode: (m: "live" | "screenshot") => void;
 	dark: boolean;

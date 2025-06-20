@@ -248,11 +248,7 @@ html {
 	.monaco-editor,
 	.monaco-diff-editor,
 	.monaco-component {
-		--monaco-bg: color-mix(
-			in srgb,
-			var(--muted) 50%,
-			var(--background)
-		);
+		--monaco-bg: color-mix(in srgb, var(--muted) 50%, var(--background));
 		--vscode-editor-background: var(--monaco-bg);
 		--vscode-editorStickyScroll-background: var(--monaco-bg);
 		--vscode-breadcrumb-background: var(--monaco-bg);

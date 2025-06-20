@@ -20,6 +20,8 @@ interface Props {
 	initialEntry?: string;
 	/** Called when user triggers a save via keyboard shortcut */
 	onSave?: () => void;
+	/** Incrementing counter from parent after a successful save; triggers dirty reset */
+	saveCounter?: number;
 }
 
 const MonacoEditor = dynamic(
@@ -35,6 +37,7 @@ export function EditorPane({
 	initialFiles,
 	initialEntry,
 	onSave,
+	saveCounter,
 }: Props) {
 	const { theme } = useComputedTheme();
 
@@ -46,9 +49,12 @@ export function EditorPane({
 				content,
 				droppable: false,
 				draggable: true,
+				dirty: false,
 			}));
 		}
-		return [{ id: "index.html", name: "index.html", content: value }];
+		return [
+			{ id: "index.html", name: "index.html", content: value, dirty: false },
+		];
 	});
 	const [activeId, setActiveId] = useState<string>(
 		initialEntry ??
@@ -81,7 +87,9 @@ export function EditorPane({
 
 	function handleEditorChange(v?: string) {
 		setFiles((prev) =>
-			prev.map((f) => (f.id === activeId ? { ...f, content: v ?? "" } : f)),
+			prev.map((f) =>
+				f.id === activeId ? { ...f, content: v ?? "", dirty: true } : f,
+			),
 		);
 		onChange(v);
 	}
@@ -95,6 +103,15 @@ export function EditorPane({
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [value, showSidebar]);
+
+	// When saveCounter increments, clear dirty flags
+	const prevSaveCounter = React.useRef<number | undefined>(saveCounter);
+	useEffect(() => {
+		if (saveCounter !== undefined && saveCounter !== prevSaveCounter.current) {
+			setFiles((prev) => prev.map((f) => ({ ...f, dirty: false })));
+			prevSaveCounter.current = saveCounter;
+		}
+	}, [saveCounter]);
 
 	const activeFile = files.find((f) => f.id === activeId);
 

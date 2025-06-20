@@ -2,7 +2,15 @@
 import * as Select from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { CLIENTS, type Client, ENGINES, type Engine } from "@diff-email/shared";
-import { ImageIcon, Moon, PlayIcon, Save, Sun, Terminal } from "lucide-react";
+import {
+	Check,
+	ImageIcon,
+	Moon,
+	PlayIcon,
+	Save,
+	Sun,
+	Terminal,
+} from "lucide-react";
 
 type Props = {
 	engine: Engine;
@@ -21,6 +29,8 @@ type Props = {
 		data: string[];
 		method: "error" | "warn";
 	}>;
+	/** Whether there are unsaved changes */
+	isDirty: boolean;
 };
 
 export function Toolbar(props: Props) {
@@ -38,6 +48,7 @@ export function Toolbar(props: Props) {
 		consoleVisible,
 		setConsoleVisible,
 		consoleLogs,
+		isDirty,
 	} = props;
 
 	const errorCount = consoleLogs.filter((l) => l.method === "error").length;
@@ -147,11 +158,29 @@ export function Toolbar(props: Props) {
 
 				<button
 					type="button"
-					className="rounded border p-1"
+					className={cn(
+						"relative flex items-center rounded border p-1",
+						!isDirty && "bg-muted text-muted-foreground",
+					)}
 					onClick={onSave}
 					title="Save version"
 				>
 					<Save size={16} />
+					<div
+						className={cn(
+							"inline-flex items-center justify-end",
+							"overflow-hidden transition-[width] duration-300 ease-out",
+							isDirty ? "w-2.5" : "w-0",
+						)}
+					>
+						<div
+							className={cn(
+								"inline-block size-1.25 rounded-full bg-amber-500",
+								"transition-[scale,opacity] duration-[inherit] ease-[inherit]",
+								isDirty ? "scale-100 opacity-100" : "scale-0 opacity-0",
+							)}
+						/>
+					</div>
 				</button>
 			</div>
 		</div>

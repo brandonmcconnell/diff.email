@@ -47,6 +47,7 @@ export function FileExplorer({
 		draggable: true,
 		droppable: false,
 		content: "",
+		dirty: true,
 	});
 
 	const newFolderNode = (fullPath: string): FileNode => ({

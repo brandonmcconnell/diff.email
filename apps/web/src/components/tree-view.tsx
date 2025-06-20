@@ -339,13 +339,13 @@ const TreeNode = ({
 const TreeLeaf = React.forwardRef<
 	HTMLDivElement,
 	React.HTMLAttributes<HTMLDivElement> & {
-		item: TreeDataItem;
+		item: FileNode;
 		selectedItemId?: string;
-		handleSelectChange: (item: TreeDataItem | undefined) => void;
+		handleSelectChange: (item: FileNode | undefined) => void;
 		defaultLeafIcon?: React.ComponentType<{ className?: string }>;
-		handleDragStart?: (item: TreeDataItem) => void;
-		handleDrop?: (item: TreeDataItem) => void;
-		draggedItem: TreeDataItem | null;
+		handleDragStart?: (item: FileNode) => void;
+		handleDrop?: (item: FileNode) => void;
+		draggedItem: FileNode | null;
 	}
 >(
 	(
@@ -424,7 +424,12 @@ const TreeLeaf = React.forwardRef<
 					isSelected={selectedItemId === item.id}
 					default={defaultLeafIcon}
 				/>
-				<span className="flex-grow truncate text-sm">{item.name}</span>
+				<div className="inline-flex flex-grow items-center truncate text-sm">
+					{item.name}
+					{item.dirty && (
+						<div className="ml-2 inline-block size-1.25 rounded-full bg-amber-500" />
+					)}
+				</div>
 				<TreeActions isSelected={selectedItemId === item.id && !item.disabled}>
 					{item.actions}
 				</TreeActions>
@@ -525,6 +530,8 @@ export { TreeView, type TreeDataItem };
 
 export interface FileNode extends TreeDataItem {
 	content?: string;
+	/** Whether this file has unsaved changes */
+	dirty?: boolean;
 }
 
 export function buildFileTree(nodes: FileNode[]): FileNode[] {

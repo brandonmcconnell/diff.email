@@ -91,6 +91,13 @@ export default function EmailEditorPage() {
 	const [files, setFiles] = useState<Record<string, string> | undefined>();
 	const [entry, setEntry] = useState<string | undefined>();
 
+	// Track last saved snapshot for dirty detection
+	const [lastSavedHtml, setLastSavedHtml] = useState<string>("");
+	const [lastSavedFiles, setLastSavedFiles] = useState<
+		Record<string, string> | undefined
+	>();
+	const [saveCounter, setSaveCounter] = useState(0);
+
 	const latestQuery = useQuery({
 		...trpc.versions.getLatest.queryOptions({ emailId }),
 		enabled: !!emailId,
@@ -110,10 +117,14 @@ export default function EmailEditorPage() {
 		if (!latestQuery.data) return;
 		if (language === "html") {
 			if (latestQuery.isSuccess) setIsReady(true);
-			setHtml(latestQuery.data.html ?? "");
+			const initialHtml = latestQuery.data.html ?? "";
+			setHtml(initialHtml);
+			setLastSavedHtml(initialHtml);
 		} else if (latestQuery.data.files) {
 			if (latestQuery.isSuccess) setIsReady(true);
-			setFiles(latestQuery.data.files as Record<string, string>);
+			const initialFiles = latestQuery.data.files as Record<string, string>;
+			setFiles(initialFiles);
+			setLastSavedFiles(initialFiles);
 			setEntry("index.tsx");
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -123,12 +134,24 @@ export default function EmailEditorPage() {
 		if (language === "html") {
 			versionsSave.mutate(
 				{ emailId, html },
-				{ onSuccess: () => toast.success("Version saved") },
+				{
+					onSuccess: () => {
+						toast.success("Version saved");
+						setLastSavedHtml(html);
+						setSaveCounter((c) => c + 1);
+					},
+				},
 			);
 		} else if (files && Object.keys(files).length) {
 			versionsSave.mutate(
 				{ emailId, files },
-				{ onSuccess: () => toast.success("Version saved") },
+				{
+					onSuccess: () => {
+						toast.success("Version saved");
+						setLastSavedFiles(files);
+						setSaveCounter((c) => c + 1);
+					},
+				},
 			);
 		}
 	}
@@ -136,6 +159,12 @@ export default function EmailEditorPage() {
 	function handleRun() {
 		// TODO run screenshots via trpc.runs.create
 	}
+
+	// Determine dirty state
+	const isDirty =
+		language === "html"
+			? html !== lastSavedHtml
+			: JSON.stringify(files ?? {}) !== JSON.stringify(lastSavedFiles ?? {});
 
 	// Show skeleton placeholder while queries are loading to avoid flashing incomplete header content
 	if (emailsQuery?.isPending || latestQuery.isPending) {
@@ -219,6 +248,7 @@ export default function EmailEditorPage() {
 									}}
 									showSidebar={language === "jsx"}
 									onSave={handleSave}
+									saveCounter={saveCounter}
 									{...(files
 										? { initialFiles: files, initialEntry: entry }
 										: {})}
@@ -242,6 +272,7 @@ export default function EmailEditorPage() {
 								consoleLogs={consoleLogs}
 								setConsoleVisible={setConsoleVisible}
 								onSave={handleSave}
+								isDirty={isDirty}
 								onRun={handleRun}
 							/>
 							<PreviewPane

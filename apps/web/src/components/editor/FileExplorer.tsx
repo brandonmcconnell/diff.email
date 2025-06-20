@@ -69,7 +69,7 @@ export function FileExplorer({
 
 	const treeContainerRef = useRef<HTMLDivElement>(null);
 
-	const refreshAnyExpanded = () => {
+	const refreshAnyExpanded = useCallback(() => {
 		if (!treeContainerRef.current) {
 			setAnyExpanded(false);
 			return;
@@ -79,7 +79,7 @@ export function FileExplorer({
 			'[role="tree"] > ul > li [data-state="open"]',
 		);
 		setAnyExpanded(!!topLevelOpen);
-	};
+	}, []);
 
 	useEffect(() => {
 		refreshAnyExpanded();
@@ -92,7 +92,7 @@ export function FileExplorer({
 			attributeFilter: ["data-state"],
 		});
 		return () => observer.disconnect();
-	}, [treeKey]);
+	}, [refreshAnyExpanded]);
 
 	const collapseAllVisible = () => {
 		setExpandAll(false);
@@ -150,10 +150,13 @@ export function FileExplorer({
 
 	// Returns true if any existing node would collide with the given path.
 	// For folders we must also consider children like "foo/bar.txt" colliding with new folder "foo".
-	const hasCollision = (candidatePath: string): boolean =>
-		flattenNodes(files).some(
-			(n) => n.id === candidatePath || n.id.startsWith(`${candidatePath}/`),
-		);
+	const hasCollision = useCallback(
+		(candidatePath: string): boolean =>
+			flattenNodes(files).some(
+				(n) => n.id === candidatePath || n.id.startsWith(`${candidatePath}/`),
+			),
+		[files],
+	);
 
 	// Radix ContextMenu uses `duration-200` exit animation; delay slightly longer
 	// so the menu is fully removed (and focus released) before we open the prompt.
@@ -245,7 +248,7 @@ export function FileExplorer({
 			setFiles(cleaned);
 			setActiveId(destination);
 		},
-		[files, setFiles, setActiveId],
+		[files, setFiles, setActiveId, hasCollision],
 	);
 
 	// Selection change ----------------------------------------------

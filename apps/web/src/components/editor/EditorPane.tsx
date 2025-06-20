@@ -1,6 +1,7 @@
 "use client";
 import type { FileNode } from "@/components/tree-view";
 import { useComputedTheme } from "@/hooks/useComputedTheme";
+import { loadRemoteTypes } from "@/lib/loadRemoteTypes";
 import { cn } from "@/lib/utils";
 import { PanelLeftOpen } from "lucide-react";
 import type * as Monaco from "monaco-editor";
@@ -155,6 +156,23 @@ export function EditorPane({
 				jsx: monaco.languages.typescript.JsxEmit.React,
 			});
 
+			// ------------------------------------------------------------------
+			// Suppress "cannot find module" & missing declaration errors for
+			// external CDN imports (e.g. esm.sh). These modules resolve at runtime
+			// but are not present in the virtual FS, so we add:
+			//   1. A catch-all ambient module declaration
+			//   2. Diagnostic ignore list for common codes (2307, 7016, 2305)
+			// ------------------------------------------------------------------
+			const wildcardDecl = `declare module "*" {\n  const anyExport: any;\n  export default anyExport;\n}`;
+			monaco.languages.typescript.typescriptDefaults.addExtraLib(
+				wildcardDecl,
+				"file:///node_modules/@types/__wildcard__.d.ts",
+			);
+
+			monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+				diagnosticCodesToIgnore: [2307, 7016, 2305, 2614, 2304],
+			});
+
 			// Register save shortcut (Cmd/Ctrl+S) to propagate save action upstream
 			if (onSave) {
 				editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
@@ -164,6 +182,49 @@ export function EditorPane({
 		},
 		[onSave],
 	);
+
+	// -------------------------------------------------------------
+	// Fetch .d.ts from esm.sh for any bare-module imports we detect
+	// -------------------------------------------------------------
+	useEffect(() => {
+		if (!activeFile) return;
+		const IMPORT_RE =
+			/(?:import|export)\s+(?:[^'";]+?from\s+)?["']([^\.\/'"`][^'"`]+)["']/g;
+		const DYNAMIC_RE = /import\(\s*["']([^\.\/'"`][^'"`]+)["']\s*\)/g;
+		const seen = new Set<string>();
+
+		const collectSpecifiers = (content: string): void => {
+			IMPORT_RE.lastIndex = 0;
+			while (true) {
+				const match = IMPORT_RE.exec(content);
+				if (!match) break;
+				seen.add(match[1]);
+			}
+			DYNAMIC_RE.lastIndex = 0;
+			while (true) {
+				const match = DYNAMIC_RE.exec(content);
+				if (!match) break;
+				seen.add(match[1]);
+			}
+		};
+
+		for (const file of files) {
+			if (file.content) collectSpecifiers(file.content);
+		}
+
+		// Fire off loads in the background (Monaco lives on globalThis when mounted)
+		interface GlobalWithMonaco {
+			monaco?: typeof Monaco;
+		}
+		if (typeof globalThis !== "undefined") {
+			const monacoGlobal = (globalThis as GlobalWithMonaco).monaco;
+			if (monacoGlobal) {
+				for (const spec of seen) {
+					void loadRemoteTypes(monacoGlobal, spec);
+				}
+			}
+		}
+	}, [files, activeFile]);
 
 	return (
 		<div className="relative flex h-full w-full min-w-0">
@@ -220,6 +281,7 @@ export function EditorPane({
 				<MonacoEditor
 					// @ts-expect-error - onMount is a valid prop for MonacoEditor (https://github.com/suren-atoyan/monaco-react#usage)
 					onMount={handleMount}
+					path={activeFile?.name}
 					theme={theme === "dark" ? "vs-dark" : "light"}
 					language={language}
 					value={activeFile?.content ?? ""}

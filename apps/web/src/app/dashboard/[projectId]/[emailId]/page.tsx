@@ -9,6 +9,7 @@ import {
 	ResizablePanel,
 	ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import { Skeleton } from "@/components/ui/skeleton";
 import { prompt } from "@/lib/dialogs";
 import { confirmDeletion } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
@@ -134,6 +135,43 @@ export default function EmailEditorPage() {
 
 	function handleRun() {
 		// TODO run screenshots via trpc.runs.create
+	}
+
+	// Show skeleton placeholder while queries are loading to avoid flashing incomplete header content
+	if (emailsQuery?.isPending || latestQuery.isPending) {
+		return (
+			<div className="animate-pulse bg-background">
+				{/* Header skeleton */}
+				<div className="border-border border-b bg-background py-4 md:py-6">
+					<div className="container mx-auto flex flex-col gap-6 px-4 lg:px-6">
+						{/* Breadcrumb */}
+						<div className="flex items-center gap-2">
+							<Skeleton className="h-3 w-16" />
+							<Skeleton className="h-3 w-3" />
+							<Skeleton className="h-3 w-24" />
+							<Skeleton className="h-3 w-3" />
+							<Skeleton className="h-3 w-24" />
+						</div>
+						{/* Title and controls */}
+						<div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
+							<div className="flex items-center gap-2">
+								<Skeleton className="h-8 w-64" />
+								<Skeleton className="h-6 w-16" />
+							</div>
+							<div className="flex gap-2">
+								<Skeleton className="h-9 w-32" />
+								<Skeleton className="h-9 w-32" />
+							</div>
+						</div>
+					</div>
+				</div>
+
+				{/* Body skeleton */}
+				<div className="container mx-auto px-4 py-6 lg:px-6">
+					<Skeleton className="h-[400px] w-full" />
+				</div>
+			</div>
+		);
 	}
 
 	return (

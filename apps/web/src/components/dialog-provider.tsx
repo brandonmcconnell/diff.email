@@ -24,7 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { registerDialogHandlers } from "@/lib/dialogs";
 import type { ConfirmOptions, PromptOptions } from "@/lib/dialogs";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod/v4";
 
 // ------------------------------------------------------------------------------------
@@ -240,6 +240,7 @@ function BasicPromptDialog({
 }: BasicPromptDialogProps) {
 	const { opts } = request;
 	const [value, setValue] = useState<string>(opts.defaultValue ?? "");
+	const inputRef = useRef<HTMLInputElement | null>(null);
 
 	const ContentWrapper = dismissible ? DialogContent : AlertDialogContent;
 	const contentProps = dismissible ? { showCloseButton: false } : ({} as const);
@@ -252,12 +253,42 @@ function BasicPromptDialog({
 	const CancelComp = dismissible ? DialogClose : AlertDialogCancel;
 	const OkComp = dismissible ? Button : AlertDialogAction;
 
+	// Guarantee the input gets focus even if something else steals it right
+	// after the dialog opens (e.g., TreeView refocus after context-menu).
+	useEffect(() => {
+		if (!hideInput && inputRef.current) {
+			// Focus right away
+			inputRef.current.focus();
+			console.log("focus attempt", {
+				immediate: document.activeElement?.tagName,
+			});
+			// Focus again after a tick to override late focus restoration elsewhere
+			const id = setTimeout(() => {
+				console.log("focus after 100 ms", {
+					later: document.activeElement?.tagName,
+				});
+				if (inputRef.current) {
+					inputRef.current.focus();
+				}
+			}, 100);
+			return () => clearTimeout(id);
+		}
+	}, [hideInput]);
+
 	return (
 		<RootComp
 			open
 			onOpenChange={(open: boolean) => dismissible && !open && onResolve(null)}
 		>
-			<ContentWrapper {...contentProps}>
+			<ContentWrapper
+				{...contentProps}
+				onOpenAutoFocus={(e: Event) => {
+					e.preventDefault();
+					if (inputRef.current) {
+						inputRef.current.focus();
+					}
+				}}
+			>
 				<DialogHeader>
 					{opts.title && <TitleComp>{opts.title}</TitleComp>}
 					{opts.description && (
@@ -267,6 +298,7 @@ function BasicPromptDialog({
 				{opts.content}
 				{!hideInput && (
 					<Input
+						ref={inputRef}
 						placeholder={opts.placeholder}
 						value={value}
 						onChange={(e) => setValue(e.target.value)}

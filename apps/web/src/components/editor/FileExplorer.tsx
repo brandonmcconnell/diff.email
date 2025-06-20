@@ -155,35 +155,47 @@ export function FileExplorer({
 			(n) => n.id === candidatePath || n.id.startsWith(`${candidatePath}/`),
 		);
 
-	async function handleAddFile(parentId?: string) {
-		const name = await prompt({ title: "File name" });
-		if (!name?.trim()) return;
-		const trimmed = name.trim();
-		const fullPath = parentId ? `${parentId}/${trimmed}` : trimmed;
+	// Radix ContextMenu uses `duration-200` exit animation; delay slightly longer
+	// so the menu is fully removed (and focus released) before we open the prompt.
+	const runAfterMenuClose = (cb: () => void) => {
+		setTimeout(cb, 250); // 250ms > 200ms animation
+	};
 
-		if (hasCollision(fullPath)) {
-			window.alert("A file with that name already exists in this directory.");
-			return;
-		}
+	function handleAddFile(parentId?: string) {
+		runAfterMenuClose(async () => {
+			const name = await prompt({ title: "File name" });
+			if (!name?.trim()) return;
+			const trimmed = name.trim();
+			const fullPath = parentId ? `${parentId}/${trimmed}` : trimmed;
 
-		const node = newFileNode(fullPath);
-		setFiles([...files, node]);
-		setActiveId(fullPath);
+			if (hasCollision(fullPath)) {
+				window.alert("A file with that name already exists in this directory.");
+				return;
+			}
+
+			const node = newFileNode(fullPath);
+			setFiles([...files, node]);
+			setActiveId(fullPath);
+		});
 	}
 
-	async function handleAddFolder(parentId?: string) {
-		const name = await prompt({ title: "Directory name" });
-		if (!name?.trim()) return;
-		const trimmed = name.trim();
-		const fullPath = parentId ? `${parentId}/${trimmed}` : trimmed;
+	function handleAddFolder(parentId?: string) {
+		runAfterMenuClose(async () => {
+			const name = await prompt({ title: "Directory name" });
+			if (!name?.trim()) return;
+			const trimmed = name.trim();
+			const fullPath = parentId ? `${parentId}/${trimmed}` : trimmed;
 
-		if (hasCollision(fullPath)) {
-			window.alert("A folder with that name already exists in this directory.");
-			return;
-		}
+			if (hasCollision(fullPath)) {
+				window.alert(
+					"A folder with that name already exists in this directory.",
+				);
+				return;
+			}
 
-		const node = newFolderNode(fullPath);
-		setFiles([...files, node]);
+			const node = newFolderNode(fullPath);
+			setFiles([...files, node]);
+		});
 	}
 
 	// Drag & drop — rewrite paths in the flat list ------------------
@@ -428,36 +440,43 @@ export function FileExplorer({
 		});
 	}
 
-	async function renameNode(id: string) {
-		const node = files.find((f) => f.id === id);
-		if (!node) return;
-		const newName = await prompt({ title: "Rename", defaultValue: node.name });
-		if (!newName?.trim()) return;
+	function renameNode(id: string) {
+		runAfterMenuClose(async () => {
+			const node = files.find((f) => f.id === id);
+			if (!node) return;
+			const newName = await prompt({
+				title: "Rename",
+				defaultValue: node.name,
+			});
+			if (!newName?.trim()) return;
 
-		const trimmed = newName.trim();
-		if (trimmed === node.name) return; // no change
+			const trimmed = newName.trim();
+			if (trimmed === node.name) return; // no change
 
-		const parts = id.split("/");
-		parts[parts.length - 1] = trimmed;
-		const newId = parts.join("/");
+			const parts = id.split("/");
+			parts[parts.length - 1] = trimmed;
+			const newId = parts.join("/");
 
-		// collision check
-		if (hasCollision(newId)) {
-			window.alert("An item with that name already exists in this directory.");
-			return;
-		}
+			// collision check
+			if (hasCollision(newId)) {
+				window.alert(
+					"An item with that name already exists in this directory.",
+				);
+				return;
+			}
 
-		const updated = files.map((n) =>
-			n.id === id || n.id.startsWith(`${id}/`)
-				? {
-						...n,
-						id: newId + n.id.slice(id.length),
-						name: n.id === id ? trimmed : n.name,
-					}
-				: n,
-		);
-		setFiles(updated);
-		setActiveId(newId);
+			const updated = files.map((n) =>
+				n.id === id || n.id.startsWith(`${id}/`)
+					? {
+							...n,
+							id: newId + n.id.slice(id.length),
+							name: n.id === id ? trimmed : n.name,
+						}
+					: n,
+			);
+			setFiles(updated);
+			setActiveId(newId);
+		});
 	}
 
 	async function deleteNode(id: string) {

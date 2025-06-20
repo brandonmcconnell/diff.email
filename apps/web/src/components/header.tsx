@@ -8,6 +8,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { ModeToggle } from "./mode-toggle";
+import { Logomark } from "./pro-blocks/logomark";
 import { Button } from "./ui/button";
 import UserMenu from "./user-menu";
 
@@ -68,15 +69,16 @@ export default function Header({ className }: HeaderProps) {
 						href={session ? "/dashboard" : isHome ? "#top" : "/home"}
 						aria-label="diff.email"
 					>
-						<Logo width={128} />
+						<Logo width={128} className="max-sm:hidden" />
+						<Logomark width={32} className="sm:hidden" />
 					</Link>
 					<Button
-						variant="ghost"
-						className="flex size-9 items-center justify-center md:hidden"
+						variant="outline"
+						className="flex h-9 items-center justify-center px-3 md:hidden"
 						onClick={toggleMenu}
 						aria-label={isMenuOpen ? "Close menu" : "Open menu"}
 					>
-						{isMenuOpen ? <X /> : <Menu />}
+						<>{isMenuOpen ? <X /> : <Menu />} Menu</>
 					</Button>
 				</div>
 

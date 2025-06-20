@@ -230,22 +230,45 @@ export function PreviewPane({
 								// Use preview props if available
 								const props = Component.PreviewProps || {};
 								
-								// Import the render function from React Email
-								const { render } = await import('https://esm.sh/@react-email/render@1.0.1');
+								// Import ReactDOMServer for server-side rendering
+								const ReactDOMServer = await import('https://esm.sh/react-dom@18/server');
 								
-								// Create element and render with React Email's render function
+								// Create element with the component
 								console.log('Creating element with props:', props);
 								const element = React.createElement(Component, props);
 								
-								// Use React Email's render function
-								console.log('Rendering with React Email render function...');
-								const htmlOutput = await render(element, { pretty: true });
+								// First, try to render with ReactDOMServer to get the HTML
+								console.log('Rendering with ReactDOMServer...');
+								let htmlOutput;
+								
+								try {
+									// Render to static markup (no React IDs)
+									htmlOutput = ReactDOMServer.renderToStaticMarkup(element);
+									console.log('Successfully rendered with ReactDOMServer');
+								} catch (renderError) {
+									console.error('ReactDOMServer render error:', renderError);
+									// If direct rendering fails, try wrapping in a fragment
+									const wrappedElement = React.createElement(React.Fragment, {}, element);
+									htmlOutput = ReactDOMServer.renderToStaticMarkup(wrappedElement);
+								}
 								
 								console.log('Rendered HTML length:', htmlOutput.length);
 								
+								// Wrap in proper HTML structure
+								const fullHTML = '<!DOCTYPE html>' +
+									'<html>' +
+									'<head>' +
+									'<meta charset="utf-8">' +
+									'<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+									'</head>' +
+									'<body>' +
+									htmlOutput +
+									'</body>' +
+									'</html>';
+								
 								// Replace document with rendered HTML
 								document.open();
-								document.write(htmlOutput);
+								document.write(fullHTML);
 								document.close();
 							} catch (err) {
 								console.error('Preview error:', err);

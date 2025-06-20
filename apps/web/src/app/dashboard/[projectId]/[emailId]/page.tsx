@@ -4,6 +4,7 @@ import { PreviewPane } from "@/components/editor/PreviewPane";
 import { Toolbar } from "@/components/editor/Toolbar";
 import { LanguageBadge } from "@/components/language-badge";
 import { PageHeader } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
 import {
 	ResizableHandle,
 	ResizablePanel,
@@ -11,13 +12,17 @@ import {
 } from "@/components/ui/resizable";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { VersionHistoryDialog } from "@/components/version-history-dialog";
+import {
+	type ReadOnlyVersion,
+	VersionHistoryDialog,
+} from "@/components/version-history-dialog";
 import { prompt } from "@/lib/dialogs";
 import { confirmDeletion } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
 import { usePersistentState } from "@/utils/usePersistentState";
 import type { Client, Engine } from "@diff-email/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Split, X } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -110,12 +115,25 @@ export default function EmailEditorPage() {
 	const versionsSave = useMutation(
 		trpc.versions.save.mutationOptions({
 			onSuccess: () => {
+				// Refresh latest version, full history, and email counts
 				queryClient.invalidateQueries({
 					queryKey: trpc.versions.getLatest.queryKey({ emailId }),
+				});
+				queryClient.invalidateQueries({
+					queryKey: trpc.versions.list.queryKey({ emailId }),
+				});
+				queryClient.invalidateQueries({
+					queryKey: trpc.emails.list.queryKey({ projectId }),
 				});
 			},
 		}),
 	);
+
+	// State for read-only viewing of historical versions
+	const [readOnlyVersion, setReadOnlyVersion] =
+		useState<ReadOnlyVersion | null>(null);
+
+	const isReadOnly = readOnlyVersion !== null;
 
 	useEffect(() => {
 		if (!latestQuery.data) return;
@@ -168,9 +186,53 @@ export default function EmailEditorPage() {
 		// TODO run screenshots via trpc.runs.create
 	}
 
+	function handleViewVersion(
+		v: { id: string; html?: string | null; files?: unknown },
+		idx: number,
+	) {
+		// Save current live state only when entering read-only the first time
+		setReadOnlyVersion({
+			id: v.id,
+			index: idx,
+			html: v.html,
+			files: v.files as Record<string, string> | null,
+		});
+		if (
+			v.files &&
+			typeof v.files === "object" &&
+			Object.keys(v.files as Record<string, string>).length
+		) {
+			const fileMap = v.files as Record<string, string>;
+			setFiles(fileMap);
+			filesRef.current = fileMap;
+			setEntry("index.tsx");
+		} else {
+			const h = v.html ?? "";
+			setHtml(h);
+			htmlRef.current = h;
+		}
+	}
+
+	function exitReadOnly() {
+		// Reload latest version to restore editors
+		if (latestQuery.data) {
+			if (latestQuery.data.files) {
+				setFiles(latestQuery.data.files as Record<string, string>);
+				filesRef.current = latestQuery.data.files as Record<string, string>;
+				setEntry("index.tsx");
+			} else {
+				const h = latestQuery.data.html ?? "";
+				setHtml(h);
+				htmlRef.current = h;
+			}
+		}
+		setReadOnlyVersion(null);
+	}
+
 	// Determine dirty state
-	const isDirty =
-		language === "html"
+	const isDirty = isReadOnly
+		? false
+		: language === "html"
 			? html !== lastSavedHtml
 			: JSON.stringify(files ?? {}) !== JSON.stringify(lastSavedFiles ?? {});
 
@@ -233,20 +295,58 @@ export default function EmailEditorPage() {
 					)
 				}
 			>
-				<VersionHistoryDialog emailId={emailId} versionCount={versionCount} />
+				<VersionHistoryDialog
+					emailId={emailId}
+					versionCount={versionCount}
+					readOnlyVersion={readOnlyVersion}
+					onSelectVersion={handleViewVersion}
+					exitReadOnly={exitReadOnly}
+				/>
 			</PageHeader>
+			{isReadOnly && (
+				<div className="flex items-center justify-between bg-amber-100 px-4 py-2 text-amber-900! text-sm dark:bg-amber-950/80 dark:text-amber-600!">
+					<span className="font-medium tabular-nums">
+						Version{" "}
+						<span className="font-mono">
+							{versionCount - (readOnlyVersion?.index ?? 0)}
+						</span>
+					</span>
+					<div className="flex gap-2">
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={exitReadOnly}
+							title="Exit read-only"
+							className="flex items-center gap-1 text-[inherit]! hover:bg-amber-500/25 dark:hover:bg-amber-900! dark:hover:text-white!"
+						>
+							<X className="size-4" />
+							<span className="max-md:hidden">Exit</span>
+						</Button>
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={() => {}}
+							title="Branch from this version (coming soon)"
+							className="flex items-center gap-1 text-[inherit]! hover:bg-amber-500/25 dark:hover:bg-amber-900! dark:hover:text-white!"
+						>
+							<Split className="size-4" />
+							<span className="max-md:hidden">Branch</span>
+						</Button>
+					</div>
+				</div>
+			)}
 			{mounted && (
 				<>
 					{/* Desktop (md+) split view */}
-					<div className="hidden min-h-0 flex-1 overflow-hidden rounded-t-md border-t md:flex">
+					<div className="hidden min-h-0 flex-1 overflow-hidden border-t md:flex">
 						<ResizablePanelGroup
 							direction="horizontal"
-							className="flex flex-1 overflow-hidden rounded-t-md"
+							className="flex flex-1 overflow-hidden"
 						>
 							<ResizablePanel
 								defaultSize={50}
 								minSize={25}
-								className="overflow-visible! rounded-tl-md"
+								className="overflow-visible!"
 							>
 								{/* Render editor only when ready to avoid flash */}
 								{(() => {
@@ -264,6 +364,7 @@ export default function EmailEditorPage() {
 												setEntry(e);
 											}}
 											showSidebar={language === "jsx"}
+											readOnly={isReadOnly}
 											onSave={handleSave}
 											saveCounter={saveCounter}
 											{...(files
@@ -290,6 +391,7 @@ export default function EmailEditorPage() {
 										setConsoleVisible={setConsoleVisible}
 										onSave={handleSave}
 										isDirty={isDirty}
+										readOnly={isReadOnly}
 										onRun={handleRun}
 									/>
 									<PreviewPane
@@ -331,6 +433,7 @@ export default function EmailEditorPage() {
 											setEntry(e);
 										}}
 										showSidebar={language === "jsx"}
+										readOnly={isReadOnly}
 										onSave={handleSave}
 										saveCounter={saveCounter}
 										{...(files
@@ -378,6 +481,7 @@ export default function EmailEditorPage() {
 							setConsoleVisible={setConsoleVisible}
 							onSave={handleSave}
 							isDirty={isDirty}
+							readOnly={isReadOnly}
 							onRun={handleRun}
 						/>
 					</div>

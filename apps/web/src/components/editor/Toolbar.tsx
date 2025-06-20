@@ -31,6 +31,7 @@ type Props = {
 	}>;
 	/** Whether there are unsaved changes */
 	isDirty: boolean;
+	readOnly?: boolean;
 };
 
 export function Toolbar(props: Props) {
@@ -49,6 +50,7 @@ export function Toolbar(props: Props) {
 		setConsoleVisible,
 		consoleLogs,
 		isDirty,
+		readOnly = false,
 	} = props;
 
 	const errorCount = consoleLogs.filter((l) => l.method === "error").length;
@@ -160,10 +162,11 @@ export function Toolbar(props: Props) {
 					type="button"
 					className={cn(
 						"relative flex items-center rounded border p-1",
-						!isDirty && "bg-muted text-muted-foreground",
+						(!isDirty || readOnly) && "bg-muted text-muted-foreground",
 					)}
-					onClick={onSave}
-					title="Save version"
+					onClick={readOnly ? undefined : onSave}
+					disabled={readOnly}
+					title={readOnly ? "Read-only" : "Save version"}
 				>
 					<Save size={16} />
 					<div

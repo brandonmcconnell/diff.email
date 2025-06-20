@@ -23,6 +23,8 @@ interface Props {
 	onSave?: () => void;
 	/** Incrementing counter from parent after a successful save; triggers dirty reset */
 	saveCounter?: number;
+	/** Whether editor is read-only */
+	readOnly?: boolean;
 }
 
 const MonacoEditor = dynamic(
@@ -39,6 +41,7 @@ export function EditorPane({
 	initialEntry,
 	onSave,
 	saveCounter,
+	readOnly = false,
 }: Props) {
 	const { theme } = useComputedTheme();
 
@@ -88,6 +91,7 @@ export function EditorPane({
 	}, [activeId, files, onChange, onFilesChange]);
 
 	function handleEditorChange(v?: string) {
+		if (readOnly) return; // ignore edits in read-only mode
 		setFiles((prev) =>
 			prev.map((f) =>
 				f.id === activeId ? { ...f, content: v ?? "", dirty: true } : f,
@@ -291,6 +295,7 @@ export function EditorPane({
 						automaticLayout: true,
 						fontSize: 14,
 						minimap: { enabled: false },
+						readOnly,
 					}}
 				/>
 				{/* <Editor

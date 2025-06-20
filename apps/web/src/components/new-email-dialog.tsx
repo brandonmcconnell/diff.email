@@ -80,14 +80,14 @@ export function NewEmailDialog({ open, onOpenChange, onCreate }: Props) {
 			label: "HTML",
 			description: "Write raw HTML markup.",
 			icon: CodeXml,
-			activeStyles: "bg-emerald-100 border-emerald-600 dark:bg-emerald-900/20",
+			activeStyles: "bg-orange-100 border-orange-600 dark:bg-orange-900/20",
 		},
 		{
 			lang: "jsx",
 			label: "JSX",
 			description: "Use React Email JSX syntax.",
 			icon: Atom,
-			activeStyles: "bg-violet-100 border-violet-600 dark:bg-violet-900/20",
+			activeStyles: "bg-indigo-100 border-indigo-600 dark:bg-indigo-900/20",
 		},
 	] as const;
 

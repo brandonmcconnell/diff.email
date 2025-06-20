@@ -116,6 +116,11 @@ export function PreviewPane({
 					<script>
 						// Inform parent to clear previous logs
 						window.parent.postMessage({type:'console_clear'}, '*');
+						
+						// Set up process.env before any module loads
+						if (typeof process === 'undefined') {
+							window.process = { env: { VERCEL_URL: 'localhost:3000', NODE_ENV: 'development' } };
+						}
 
 						(function(){
 							const METHODS=['log','info','warn','error','debug'];
@@ -149,8 +154,26 @@ export function PreviewPane({
 					</script>
 					<div id="root"></div>
 					<script type="module">
+						// First, let's debug the bundle content
 						(async () => {
 							try {
+								// Fetch and analyze the bundle first
+								const response = await fetch('${blobUrl}');
+								const bundleContent = await response.text();
+								
+								// Split into lines for debugging
+								const lines = bundleContent.split('\\n');
+								console.log('Bundle has', lines.length, 'lines total');
+								
+								// Log lines around line 17 (where the error occurs)
+								console.log('Lines around line 17:');
+								for (let i = 14; i < 20 && i < lines.length; i++) {
+									console.log(\`Line \${i + 1}: \${lines[i]}\`);
+								}
+								
+								// Now proceed with the actual import
+								console.log('Attempting to import bundle...');
+								
 								// Import React modules first
 								const React = (await import('https://esm.sh/react@18')).default || (await import('https://esm.sh/react@18'));
 								const ReactJSXRuntime = await import('https://esm.sh/react@18/jsx-runtime');
@@ -202,6 +225,18 @@ export function PreviewPane({
 								document.close();
 							} catch (err) {
 								console.error('Preview error:', err);
+								
+								// If it's a syntax error, try to show more context
+								if (err instanceof SyntaxError) {
+									try {
+										const response = await fetch('${blobUrl}');
+										const bundleContent = await response.text();
+										console.error('Bundle content preview (first 500 chars):', bundleContent.substring(0, 500));
+									} catch (e) {
+										console.error('Could not fetch bundle for debugging');
+									}
+								}
+								
 								const errorHtml = '<div style="padding: 20px; font-family: monospace;">' +
 									'<h3 style="color: red;">Preview Error</h3>' +
 									'<pre style="white-space: pre-wrap; color: #333;">' + 

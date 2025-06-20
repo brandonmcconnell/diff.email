@@ -139,6 +139,7 @@ export async function bundle(
 			bundle: true,
 			write: false,
 			format: "esm",
+			target: "es2020", // Add explicit target for better compatibility
 			sourcemap: false, // Disable source maps entirely
 			plugins: [inMemPlugin],
 			jsx: "automatic",
@@ -181,10 +182,9 @@ export async function bundle(
 		}
 
 		// Prepend process.env polyfill to handle templates that reference it at module scope
-		const processPolyfill = `
-// Process.env polyfill for React Email templates
+		const processPolyfill = `// Process.env polyfill for React Email templates
 if (typeof process === 'undefined') {
-	globalThis.process = { env: { VERCEL_URL: 'localhost:3000', NODE_ENV: 'development' } };
+	var process = { env: { VERCEL_URL: 'example.vercel.app', NODE_ENV: 'development' } };
 }
 `;
 

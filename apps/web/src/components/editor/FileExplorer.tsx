@@ -26,8 +26,14 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { confirm, prompt } from "@/lib/dialogs";
-import { FilePlus2, FolderPlus, MoreVertical } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import {
+	CopyMinus,
+	CopyPlus,
+	FilePlus2,
+	FolderPlus,
+	MoreVertical,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "../ui/button";
 
 interface Props {
@@ -46,6 +52,52 @@ export function FileExplorer({
 	console.log("files", files);
 	const tree = useMemo(() => buildFileTree(files), [files]);
 	console.log("tree", tree);
+
+	// Expand / collapse controls -----------------------------------
+	const [expandAll, setExpandAll] = useState(false);
+	const [treeKey, setTreeKey] = useState(0);
+	const [anyExpanded, setAnyExpanded] = useState(false);
+	const treeContainerRef = useRef<HTMLDivElement>(null);
+
+	const refreshAnyExpanded = () => {
+		if (!treeContainerRef.current) {
+			setAnyExpanded(false);
+			return;
+		}
+		// Check ONLY top-level accordion items
+		const topLevelOpen = treeContainerRef.current.querySelector(
+			'[role="tree"] > ul > li [data-state="open"]',
+		);
+		setAnyExpanded(!!topLevelOpen);
+	};
+
+	useEffect(() => {
+		refreshAnyExpanded();
+		const target = treeContainerRef.current;
+		if (!target) return;
+		const observer = new MutationObserver(() => refreshAnyExpanded());
+		observer.observe(target, {
+			subtree: true,
+			attributes: true,
+			attributeFilter: ["data-state"],
+		});
+		return () => observer.disconnect();
+	}, [treeKey]);
+
+	const collapseAllVisible = () => {
+		setExpandAll(false);
+		setTreeKey((k) => k + 1);
+		setAnyExpanded(false);
+	};
+
+	const expandAllVisible = () => {
+		setExpandAll(true);
+		setTreeKey((k) => k + 1);
+		setAnyExpanded(true);
+	};
+
+	const selectedIdForTree = expandAll ? activeId : undefined;
+
 	// Helpers --------------------------------------------------------
 	const newFileNode = (fullPath: string): FileNode => ({
 		id: fullPath,
@@ -188,15 +240,52 @@ export function FileExplorer({
 						<p>New directory</p>
 					</TooltipContent>
 				</Tooltip>
+
+				{anyExpanded ? (
+					/* Collapse All Button */
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								variant="outline"
+								onClick={collapseAllVisible}
+								size="icon"
+								className="size-7"
+							>
+								<CopyMinus className="size-4.5" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>
+							<p>Collapse all</p>
+						</TooltipContent>
+					</Tooltip>
+				) : (
+					/* Expand All Button */
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								variant="outline"
+								onClick={expandAllVisible}
+								size="icon"
+								className="size-7"
+							>
+								<CopyPlus className="size-4.5" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>
+							<p>Expand all</p>
+						</TooltipContent>
+					</Tooltip>
+				)}
 			</div>
 			<ContextMenu>
 				<ContextMenuTrigger asChild>
-					<div className="flex-1 overflow-y-auto">
+					<div ref={treeContainerRef} className="flex-1 overflow-y-auto">
 						<TreeView
+							key={treeKey}
 							data={decorateWithActions(tree)}
-							initialSelectedItemId={activeId}
+							initialSelectedItemId={selectedIdForTree}
 							onSelectChange={handleSelectChange}
-							expandAll
+							expandAll={expandAll}
 							defaultNodeIcon={undefined}
 							defaultLeafIcon={undefined}
 							onDocumentDrag={handleDocumentDrag}

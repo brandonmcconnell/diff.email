@@ -19,8 +19,8 @@ export function LanguageBadge({
 			variant="secondary"
 			className={cn(
 				"rounded-full bg-current/15 font-mono font-semibold tracking-wide dark:bg-current/25",
-				language === "html" && "text-emerald-600 dark:text-emerald-400",
-				language === "jsx" && "text-violet-600 dark:text-violet-400",
+				language === "html" && "text-orange-600 dark:text-orange-400",
+				language === "jsx" && "text-indigo-600 dark:text-indigo-500",
 				badgeOnly && "aspect-square p-1",
 				{
 					sm: "text-xs",

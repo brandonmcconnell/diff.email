@@ -148,63 +148,71 @@ export function DataList<T extends BasicItem>({
 				className={cn("grid gap-4", view === "list" && "md:hidden")}
 				style={{ gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))" }}
 			>
-				{items.map((item) => (
-					<div
-						key={item.id}
-						className="grid grid-cols-[1fr_auto] grid-rows-[auto_auto_auto] gap-y-1 rounded-md border p-4"
-					>
-						{/* Name link */}
-						<Link
-							href={href(item)}
-							className="col-start-1 row-start-1 truncate font-medium"
+				{items.map((item) => {
+					return (
+						<div
+							key={item.id}
+							className="flex min-h-[125px] flex-col gap-2 rounded-md border p-4"
 						>
-							{render ? render(item, "grid") : item.name}
-						</Link>
-						{/* Actions */}
-						{hasActions && (
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<Button
-										variant="outline"
-										size="icon"
-										className="justify-self-end"
-									>
-										<EllipsisVertical className="size-4" />
-									</Button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent align="end">
-									{actions?.map((a) => (
-										<DropdownMenuItem
-											key={a.label}
-											className={a.className}
-											onSelect={() => a.onSelect(item)}
-										>
-											{a.label}
-										</DropdownMenuItem>
-									))}
-								</DropdownMenuContent>
-							</DropdownMenu>
-						)}
-						{/* Detail label (optional third line) */}
-						{cardColumnMap.description && (
-							<span className="col-span-2 text-sm">
-								{cardColumnMap.description.render(item)}
-							</span>
-						)}
-						{/* Description row */}
-						{cardColumnMap.detailLabel && (
-							<span className="col-span-2 text-muted-foreground text-xs">
-								{cardColumnMap.detailLabel.render(item)}
-							</span>
-						)}
-						{/* Detail row */}
-						{cardColumnMap.detail && (
-							<span className="col-span-2 text-sm">
-								{cardColumnMap.detail.render(item)}
-							</span>
-						)}
-					</div>
-				))}
+							{/* Name link */}
+							<Link href={href(item)} className="truncate font-medium">
+								{render ? render(item, "grid") : item.name}
+							</Link>
+
+							{/* Description (optional) */}
+							{cardColumnMap.description && (
+								<span className="mt-0.5 mb-1 text-sm">
+									{cardColumnMap.description.render(item)}
+								</span>
+							)}
+
+							{/* Bottom row: details + actions */}
+							<div className="mt-auto flex items-end justify-between gap-2">
+								{/* Details stack (left) */}
+								{(cardColumnMap.detailLabel || cardColumnMap.detail) && (
+									<div className="flex flex-col">
+										{cardColumnMap.detailLabel && (
+											<span className="text-muted-foreground text-xs">
+												{cardColumnMap.detailLabel.render(item)}
+											</span>
+										)}
+										{cardColumnMap.detail && (
+											<span className="text-sm">
+												{cardColumnMap.detail.render(item)}
+											</span>
+										)}
+									</div>
+								)}
+
+								{/* Actions (right) */}
+								{hasActions && (
+									<DropdownMenu>
+										<DropdownMenuTrigger asChild>
+											<Button
+												variant="outline"
+												size="icon"
+												className="shrink-0"
+											>
+												<EllipsisVertical className="size-4" />
+											</Button>
+										</DropdownMenuTrigger>
+										<DropdownMenuContent align="end">
+											{actions?.map((a) => (
+												<DropdownMenuItem
+													key={a.label}
+													className={a.className}
+													onSelect={() => a.onSelect(item)}
+												>
+													{a.label}
+												</DropdownMenuItem>
+											))}
+										</DropdownMenuContent>
+									</DropdownMenu>
+								)}
+							</div>
+						</div>
+					);
+				})}
 			</div>
 
 			<div

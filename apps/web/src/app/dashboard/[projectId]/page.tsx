@@ -213,10 +213,10 @@ export default function ProjectPage() {
 				<DataList
 					items={filteredEmails}
 					render={(e, view) => (
-						<div className="flex items-center gap-2">
-							<span>{e.name}</span>
+						<div className="flex w-full items-center justify-between gap-2">
+							<div className="truncate">{e.name}</div>
 							{view === "grid" && (
-								<>
+								<div className="flex items-center">
 									<LanguageBadge
 										language={e.language}
 										className="max-md:hidden"
@@ -226,7 +226,7 @@ export default function ProjectPage() {
 										badgeOnly
 										className="md:hidden"
 									/>
-								</>
+								</div>
 							)}
 						</div>
 					)}
@@ -260,6 +260,14 @@ export default function ProjectPage() {
 						{
 							label: "Language",
 							render: (item) => <LanguageBadge language={item.language} />,
+						},
+						{
+							label: "Description",
+							render: (item) =>
+								Math.random() > 0.5
+									? "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+									: null,
+							dataCardProperty: "description",
 						},
 						{
 							label: "Created",

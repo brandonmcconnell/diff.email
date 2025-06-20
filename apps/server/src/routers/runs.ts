@@ -1,5 +1,5 @@
 import { and, desc, eq } from "drizzle-orm";
-import { z } from "zod";
+import { z } from "zod/v4";
 import { db } from "../db";
 import { run, screenshot, version } from "../db/schema/core";
 import { screenshotsQueue } from "../lib/queue";

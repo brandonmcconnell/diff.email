@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import type { z } from "zod";
+import type * as z from "zod/v4";
 
 /**
  * Public options for confirm() helper.

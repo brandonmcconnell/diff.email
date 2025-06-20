@@ -3,7 +3,7 @@ import { defaultHtmlTemplate, defaultJsxTemplate } from "@diff-email/shared";
 import { eq } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import type { CreateEmailResponse } from "resend";
-import { z } from "zod";
+import { z } from "zod/v4";
 import { db } from "../db";
 import { user } from "../db/schema/auth";
 import { email, project, run, sentEmail, version } from "../db/schema/core";

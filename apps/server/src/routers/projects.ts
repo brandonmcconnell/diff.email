@@ -1,5 +1,5 @@
 import { eq, sql } from "drizzle-orm";
-import { z } from "zod";
+import { z } from "zod/v4";
 import { db } from "../db";
 import { user } from "../db/schema/auth";
 import { email, project } from "../db/schema/core";

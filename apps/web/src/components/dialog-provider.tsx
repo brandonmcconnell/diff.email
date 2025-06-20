@@ -25,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import { registerDialogHandlers } from "@/lib/dialogs";
 import type { ConfirmOptions, PromptOptions } from "@/lib/dialogs";
 import { useCallback, useEffect, useState } from "react";
+import { z } from "zod/v4";
 
 // ------------------------------------------------------------------------------------
 // Internal types
@@ -318,7 +319,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 // ------------ FormPromptDialog -----------------------------
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+
+type FormValues = Record<string, unknown>;
 
 type FormPromptDialogProps = {
 	request: PromptRequest;
@@ -327,10 +329,10 @@ type FormPromptDialogProps = {
 
 function FormPromptDialog({ request, onResolve }: FormPromptDialogProps) {
 	const { opts } = request;
-	const schema = opts.schema as z.ZodObject<Record<string, z.ZodTypeAny>>;
+	const schema = opts.schema as z.ZodObject<Record<string, z.ZodType<unknown>>>;
 	const dismissible = opts.dismissible ?? true;
 
-	const form = useForm<Record<string, unknown>>({
+	const form = useForm<FormValues>({
 		resolver: zodResolver(schema),
 		defaultValues: opts.defaultValues as Record<string, unknown> | undefined,
 	});
@@ -371,7 +373,14 @@ function FormPromptDialog({ request, onResolve }: FormPromptDialogProps) {
 							<FormItem>
 								<FormLabel className="capitalize">{name}</FormLabel>
 								<FormControl>
-									<Input type={inputType} {...field} />
+									<Input
+										type={inputType}
+										value={field.value == null ? "" : String(field.value)}
+										onChange={(e) => field.onChange(e.target.value)}
+										onBlur={field.onBlur}
+										name={field.name}
+										ref={field.ref}
+									/>
 								</FormControl>
 								<FormMessage />
 							</FormItem>
@@ -390,8 +399,8 @@ function FormPromptDialog({ request, onResolve }: FormPromptDialogProps) {
 							<FormItem className="flex flex-row items-start space-x-2 space-y-0">
 								<FormControl>
 									<Checkbox
-										checked={field.value}
-										onCheckedChange={field.onChange}
+										checked={Boolean(field.value)}
+										onCheckedChange={(v) => field.onChange(v)}
 									/>
 								</FormControl>
 								<FormLabel className="capitalize">{name}</FormLabel>
@@ -402,16 +411,8 @@ function FormPromptDialog({ request, onResolve }: FormPromptDialogProps) {
 				);
 			}
 
-			if (
-				fieldSchema instanceof z.ZodEnum ||
-				fieldSchema instanceof z.ZodNativeEnum
-			) {
-				const enumLike = fieldSchema as unknown as {
-					options?: string[];
-					_def?: { values: Record<string, unknown> };
-				};
-				const options =
-					enumLike.options ?? Object.values(enumLike._def?.values ?? {});
+			if (fieldSchema instanceof z.ZodEnum) {
+				const options = [...fieldSchema.options];
 				return (
 					<FormField
 						key={name}
@@ -423,20 +424,26 @@ function FormPromptDialog({ request, onResolve }: FormPromptDialogProps) {
 								<FormControl>
 									<RadioGroup
 										onValueChange={field.onChange}
-										value={field.value}
+										value={typeof field.value === "string" ? field.value : ""}
 										className="grid gap-2"
 									>
-										{options.map((opt: string) => (
-											<div key={opt} className="flex items-center space-x-2">
-												<RadioGroupItem value={opt} />
-												<Label
-													className="capitalize"
-													htmlFor={`${name}-${opt}`}
+										{options.map((opt) => {
+											const optStr = String(opt);
+											return (
+												<div
+													key={optStr}
+													className="flex items-center space-x-2"
 												>
-													{opt}
-												</Label>
-											</div>
-										))}
+													<RadioGroupItem value={optStr} />
+													<Label
+														className="capitalize"
+														htmlFor={`${name}-${optStr}`}
+													>
+														{optStr}
+													</Label>
+												</div>
+											);
+										})}
 									</RadioGroup>
 								</FormControl>
 								<FormMessage />
@@ -448,16 +455,13 @@ function FormPromptDialog({ request, onResolve }: FormPromptDialogProps) {
 
 			if (
 				fieldSchema instanceof z.ZodArray &&
-				(fieldSchema.element instanceof z.ZodEnum ||
-					fieldSchema.element instanceof z.ZodNativeEnum)
+				fieldSchema.element instanceof z.ZodEnum
 			) {
-				const elemEnumLike = fieldSchema.element as unknown as {
-					options?: string[];
-					_def?: { values: Record<string, unknown> };
-				};
+				const elemElement = fieldSchema.element;
 				const options =
-					elemEnumLike.options ??
-					Object.values(elemEnumLike._def?.values ?? {});
+					"options" in elemElement
+						? [...(elemElement as { options: readonly string[] }).options]
+						: [];
 				return (
 					<FormField
 						key={name}
@@ -468,27 +472,40 @@ function FormPromptDialog({ request, onResolve }: FormPromptDialogProps) {
 								<FormLabel className="capitalize">{name}</FormLabel>
 								<FormControl>
 									<div className="grid gap-2">
-										{options.map((opt: string) => (
-											<div key={opt} className="flex items-center space-x-2">
-												<Checkbox
-													checked={field.value?.includes(opt)}
-													onCheckedChange={(checked) => {
-														const current: string[] = field.value ?? [];
-														if (checked) {
-															field.onChange([...current, opt]);
-														} else {
-															field.onChange(current.filter((v) => v !== opt));
-														}
-													}}
-												/>
-												<Label
-													className="capitalize"
-													htmlFor={`${name}-${opt}`}
+										{options.map((opt) => {
+											const optStr = String(opt);
+											return (
+												<div
+													key={optStr}
+													className="flex items-center space-x-2"
 												>
-													{opt}
-												</Label>
-											</div>
-										))}
+													<Checkbox
+														checked={
+															Array.isArray(field.value) &&
+															field.value.includes(optStr)
+														}
+														onCheckedChange={(checked) => {
+															const current = Array.isArray(field.value)
+																? [...field.value]
+																: [];
+															if (checked) {
+																field.onChange([...current, optStr]);
+															} else {
+																field.onChange(
+																	current.filter((v) => v !== optStr),
+																);
+															}
+														}}
+													/>
+													<Label
+														className="capitalize"
+														htmlFor={`${name}-${optStr}`}
+													>
+														{optStr}
+													</Label>
+												</div>
+											);
+										})}
 									</div>
 								</FormControl>
 								<FormMessage />
@@ -508,7 +525,13 @@ function FormPromptDialog({ request, onResolve }: FormPromptDialogProps) {
 						<FormItem>
 							<FormLabel className="capitalize">{name}</FormLabel>
 							<FormControl>
-								<Input {...field} />
+								<Input
+									value={field.value == null ? "" : String(field.value)}
+									onChange={(e) => field.onChange(e.target.value)}
+									onBlur={field.onBlur}
+									name={field.name}
+									ref={field.ref}
+								/>
 							</FormControl>
 							<FormMessage />
 						</FormItem>

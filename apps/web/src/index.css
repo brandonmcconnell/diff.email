@@ -19,6 +19,8 @@ body {
 	}
 }
 
+@custom-variant zen (&:where(.zen-mode, .zen-mode *));
+
 :root {
 	--radius: 0.625rem;
 	--background: oklch(1 0 0);
@@ -258,4 +260,23 @@ html {
 		--vscode-editor-foreground: var(--foreground);
 		--vscode-editor-line-height: 1.5;
 	}
+}
+
+/* =====================
+   Zen Mode Styles
+   When <body> has the "zen-mode" class, hide top navigation/header and page header
+   and remove extra top padding so the editor fills the viewport.
+===================== */
+body.zen-mode nav {
+	display: none !important;
+}
+
+body.zen-mode .page-header {
+	display: none !important;
+}
+
+/* Root layout grid container adds pt-16 (4rem) to offset fixed header.
+   Override to remove when in zen mode so content stretches to top. */
+body.zen-mode .pt-16 {
+	padding-top: 0 !important;
 }

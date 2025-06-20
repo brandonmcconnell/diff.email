@@ -155,7 +155,7 @@ export function FileExplorer({
 			flattenNodes(files).some(
 				(n) => n.id === candidatePath || n.id.startsWith(`${candidatePath}/`),
 			),
-		[files],
+		[files, flattenNodes],
 	);
 
 	// Radix ContextMenu uses `duration-200` exit animation; delay slightly longer

@@ -167,11 +167,11 @@ export function EditorPane({
 			//   1. A catch-all ambient module declaration
 			//   2. Diagnostic ignore list for common codes (2307, 7016, 2305)
 			// ------------------------------------------------------------------
-			const wildcardDecl = `declare module "*" {\n  const anyExport: any;\n  export default anyExport;\n}`;
-			monaco.languages.typescript.typescriptDefaults.addExtraLib(
-				wildcardDecl,
-				"file:///node_modules/@types/__wildcard__.d.ts",
-			);
+			// const wildcardDecl = `declare module "*" {\n  const anyExport: any;\n  export default anyExport;\n}`;
+			// monaco.languages.typescript.typescriptDefaults.addExtraLib(
+			// 	wildcardDecl,
+			// 	"file:///node_modules/@types/__wildcard__.d.ts",
+			// );
 
 			monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
 				diagnosticCodesToIgnore: [2307, 7016, 2305, 2614, 2304],

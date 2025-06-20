@@ -5,12 +5,15 @@ import { CLIENTS, type Client, ENGINES, type Engine } from "@diff-email/shared";
 import {
 	Check,
 	ImageIcon,
+	Maximize2,
+	Minimize2,
 	Moon,
 	PlayIcon,
 	Save,
 	Sun,
 	Terminal,
 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 
 type Props = {
 	engine: Engine;
@@ -65,6 +68,28 @@ export function Toolbar(props: Props) {
 	];
 	const consoleBadgeClasses =
 		"flex h-4 min-w-4 px-1 items-center justify-center rounded-full text-[10px] text-white";
+
+	// Local zen mode state (not persisted)
+	const [zenMode, setZenMode] = useState<boolean>(
+		typeof document !== "undefined"
+			? document.body.classList.contains("zen-mode")
+			: false,
+	);
+	const toggleZenMode = useCallback(
+		() => setZenMode((prev) => !prev),
+		[setZenMode],
+	);
+
+	useEffect(() => {
+		if (typeof document !== "undefined") {
+			document.body.classList[zenMode ? "add" : "remove"]("zen-mode");
+		}
+		return () => {
+			if (typeof document !== "undefined") {
+				document.body.classList.remove("zen-mode");
+			}
+		};
+	}, [zenMode]);
 
 	return (
 		<div className="flex items-center gap-2 border-b px-2 py-1 text-sm max-md:pb-safe-offset-1">
@@ -156,6 +181,16 @@ export function Toolbar(props: Props) {
 								</span>
 							),
 					)}
+				</button>
+
+				{/* Zen mode toggle */}
+				<button
+					type="button"
+					className="rounded border p-1"
+					onClick={toggleZenMode}
+					title={zenMode ? "Exit Zen mode" : "Enter Zen mode"}
+				>
+					{zenMode ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
 				</button>
 
 				<button

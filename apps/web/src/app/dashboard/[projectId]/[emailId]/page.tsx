@@ -274,7 +274,7 @@ export default function EmailEditorPage() {
 	}
 
 	return (
-		<div className="flex h-[calc(100vh_-_4rem)] w-full flex-col">
+		<div className="flex h-[calc(100vh_-_4rem)] zen:h-svh w-full flex-col">
 			<PageHeader
 				data={{ id: emailId, name: emailName, projectId, type: "email" }}
 				subtitle="Edit email document"
@@ -338,10 +338,10 @@ export default function EmailEditorPage() {
 			{mounted && (
 				<>
 					{/* Desktop (md+) split view */}
-					<div className="hidden min-h-0 flex-1 overflow-hidden border-t md:flex">
+					<div className="overflow-visible! hidden min-h-0 flex-1 border-t md:flex">
 						<ResizablePanelGroup
 							direction="horizontal"
-							className="flex flex-1 overflow-hidden"
+							className="overflow-visible! flex flex-1"
 						>
 							<ResizablePanel
 								defaultSize={50}

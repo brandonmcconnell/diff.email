@@ -2,7 +2,7 @@
 import type { FileNode } from "@/components/tree-view";
 import { useComputedTheme } from "@/hooks/useComputedTheme";
 import { cn } from "@/lib/utils";
-import { Menu } from "lucide-react";
+import { Menu, PanelLeftOpen } from "lucide-react";
 import type * as Monaco from "monaco-editor";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
@@ -60,7 +60,8 @@ export function EditorPane({
 		initialEntry ??
 			(initialFiles ? Object.keys(initialFiles)[0] : "index.html"),
 	);
-	const [sidebarOpen, setSidebarOpen] = useState(false);
+	const [sidebarOpen, setSidebarOpen] = useState(false); // mobile overlay
+	const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // desktop collapse
 
 	const prevMapJson = React.useRef<string>("");
 	useEffect(() => {
@@ -166,7 +167,7 @@ export function EditorPane({
 
 	return (
 		<div className="relative flex h-full w-full min-w-0">
-			{showSidebar && (
+			{showSidebar && !sidebarCollapsed && (
 				<>
 					{/* Sidebar */}
 					<div
@@ -180,10 +181,11 @@ export function EditorPane({
 							activeId={activeId}
 							setActiveId={setActiveId}
 							setFiles={setFiles}
+							onCollapse={() => setSidebarCollapsed(true)}
 						/>
 					</div>
 
-					{/* Toggle button for mobile */}
+					{/* Mobile toggle button (hide/show overlay) */}
 					<button
 						type="button"
 						className="md:hidden! absolute top-2 left-2 z-30 rounded border bg-background p-1 shadow"
@@ -192,6 +194,17 @@ export function EditorPane({
 						<Menu className="size-4" />
 					</button>
 				</>
+			)}
+
+			{/* Open sidebar button when collapsed */}
+			{showSidebar && sidebarCollapsed && (
+				<button
+					type="button"
+					className="absolute top-2 left-2 z-30 rounded border bg-background p-1 shadow dark:bg-white/10"
+					onClick={() => setSidebarCollapsed(false)}
+				>
+					<PanelLeftOpen className="size-4" />
+				</button>
 			)}
 
 			{/* Editor */}

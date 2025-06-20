@@ -20,18 +20,23 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { confirm, prompt } from "@/lib/dialogs";
+import { cn } from "@/lib/utils";
 import {
 	CopyMinus,
 	CopyPlus,
 	FilePlus2,
 	FolderPlus,
 	MoreVertical,
+	PanelLeftClose,
+	Search as SearchIcon,
+	SearchX,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "../ui/button";
@@ -41,6 +46,7 @@ interface Props {
 	activeId: string;
 	setActiveId: (id: string) => void;
 	setFiles: (files: FileNode[]) => void;
+	onCollapse?: () => void;
 }
 
 export function FileExplorer({
@@ -48,15 +54,19 @@ export function FileExplorer({
 	activeId,
 	setActiveId,
 	setFiles,
+	onCollapse,
 }: Props) {
 	console.log("files", files);
-	const tree = useMemo(() => buildFileTree(files), [files]);
-	console.log("tree", tree);
 
 	// Expand / collapse controls -----------------------------------
 	const [expandAll, setExpandAll] = useState(false);
 	const [treeKey, setTreeKey] = useState(0);
 	const [anyExpanded, setAnyExpanded] = useState(false);
+
+	// Search / filter ----------------------------------------------
+	const [searchActive, setSearchActive] = useState(false);
+	const [searchQuery, setSearchQuery] = useState("");
+
 	const treeContainerRef = useRef<HTMLDivElement>(null);
 
 	const refreshAnyExpanded = () => {
@@ -97,6 +107,21 @@ export function FileExplorer({
 	};
 
 	const selectedIdForTree = expandAll ? activeId : undefined;
+
+	// Derive list based on search query
+	const displayedFiles = useMemo(() => {
+		if (!searchActive || !searchQuery.trim()) return files;
+		const q = searchQuery.toLowerCase();
+		const matches = (n: FileNode): boolean => {
+			if (n.name.toLowerCase().includes(q)) return true;
+			if (!n.children && n.content && n.content.toLowerCase().includes(q))
+				return true;
+			return false;
+		};
+		return files.filter(matches);
+	}, [files, searchActive, searchQuery]);
+
+	const tree = useMemo(() => buildFileTree(displayedFiles), [displayedFiles]);
 
 	// Helpers --------------------------------------------------------
 	const newFileNode = (fullPath: string): FileNode => ({
@@ -206,77 +231,141 @@ export function FileExplorer({
 	return (
 		<div className="@container flex h-full flex-col">
 			{/* Top toolbar */}
-			<div className="flex justify-end gap-0.5">
-				{/* New File Button with Tooltip */}
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<Button
-							variant="ghost"
-							onClick={() => handleAddFile()}
-							size="icon"
-							className="size-7 text-foreground/50 transition-colors hover:text-foreground"
-						>
-							<FilePlus2 className="size-4.5" />
-						</Button>
-					</TooltipTrigger>
-					<TooltipContent>
-						<p>New file</p>
-					</TooltipContent>
-				</Tooltip>
-
-				{/* New Directory Button with Tooltip */}
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<Button
-							variant="ghost"
-							onClick={() => handleAddFolder()}
-							size="icon"
-							className="size-7 text-foreground/50 transition-colors hover:text-foreground"
-						>
-							<FolderPlus className="size-4.5" />
-						</Button>
-					</TooltipTrigger>
-					<TooltipContent>
-						<p>New directory</p>
-					</TooltipContent>
-				</Tooltip>
-
-				{anyExpanded ? (
-					/* Collapse All Button */
+			<div className="flex justify-between">
+				<div className="flex justify-end gap-0.5">
+					{/* Collapse FileTree sidebar */}
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button
 								variant="ghost"
-								onClick={collapseAllVisible}
 								size="icon"
-								className="size-7 text-foreground/50 transition-colors hover:text-foreground"
+								onClick={onCollapse}
+								className="size-7 text-foreground opacity-50 transition-opacity ease-out hover:opacity-100"
 							>
-								<CopyMinus className="size-4.5" />
+								<PanelLeftClose className="size-4.5" />
 							</Button>
 						</TooltipTrigger>
 						<TooltipContent>
-							<p>Collapse all</p>
+							<p>Filter files</p>
 						</TooltipContent>
 					</Tooltip>
-				) : (
-					/* Expand All Button */
+
+					{/* Search Button */}
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button
 								variant="ghost"
-								onClick={expandAllVisible}
 								size="icon"
-								className="size-7 text-foreground/50 transition-colors hover:text-foreground"
+								onClick={() => {
+									setSearchActive((prev) => {
+										const next = !prev;
+										if (!next) setSearchQuery("");
+										return next;
+									});
+								}}
+								className={cn(
+									"size-7 text-foreground opacity-50 transition-opacity ease-out hover:opacity-100",
+									searchActive && "opacity-100",
+								)}
 							>
-								<CopyPlus className="size-4.5" />
+								{searchActive ? (
+									<SearchX className="size-4.5" />
+								) : (
+									<SearchIcon className="size-4.5" />
+								)}
 							</Button>
 						</TooltipTrigger>
 						<TooltipContent>
-							<p>Expand all</p>
+							<p>Filter files</p>
 						</TooltipContent>
 					</Tooltip>
-				)}
+				</div>
+				<div className="flex justify-end gap-0.5">
+					{/* New File Button with Tooltip */}
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								variant="ghost"
+								onClick={() => handleAddFile()}
+								size="icon"
+								className="size-7 text-foreground opacity-50 transition-opacity ease-out hover:opacity-100"
+							>
+								<FilePlus2 className="size-4.5" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>
+							<p>New file</p>
+						</TooltipContent>
+					</Tooltip>
+
+					{/* New Directory Button with Tooltip */}
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								variant="ghost"
+								onClick={() => handleAddFolder()}
+								size="icon"
+								className="size-7 text-foreground opacity-50 transition-opacity ease-out hover:opacity-100"
+							>
+								<FolderPlus className="size-4.5" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>
+							<p>New directory</p>
+						</TooltipContent>
+					</Tooltip>
+
+					{anyExpanded ? (
+						/* Collapse All Button */
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									onClick={collapseAllVisible}
+									size="icon"
+									className="size-7 text-foreground opacity-50 transition-opacity ease-out hover:opacity-100"
+								>
+									<CopyMinus className="size-4.5" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>
+								<p>Collapse all</p>
+							</TooltipContent>
+						</Tooltip>
+					) : (
+						/* Expand All Button */
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									onClick={expandAllVisible}
+									size="icon"
+									className="size-7 text-foreground opacity-50 transition-opacity ease-out hover:opacity-100"
+								>
+									<CopyPlus className="size-4.5" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>
+								<p>Expand all</p>
+							</TooltipContent>
+						</Tooltip>
+					)}
+				</div>
 			</div>
+
+			{/* Search input */}
+			{searchActive && (
+				<div className="px-1 py-1">
+					<Input
+						type="text"
+						value={searchQuery}
+						onChange={(e) => setSearchQuery(e.target.value)}
+						placeholder="Filter files..."
+						className="h-8 w-full bg-background dark:bg-white/10"
+					/>
+				</div>
+			)}
+
 			<ContextMenu>
 				<ContextMenuTrigger asChild>
 					<div ref={treeContainerRef} className="flex-1 overflow-y-auto">

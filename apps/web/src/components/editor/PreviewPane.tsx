@@ -239,7 +239,12 @@ export function PreviewPane({
 								// Check what the component returns
 								const componentResult = Component(props);
 								console.log('Component result type:', typeof componentResult);
-								console.log('Component result:', componentResult);
+								// Don't log the actual React element as it contains non-serializable symbols
+								if (componentResult && typeof componentResult === 'object' && componentResult.$$typeof) {
+									console.log('Component result: [React Element]');
+								} else {
+									console.log('Component result:', componentResult);
+								}
 								
 								// First, try to render with ReactDOMServer to get the HTML
 								console.log('Rendering with ReactDOMServer...');

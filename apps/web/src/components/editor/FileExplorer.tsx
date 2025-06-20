@@ -142,11 +142,12 @@ export function FileExplorer({
 	});
 
 	// Utility helper to flatten the entire tree (folders + files) into a single list
-	const flattenNodes = (nodes: FileNode[]): FileNode[] =>
-		nodes.flatMap((n) => [
+	const flattenNodes = useCallback((nodes: FileNode[]): FileNode[] => {
+		return nodes.flatMap((n) => [
 			n,
 			...(n.children ? flattenNodes(n.children as FileNode[]) : []),
 		]);
+	}, []);
 
 	// Returns true if any existing node would collide with the given path.
 	// For folders we must also consider children like "foo/bar.txt" colliding with new folder "foo".

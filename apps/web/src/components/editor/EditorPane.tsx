@@ -32,6 +32,15 @@ const MonacoEditor = dynamic(
 	{ ssr: false },
 );
 
+// Simple debounce utility (executes fn after wait ms of no calls)
+function debounce<F extends (...args: unknown[]) => void>(fn: F, wait = 250) {
+	let t: ReturnType<typeof setTimeout> | undefined;
+	return (...args: Parameters<F>) => {
+		if (t) clearTimeout(t);
+		t = setTimeout(() => fn(...args), wait);
+	};
+}
+
 export function EditorPane({
 	value,
 	onChange,
@@ -183,6 +192,53 @@ export function EditorPane({
 					onSave();
 				});
 			}
+
+			// -----------------------------------------------------------
+			// Forward TypeScript/JavaScript diagnostics (red squiggles)
+			// from Monaco to the shared console feed so users can see
+			// them alongside runtime messages.
+			// -----------------------------------------------------------
+			const broadcastDiagnostics = debounce(() => {
+				if (typeof window === "undefined") return;
+				const model = editor.getModel();
+				if (!model) return;
+				const markers = monaco.editor.getModelMarkers({ resource: model.uri });
+				// Always clear previous diagnostic logs so we don't accumulate stale ones
+				window.postMessage({ type: "console_clear" }, "*");
+				for (const m of markers) {
+					if (
+						m.severity !== monaco.MarkerSeverity.Error &&
+						m.severity !== monaco.MarkerSeverity.Warning
+					)
+						continue;
+					const loc = `${model.uri.path}:${m.startLineNumber}:${m.startColumn}`;
+					const msg = `${m.severity === monaco.MarkerSeverity.Warning ? "Warning" : "Error"}: ${m.message} (${loc})`;
+					window.postMessage(
+						{
+							type: "console",
+							method:
+								m.severity === monaco.MarkerSeverity.Warning ? "warn" : "error",
+							args: [msg],
+						},
+						"*",
+					);
+				}
+			}, 250);
+
+			// Initial emit and on-change listener
+			broadcastDiagnostics();
+			const disposable = monaco.editor.onDidChangeMarkers((uris) => {
+				const model = editor.getModel();
+				if (!model) return;
+				if (uris.some((u) => u.toString() === model.uri.toString())) {
+					broadcastDiagnostics();
+				}
+			});
+
+			// Cleanup on unmount
+			return () => {
+				disposable.dispose();
+			};
 		},
 		[onSave],
 	);

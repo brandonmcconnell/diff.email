@@ -66,8 +66,13 @@ export function Toolbar(props: Props) {
 		[errorCount, "bg-red-600"],
 		[warnCount, "bg-amber-600"],
 	];
-	const consoleBadgeClasses =
-		"flex h-4 min-w-4 px-1 items-center justify-center rounded-full text-[10px] text-white";
+	const consoleBadgeClasses = (count: number) =>
+		cn(
+			"flex h-4 min-w-4 items-center justify-center rounded-full font-mono",
+			"font-medium text-[12px] text-white leading-none tracking-wide subpixel-antialiased",
+			// fine-tuned padding to display single-digit badges as circles
+			count < 10 ? "px-1" : "px-1.25",
+		);
 
 	// Local zen mode state (not persisted)
 	const [zenMode, setZenMode] = useState<boolean>(
@@ -75,10 +80,7 @@ export function Toolbar(props: Props) {
 			? document.body.classList.contains("zen-mode")
 			: false,
 	);
-	const toggleZenMode = useCallback(
-		() => setZenMode((prev) => !prev),
-		[setZenMode],
-	);
+	const toggleZenMode = useCallback(() => setZenMode((prev) => !prev), []);
 
 	useEffect(() => {
 		if (typeof document !== "undefined") {
@@ -92,11 +94,19 @@ export function Toolbar(props: Props) {
 	}, [zenMode]);
 
 	return (
-		<div className="flex items-center gap-2 border-b px-2 py-1 text-sm max-md:pb-safe-offset-1">
+		<div
+			className={cn(
+				"flex items-center gap-2 border-b px-2 py-1",
+				"bg-muted/50 text-sm max-md:pb-safe-offset-1",
+			)}
+		>
 			{/* Engine Select */}
 			<Select.DropdownMenu>
 				<Select.DropdownMenuTrigger asChild>
-					<button type="button" className="rounded border px-2 py-1 capitalize">
+					<button
+						type="button"
+						className="rounded border border-neutral-800/15 px-2 py-1"
+					>
 						{engine}
 					</button>
 				</Select.DropdownMenuTrigger>
@@ -116,7 +126,10 @@ export function Toolbar(props: Props) {
 			{/* Client Select */}
 			<Select.DropdownMenu>
 				<Select.DropdownMenuTrigger asChild>
-					<button type="button" className="rounded border px-2 py-1 capitalize">
+					<button
+						type="button"
+						className="rounded border border-neutral-800/15 px-2 py-1"
+					>
 						{client}
 					</button>
 				</Select.DropdownMenuTrigger>
@@ -137,17 +150,32 @@ export function Toolbar(props: Props) {
 				{/* Mode Toggle */}
 				<button
 					type="button"
-					className="rounded border p-1"
+					className={cn(
+						"rounded border border-neutral-800/15 p-1",
+						mode === "live" ? "bg-border" : "hover:bg-muted",
+					)}
 					onClick={() => setMode(mode === "live" ? "screenshot" : "live")}
 					title="Toggle live/screenshot"
 				>
 					{mode === "live" ? <PlayIcon size={16} /> : <ImageIcon size={16} />}
 				</button>
 
+				<button
+					type="button"
+					className="rounded border border-neutral-800/15 p-1"
+					onClick={onRun}
+					title="Generate screenshots"
+				>
+					<ImageIcon size={16} />
+				</button>
+
 				{/* Dark/light toggle */}
 				<button
 					type="button"
-					className="rounded border p-1"
+					className={cn(
+						"rounded border border-neutral-800/15 p-1",
+						dark ? "bg-border" : "hover:bg-muted",
+					)}
 					onClick={() => setDark(!dark)}
 					title="Toggle dark mode"
 				>
@@ -156,17 +184,8 @@ export function Toolbar(props: Props) {
 
 				<button
 					type="button"
-					className="rounded border p-1"
-					onClick={onRun}
-					title="Generate screenshots"
-				>
-					<ImageIcon size={16} />
-				</button>
-
-				<button
-					type="button"
 					className={cn(
-						"flex items-center gap-1 rounded border p-1",
+						"flex items-center gap-1 rounded border border-neutral-800/15 p-1",
 						consoleVisible ? "bg-border" : "hover:bg-muted",
 					)}
 					onClick={() => setConsoleVisible(!consoleVisible)}
@@ -176,7 +195,10 @@ export function Toolbar(props: Props) {
 					{consoleBadgeCounts.map(
 						([count, color]) =>
 							count > 0 && (
-								<span key={color} className={cn(consoleBadgeClasses, color)}>
+								<span
+									key={color}
+									className={cn(consoleBadgeClasses(count), color)}
+								>
 									{count}
 								</span>
 							),
@@ -186,7 +208,10 @@ export function Toolbar(props: Props) {
 				{/* Zen mode toggle */}
 				<button
 					type="button"
-					className="rounded border p-1"
+					className={cn(
+						"rounded border border-neutral-800/15 p-1",
+						zenMode ? "bg-border" : "hover:bg-muted",
+					)}
 					onClick={toggleZenMode}
 					title={zenMode ? "Exit Zen mode" : "Enter Zen mode"}
 				>
@@ -196,7 +221,7 @@ export function Toolbar(props: Props) {
 				<button
 					type="button"
 					className={cn(
-						"relative flex items-center rounded border p-1",
+						"relative flex items-center rounded border border-neutral-800/15 p-1",
 						(!isDirty || readOnly) && "bg-muted text-muted-foreground",
 					)}
 					onClick={readOnly ? undefined : onSave}

@@ -256,8 +256,8 @@ export function FileExplorer({
 	// Render ---------------------------------------------------------
 	return (
 		<div className="@container flex h-full flex-col">
-			{/* Top toolbar */}
-			<div className="flex justify-between">
+			{/* Toolbar (top on md+, bottom on mobile) */}
+			<div className="flex justify-between max-md:order-2 max-md:mt-auto max-md:mb-2">
 				<div className="flex justify-end gap-0.5">
 					{/* Collapse FileTree sidebar */}
 					<Tooltip>

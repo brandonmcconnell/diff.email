@@ -195,7 +195,7 @@ export function EditorPane({
 					{!sidebarOpen && (
 						<button
 							type="button"
-							className="absolute top-2 left-2 z-30 rounded border bg-background p-1 shadow dark:bg-white/10"
+							className="absolute bottom-2 left-2 z-30 rounded border bg-background p-1 shadow md:top-2 md:bottom-auto dark:bg-white/10"
 							onClick={() => setSidebarOpen(true)}
 						>
 							<PanelLeftOpen className="size-4.5" />
@@ -208,7 +208,7 @@ export function EditorPane({
 			{showSidebar && sidebarCollapsed && (
 				<button
 					type="button"
-					className="absolute top-2 left-2 z-30 rounded border bg-background p-1 shadow dark:bg-white/10"
+					className="absolute bottom-2 left-2 z-30 rounded border bg-background p-1 shadow md:top-2 md:bottom-auto dark:bg-white/10"
 					onClick={() => setSidebarCollapsed(false)}
 				>
 					<PanelLeftOpen className="size-4.5" />

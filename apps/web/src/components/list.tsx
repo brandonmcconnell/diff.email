@@ -67,7 +67,7 @@ function renderEmpty({
 // Generic simple list pattern for projects, emails, etc.
 export interface BasicItem {
 	id: string;
-	name: string;
+	name: string | React.ReactNode;
 }
 
 export interface ListAction<T extends BasicItem> {
@@ -76,10 +76,17 @@ export interface ListAction<T extends BasicItem> {
 	className?: string;
 }
 
+type CardKey = "title" | "description" | "detail" | "detailLabel";
+
 interface Column<T> {
 	label: string;
 	render: (item: T) => React.ReactNode;
 	className?: string;
+	/**
+	 * When provided, makes this column appear in the mobile card layout.
+	 * Use semantic keys rather than positions so the card renderer can decide styling.
+	 */
+	dataCardProperty?: CardKey;
 }
 
 interface DataListProps<T extends BasicItem> {
@@ -92,6 +99,7 @@ interface DataListProps<T extends BasicItem> {
 	emptyIcon?: React.ComponentType<{ className?: string }>;
 	createLabel: string;
 	createIcon?: React.ComponentType<{ className?: string }>;
+	render?: (item: T, view: "grid" | "list") => React.ReactNode;
 	columns?: Column<T>[];
 	view?: "grid" | "list"; // Desktop view mode
 }
@@ -106,6 +114,7 @@ export function DataList<T extends BasicItem>({
 	emptyIcon,
 	createLabel,
 	createIcon,
+	render,
 	columns = [],
 	view = "grid",
 }: DataListProps<T>) {
@@ -122,6 +131,15 @@ export function DataList<T extends BasicItem>({
 
 	const hasActions = actions && actions.length > 0;
 	const colCount = 1 + columns.length;
+
+	// Lookup of columns that belong in the card by their semantic key
+	const cardColumnMap = columns.reduce<Partial<Record<CardKey, Column<T>>>>(
+		(acc, col) => {
+			if (col.dataCardProperty) acc[col.dataCardProperty] = col;
+			return acc;
+		},
+		{},
+	);
 
 	return (
 		<>
@@ -140,7 +158,7 @@ export function DataList<T extends BasicItem>({
 							href={href(item)}
 							className="col-start-1 row-start-1 truncate font-medium"
 						>
-							{item.name}
+							{render ? render(item, "grid") : item.name}
 						</Link>
 						{/* Actions */}
 						{hasActions && (
@@ -167,16 +185,22 @@ export function DataList<T extends BasicItem>({
 								</DropdownMenuContent>
 							</DropdownMenu>
 						)}
-						{/* Created / Modified date */}
-						{columns[0] && (
-							<span className="col-span-2 row-start-2 text-muted-foreground text-xs">
-								{columns[0].render(item)}
+						{/* Detail label (optional third line) */}
+						{cardColumnMap.description && (
+							<span className="col-span-2 text-sm">
+								{cardColumnMap.description.render(item)}
 							</span>
 						)}
-						{/* Author */}
-						{columns[1] && (
-							<span className="col-span-2 row-start-3 text-sm">
-								{columns[1].render(item)}
+						{/* Description row */}
+						{cardColumnMap.detailLabel && (
+							<span className="col-span-2 text-muted-foreground text-xs">
+								{cardColumnMap.detailLabel.render(item)}
+							</span>
+						)}
+						{/* Detail row */}
+						{cardColumnMap.detail && (
+							<span className="col-span-2 text-sm">
+								{cardColumnMap.detail.render(item)}
 							</span>
 						)}
 					</div>
@@ -210,7 +234,9 @@ export function DataList<T extends BasicItem>({
 							asChild
 						>
 							<Link href={href(item)}>
-								<span className="truncate font-medium">{item.name}</span>
+								<span className="truncate font-medium">
+									{render ? render(item, "list") : item.name}
+								</span>
 							</Link>
 						</Button>
 						{columns.map((c) => (

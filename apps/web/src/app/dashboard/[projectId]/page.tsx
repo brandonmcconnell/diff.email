@@ -1,4 +1,5 @@
 "use client";
+import { LanguageBadge } from "@/components/language-badge";
 import { DataList, ListSkeleton } from "@/components/list";
 import { NewEmailDialog } from "@/components/new-email-dialog";
 import { PageHeader } from "@/components/page-header";
@@ -200,6 +201,24 @@ export default function ProjectPage() {
 			<div className="container mx-auto px-4 py-6 lg:px-6">
 				<DataList
 					items={filteredEmails}
+					render={(e, view) => (
+						<div className="flex items-center gap-2">
+							<span>{e.name}</span>
+							{view === "grid" && (
+								<>
+									<LanguageBadge
+										language={e.language}
+										className="max-md:hidden"
+									/>
+									<LanguageBadge
+										language={e.language}
+										badgeOnly
+										className="md:hidden"
+									/>
+								</>
+							)}
+						</div>
+					)}
 					href={(e) => `/dashboard/${projectId}/${e.id}`}
 					actions={[
 						{
@@ -224,13 +243,14 @@ export default function ProjectPage() {
 					createLabel="New email"
 					createIcon={MailPlus}
 					columns={[
-						// {
-						// 	label: "Versions",
-						// 	render: (item) => (item.count ?? 0).toString(),
-						// },
+						{
+							label: "Language",
+							render: (item) => <LanguageBadge language={item.language} />,
+						},
 						{
 							label: "Created",
 							render: (item) => new Date(item.createdAt).toLocaleDateString(),
+							dataCardProperty: "detail",
 						},
 						{
 							label: "Author",
@@ -240,6 +260,7 @@ export default function ProjectPage() {
 								// return `${name}${suffix}`;
 								return name;
 							},
+							dataCardProperty: "detailLabel",
 						},
 					]}
 					view={view}

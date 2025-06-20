@@ -123,7 +123,7 @@ export default function Dashboard() {
 		<div className="bg-background">
 			{/* Header */}
 			<PageHeader
-				data={{ name: "Projects", type: "dashboard" }}
+				data={{ id: "dashboard", name: "Projects", type: "dashboard" }}
 				subtitle="Organize your projects and emails."
 				onCreate={handleCreate}
 			>
@@ -183,13 +183,10 @@ export default function Dashboard() {
 					createLabel="New project"
 					createIcon={FolderPlus}
 					columns={[
-						// {
-						// 	label: "Emails",
-						// 	render: (item) => (item.count ?? 0).toString(),
-						// },
 						{
 							label: "Created",
 							render: (item) => new Date(item.createdAt).toLocaleDateString(),
+							dataCardProperty: "detailLabel",
 						},
 						{
 							label: "Author",
@@ -198,6 +195,7 @@ export default function Dashboard() {
 								const suffix = item.userId === session?.user.id ? " (you)" : "";
 								return `${name}${suffix}`;
 							},
+							dataCardProperty: "detail",
 						},
 					]}
 					view={view}

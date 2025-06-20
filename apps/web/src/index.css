@@ -245,13 +245,20 @@ body {
 
 /* including `html` selector to increase specificity, in order to override the default styles */
 html {
-	.monaco-editor, .monaco-diff-editor, .monaco-component {
-		--vscode-editor-background: color-mix(in srgb, var(--muted) 50%, var(--background));
-		--vscode-editorStickyScroll-background: color-mix(in srgb, var(--muted) 50%, var(--background));
-		--vscode-breadcrumb-background: color-mix(in srgb, var(--muted) 50%, var(--background));
-		--vscode-multiDiffEditor-background: color-mix(in srgb, var(--muted) 50%, var(--background));
-		--vscode-editorGutter-background: color-mix(in srgb, var(--muted) 50%, var(--background));
-		--vscode-editorMarkerNavigation-background: color-mix(in srgb, var(--muted) 50%, var(--background));
+	.monaco-editor,
+	.monaco-diff-editor,
+	.monaco-component {
+		--monaco-bg: color-mix(
+			in srgb,
+			var(--muted) 50%,
+			var(--background)
+		);
+		--vscode-editor-background: var(--monaco-bg);
+		--vscode-editorStickyScroll-background: var(--monaco-bg);
+		--vscode-breadcrumb-background: var(--monaco-bg);
+		--vscode-multiDiffEditor-background: var(--monaco-bg);
+		--vscode-editorGutter-background: var(--monaco-bg);
+		--vscode-editorMarkerNavigation-background: var(--monaco-bg);
 		--vscode-editor-foreground: var(--foreground);
 		--vscode-editor-line-height: 1.5;
 	}

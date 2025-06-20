@@ -90,12 +90,19 @@ export default function ProjectPage() {
 		createEmail.mutate({ projectId, name: title, language });
 	}
 
-	// Prefetch email editor pages for performance
+	// Prefetch email editor pages and their latest version data for performance
 	useLayoutEffect(() => {
 		for (const e of filteredEmails satisfies Array<{ id: string }>) {
+			// Prefetch the route so Next.js has the bundle cached
 			router.prefetch(`/dashboard/${projectId}/${e.id}`);
+
+			// Prefetch API data needed by the email editor (latest version)
+			const latestOpts = trpc.versions.getLatest.queryOptions({
+				emailId: e.id,
+			});
+			queryClient.prefetchQuery(latestOpts);
 		}
-	}, [filteredEmails, projectId, router]);
+	}, [filteredEmails, projectId, router, queryClient]);
 
 	// Mutations for the project itself
 	const updateProject = useMutation(

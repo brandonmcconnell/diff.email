@@ -85,6 +85,26 @@ export default function Dashboard() {
 		}
 	}, [filteredProjects, router, queryClient.prefetchQuery]);
 
+	// After email lists are in cache, prefetch email editor pages and their latest versions
+	useLayoutEffect(() => {
+		for (const p of filteredProjects satisfies Array<{ id: string }>) {
+			const emails = queryClient.getQueryData(
+				trpc.emails.list.queryKey({ projectId: p.id }),
+			) as Array<{ id: string }> | undefined;
+			if (!emails?.length) continue;
+			for (const e of emails) {
+				// Prefetch the editor route
+				router.prefetch(`/dashboard/${p.id}/${e.id}`);
+
+				// Prefetch latest version data for the email editor
+				const latestOpts = trpc.versions.getLatest.queryOptions({
+					emailId: e.id,
+				});
+				queryClient.prefetchQuery(latestOpts);
+			}
+		}
+	}, [filteredProjects, router, queryClient]);
+
 	useEffect(() => {
 		if (!session && !isPending) router.push("/sign-in");
 	}, [session, isPending, router]);

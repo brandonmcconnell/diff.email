@@ -259,28 +259,28 @@ export function PreviewPane({
 								let htmlOutput;
 								
 								try {
-									// Use renderToString instead of renderToStaticMarkup for better error messages
-									htmlOutput = ReactDOMServerModule.renderToString(element);
+									// First try with the direct component result for React Email components
+									console.log('Checking if this is a React Email component...');
+									const componentResult = Component(props);
+									
+									if (componentResult && typeof componentResult === 'object' && componentResult.$$typeof) {
+										console.log('React Email component detected, using renderToStaticMarkup...');
+										// React Email components return elements that need renderToStaticMarkup
+										htmlOutput = ReactDOMServerModule.renderToStaticMarkup(componentResult);
+									} else {
+										console.log('Standard component, using createElement + renderToString...');
+										// Standard components need createElement
+										htmlOutput = ReactDOMServerModule.renderToString(element);
+									}
 									console.log('Successfully rendered, HTML length:', htmlOutput.length);
 								} catch (renderError) {
-									console.error('ReactDOMServer render error:', renderError);
-									
-									// Try a different approach - check if the component returns a React element directly
-									try {
-										console.log('Trying direct component call...');
-										const componentResult = Component(props);
-										
-										// Check if it's returning a React element
-										if (componentResult && typeof componentResult === 'object' && componentResult.$$typeof) {
-											console.log('Component returned React element directly, rendering that...');
-											htmlOutput = ReactDOMServerModule.renderToString(componentResult);
-										} else {
-											throw new Error('Component did not return a React element');
-										}
-									} catch (directError) {
-										console.error('Direct render error:', directError);
-										throw renderError;
-									}
+									console.error('Render error details:', {
+										message: renderError.message,
+										stack: renderError.stack,
+										elementType: element?.type?.name || 'unknown',
+										props: element?.props
+									});
+									throw renderError;
 								}
 								
 								console.log('Rendered HTML length:', htmlOutput.length);

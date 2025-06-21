@@ -469,11 +469,10 @@ export default function EmailEditorPage() {
 												? {
 														onFilesChange: (
 															m: Record<string, string>,
-															e: string,
+															_e: string,
 														) => {
 															setFiles(m);
 															filesRef.current = m;
-															setEntry(e);
 														},
 													}
 												: {})}
@@ -511,6 +510,7 @@ export default function EmailEditorPage() {
 										setEntryPath={setEntry}
 										exportName={exportName}
 										setExportName={setExportName}
+										files={files}
 										onRun={handleRun}
 									/>
 									<PreviewPane
@@ -552,11 +552,10 @@ export default function EmailEditorPage() {
 											? {
 													onFilesChange: (
 														m: Record<string, string>,
-														e: string,
+														_e: string,
 													) => {
 														setFiles(m);
 														filesRef.current = m;
-														setEntry(e);
 													},
 												}
 											: {})}
@@ -615,6 +614,7 @@ export default function EmailEditorPage() {
 							setEntryPath={setEntry}
 							exportName={exportName}
 							setExportName={setExportName}
+							files={files}
 							onRun={handleRun}
 						/>
 					</div>

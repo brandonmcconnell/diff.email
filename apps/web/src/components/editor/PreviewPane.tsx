@@ -9,7 +9,7 @@ import { bundle } from "@/lib/bundler";
 // import { cn } from "@/lib/utils"; // removed unused helper
 import type { Client, Engine } from "@diff-email/shared";
 import { Console } from "console-feed";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import * as React from "react";
 
 interface Props {
@@ -323,9 +323,10 @@ export function PreviewPane({
 									throw renderError;
 								}
 								
+								// TODO: Remove this
 								console.log('Rendered HTML length:', htmlOutput.length);
-								console.warn('Rendered HTML length:', htmlOutput.length);
-								console.error('Rendered HTML length:', htmlOutput.length);
+								console.warn('Testing console.warn');
+								console.error('Testing console.error');
 								
 								// Wrap in proper HTML structure
 								const fullHTML = '<!DOCTYPE html>' +
@@ -384,6 +385,45 @@ export function PreviewPane({
 			}
 		})();
 	}, [html, files, effectiveEntry, mode, exportName]);
+
+	/**
+	 * Apply light / dark classes to the preview document only.
+	 * This must not leak outside the iframe so we mutate the
+	 * iframe's own documentElement. We also set the css
+	 * `color-scheme` property so built-in form controls match.
+	 */
+	const applyDarkMode = useCallback(() => {
+		const iframe = iframeRef.current;
+		const doc = iframe?.contentDocument;
+		if (!doc) return;
+
+		const root = doc.documentElement;
+		if (!root) return;
+
+		if (dark) {
+			root.classList.add("dark");
+			// Ensure browser default styles respect dark mode.
+			root.style.colorScheme = "dark";
+		} else {
+			root.classList.remove("dark");
+			root.style.colorScheme = "light";
+		}
+	}, [dark]);
+
+	// Re-apply dark mode whenever the toggle changes or the iframe reloads.
+	useEffect(() => {
+		const iframe = iframeRef.current;
+		if (!iframe) return;
+
+		// Apply immediately in case the iframe is already loaded.
+		applyDarkMode();
+
+		// Also apply after every load event (srcdoc updates / navigation).
+		iframe.addEventListener("load", applyDarkMode);
+		return () => {
+			iframe.removeEventListener("load", applyDarkMode);
+		};
+	}, [applyDarkMode]);
 
 	// Convert internal logs to console-feed messages
 	const consoleMessages: ConsoleMessage[] = logs.map(

@@ -1,17 +1,16 @@
 "use client";
-import * as Select from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { CLIENTS, type Client, ENGINES, type Engine } from "@diff-email/shared";
+import type { Client, Engine } from "@diff-email/shared";
 import {
-	Check,
+	FolderCheck,
+	FolderX,
 	Globe,
-	ImageIcon,
 	Images,
 	Maximize2,
 	Minimize2,
@@ -52,6 +51,8 @@ type Props = {
 	/** Export name to render with @react-email/render */
 	exportName?: string;
 	setExportName?: (e: string) => void;
+	/** Virtual file system (path -> contents) for validation */
+	files?: Record<string, string>;
 };
 
 export function Toolbar(props: Props) {
@@ -72,6 +73,7 @@ export function Toolbar(props: Props) {
 		setEntryPath,
 		exportName,
 		setExportName,
+		files,
 	} = props;
 
 	const errorCount = consoleLogs.filter((l) => l.method === "error").length;
@@ -102,6 +104,33 @@ export function Toolbar(props: Props) {
 
 	// Local saving state to show active style and spinner icon
 	const [isSaving, setIsSaving] = useState(false);
+
+	function stripComments(code: string): string {
+		// Remove /* block */ comments
+		let out = code.replace(/\/\*[\s\S]*?\*\//g, "");
+		// Remove // line comments
+		out = out.replace(/(^|[^:])\/\/.*$/gm, "$1");
+		return out;
+	}
+
+	const hasConfigError = (() => {
+		if (language !== "jsx" || !files) return false;
+		if (!entryPath || !(entryPath in files)) return true;
+		if (!exportName) return true;
+		const rawSource = files[entryPath] ?? "";
+		const source = stripComments(rawSource);
+		if (exportName === "default") {
+			// Assume default export always exists as we render default
+			return !/export\s+default\s+/m.test(source);
+		}
+		// Simple regex to check named export
+		const escaped = exportName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+		const re = new RegExp(
+			`export\\s+(?:const|let|var|function|class|interface|type)\\s+${escaped}\\b|export\\s*{[^}]*\\b${escaped}\\b`,
+			"m",
+		);
+		return !re.test(source);
+	})();
 
 	const handleSave = useCallback(async () => {
 		if (readOnly || isSaving) return;
@@ -170,50 +199,92 @@ export function Toolbar(props: Props) {
 				</button>
 			</div>
 
-			{/* Email entry & export inputs (shown only if setters provided) */}
-			{language === "jsx" && setEntryPath && setExportName && (
-				<div className="flex items-center gap-1.5 max-md:hidden">
-					{/* Entry file path */}
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Input
-								type="text"
-								className="h-7 w-28 px-2 text-xs"
-								placeholder="index.tsx"
-								value={entryPath ?? ""}
-								onChange={(e) => setEntryPath?.(e.target.value)}
-								onBlur={(e) => {
-									if (!e.target.value.trim()) {
-										setEntryPath?.("index.tsx");
-									}
-								}}
-							/>
-						</TooltipTrigger>
-						<TooltipContent>Entry File</TooltipContent>
-					</Tooltip>
-
-					{/* Export name */}
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Input
-								type="text"
-								className="h-7 w-28 px-2 text-xs"
-								placeholder="default"
-								value={exportName ?? ""}
-								onChange={(e) => setExportName?.(e.target.value)}
-								onBlur={(e) => {
-									if (!e.target.value.trim()) {
-										setExportName?.("default");
-									}
-								}}
-							/>
-						</TooltipTrigger>
-						<TooltipContent>Export Name</TooltipContent>
-					</Tooltip>
-				</div>
-			)}
-
 			<div className="ml-auto flex items-center gap-1.25">
+				{/* Email entry & export inputs – Popover */}
+				{language === "jsx" && setEntryPath && setExportName && (
+					<Popover>
+						<PopoverTrigger asChild>
+							<button
+								type="button"
+								className={cn(
+									"inline-flex size-7 items-center justify-center rounded-sm border p-1 shadow-xs",
+									hasConfigError
+										? cn(
+												"relative border-destructive/20 text-destructive hover:bg-destructive/10",
+												"before:absolute before:inset-0 before:rounded-[inherit] before:content-['']",
+												"before:pointer-events-none before:border-0 before:bg-destructive/20",
+												"before:animation-duration-1250 before:animate-ping before:transition-opacity",
+												"hover:before:opacity-0 data-[state=open]:before:opacity-0",
+												"data-[state=open]:bg-border! data-[state=closed]:hover:bg-muted!",
+											)
+										: "border-border hover:bg-muted",
+								)}
+								aria-invalid={hasConfigError}
+								title={
+									hasConfigError
+										? "Invalid entry path or export name"
+										: "Editor settings"
+								}
+							>
+								<div className="pointer-events-none">
+									{hasConfigError ? (
+										<FolderX size={16} />
+									) : (
+										<FolderCheck size={16} />
+									)}
+								</div>
+							</button>
+						</PopoverTrigger>
+						<PopoverContent>
+							<div className="flex flex-col gap-2">
+								<div className="flex flex-col gap-1">
+									<label
+										htmlFor="entry-path"
+										className="font-medium text-foreground/80 text-xs"
+									>
+										Entry File Path
+									</label>
+									<Input
+										id="entry-path"
+										type="text"
+										placeholder="index.tsx"
+										value={entryPath ?? ""}
+										onChange={(e) => setEntryPath?.(e.target.value)}
+										onBlur={(e) => {
+											if (!e.target.value.trim()) {
+												setEntryPath?.("index.tsx");
+											}
+										}}
+										className="h-7 px-2 text-xs"
+									/>
+								</div>
+								<div className="flex flex-col gap-1">
+									<label
+										htmlFor="export-name"
+										className="font-medium text-foreground/80 text-xs"
+									>
+										Export Name
+									</label>
+									<Input
+										id="export-name"
+										type="text"
+										placeholder="default"
+										value={exportName ?? ""}
+										onChange={(e) => setExportName?.(e.target.value)}
+										onBlur={(e) => {
+											if (!e.target.value.trim()) {
+												setExportName?.("default");
+											}
+										}}
+										className="h-7 px-2 text-xs"
+									/>
+								</div>
+							</div>
+						</PopoverContent>
+					</Popover>
+				)}
+
+				{/* Dark mode toggle (light/dark) */}
 				<button
 					type="button"
 					className={cn(
@@ -226,6 +297,7 @@ export function Toolbar(props: Props) {
 					{dark ? <Moon size={16} /> : <Sun size={16} />}
 				</button>
 
+				{/* Console toggle (error/warning/info) */}
 				<button
 					type="button"
 					className={cn(
@@ -249,7 +321,7 @@ export function Toolbar(props: Props) {
 					)}
 				</button>
 
-				{/* Zen mode toggle */}
+				{/* Zen mode toggle (full screen) */}
 				<button
 					type="button"
 					className={cn(
@@ -262,6 +334,7 @@ export function Toolbar(props: Props) {
 					{zenMode ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
 				</button>
 
+				{/* Save button */}
 				<button
 					type="button"
 					className={cn(

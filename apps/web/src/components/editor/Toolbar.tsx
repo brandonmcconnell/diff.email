@@ -24,6 +24,7 @@ import {
 import { useCallback, useEffect, useState } from "react";
 
 type Props = {
+	language?: "jsx" | "html";
 	// Currently unused, but passed down from parent for future expansion.
 	engine?: Engine;
 	setEngine?: (e: Engine) => void;
@@ -54,6 +55,7 @@ type Props = {
 
 export function Toolbar(props: Props) {
 	const {
+		language,
 		mode,
 		setMode,
 		dark,
@@ -149,7 +151,7 @@ export function Toolbar(props: Props) {
 			</ToggleGroup>
 
 			{/* Email entry & export inputs (shown only if setters provided) */}
-			{setEntryPath && setExportName && (
+			{language === "jsx" && setEntryPath && setExportName && (
 				<div className="flex items-center gap-1.5 max-md:hidden">
 					{/* Entry file path */}
 					<Tooltip>

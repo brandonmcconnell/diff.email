@@ -1,7 +1,12 @@
 "use client";
+import {
+	ResizableHandle,
+	ResizablePanel,
+	ResizablePanelGroup,
+} from "@/components/ui/resizable";
 import { useComputedTheme } from "@/hooks/useComputedTheme";
 import { bundle } from "@/lib/bundler";
-import { cn } from "@/lib/utils";
+// import { cn } from "@/lib/utils"; // removed unused helper
 import type { Client, Engine } from "@diff-email/shared";
 import { Console } from "console-feed";
 import { useEffect, useRef, useState } from "react";
@@ -398,20 +403,36 @@ export function PreviewPane({
 		);
 	}
 
+	// Unified layout: preview always mounted; console + handle toggle visibility
 	return (
-		<div className="flex h-full w-full flex-col">
-			<div className="relative flex-1">
-				<iframe
-					title="Preview"
-					ref={iframeRef}
-					className="h-full w-full border-0"
-				/>
-			</div>
-			{showConsole && (
-				<div className="console-feed">
+		<ResizablePanelGroup direction="vertical" className="h-full w-full">
+			{/* Preview panel */}
+			<ResizablePanel defaultSize={75} minSize={25} className="min-h-[5rem]">
+				<div className="relative h-full w-full">
+					<iframe
+						title="Preview"
+						ref={iframeRef}
+						className="h-full w-full border-0"
+					/>
+				</div>
+			</ResizablePanel>
+
+			{/* Divider / handle */}
+			<ResizableHandle
+				className={showConsole ? undefined : "pointer-events-none opacity-0"}
+			/>
+
+			{/* Console panel (collapsible) */}
+			<ResizablePanel
+				defaultSize={25}
+				minSize={10}
+				maxSize={75}
+				className={showConsole ? "" : "hidden"}
+			>
+				<div className="console-feed h-full!">
 					<Console logs={consoleMessages} variant={theme} />
 				</div>
-			)}
-		</div>
+			</ResizablePanel>
+		</ResizablePanelGroup>
 	);
 }

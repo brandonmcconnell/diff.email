@@ -488,7 +488,7 @@ export default function EmailEditorPage() {
 									);
 								})()}
 							</ResizablePanel>
-							<ResizableHandle withHandle />
+							<ResizableHandle />
 							<ResizablePanel defaultSize={50} minSize={25}>
 								<div className="flex h-full flex-col">
 									<Toolbar

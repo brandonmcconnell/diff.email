@@ -80,9 +80,9 @@ export function Toolbar(props: Props) {
 		(l) => l.method !== "error" && l.method !== "warn",
 	).length;
 	const consoleBadgeCounts: [number, string][] = [
-		[infoCount, "bg-blue-600"],
 		[errorCount, "bg-red-600"],
 		[warnCount, "bg-yellow-600"],
+		[infoCount, "bg-blue-600"],
 	];
 	const consoleBadgeClasses = (count: number) =>
 		cn(

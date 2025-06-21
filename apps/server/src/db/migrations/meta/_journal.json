@@ -50,6 +50,13 @@
 			"when": 1750471702233,
 			"tag": "0006_sparkling_lord_hawal",
 			"breakpoints": true
+		},
+		{
+			"idx": 7,
+			"version": "7",
+			"when": 1750474740540,
+			"tag": "0007_mighty_hairball",
+			"breakpoints": true
 		}
 	]
 }

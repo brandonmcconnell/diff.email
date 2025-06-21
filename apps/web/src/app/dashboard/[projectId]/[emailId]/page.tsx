@@ -108,6 +108,10 @@ export default function EmailEditorPage() {
 	>();
 	const [saveCounter, setSaveCounter] = useState(0);
 
+	// Track last saved entry/export for dirty detection
+	const [lastSavedEntry, setLastSavedEntry] = useState<string | undefined>();
+	const [lastSavedExport, setLastSavedExport] = useState<string>("default");
+
 	const latestQuery = useQuery({
 		...trpc.versions.getLatest.queryOptions({ emailId }),
 		enabled: !!emailId,
@@ -150,7 +154,15 @@ export default function EmailEditorPage() {
 			setFiles(initialFiles);
 			filesRef.current = initialFiles;
 			setLastSavedFiles(initialFiles);
-			setEntry("index.tsx");
+			const initialEntryPath =
+				(latestQuery.data as { entryPath?: string }).entryPath ?? "index.tsx";
+			setEntry(initialEntryPath);
+			setLastSavedEntry(initialEntryPath);
+
+			const initialExportName =
+				(latestQuery.data as { exportName?: string }).exportName ?? "default";
+			setExportName(initialExportName);
+			setLastSavedExport(initialExportName);
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [language, latestQuery.data, latestQuery.isSuccess]);
@@ -171,11 +183,13 @@ export default function EmailEditorPage() {
 		} else if (filesRef.current && Object.keys(filesRef.current).length) {
 			const currentFiles = filesRef.current;
 			versionsSave.mutate(
-				{ emailId, files: currentFiles },
+				{ emailId, files: currentFiles, entryPath: entry, exportName },
 				{
 					onSuccess: () => {
 						toast.success("Version saved");
 						setLastSavedFiles(currentFiles);
+						setLastSavedEntry(entry);
+						setLastSavedExport(exportName);
 						setSaveCounter((c) => c + 1);
 					},
 				},
@@ -188,7 +202,13 @@ export default function EmailEditorPage() {
 	}
 
 	function handleViewVersion(
-		v: { id: string; html?: string | null; files?: unknown },
+		v: {
+			id: string;
+			html?: string | null;
+			files?: unknown;
+			entryPath?: string | null;
+			exportName?: string | null;
+		},
 		idx: number,
 	) {
 		// Save current live state only when entering read-only the first time
@@ -206,7 +226,8 @@ export default function EmailEditorPage() {
 			const fileMap = v.files as Record<string, string>;
 			setFiles(fileMap);
 			filesRef.current = fileMap;
-			setEntry("index.tsx");
+			setEntry(v.entryPath ?? "index.tsx");
+			setExportName(v.exportName ?? "default");
 		} else {
 			const h = v.html ?? "";
 			setHtml(h);
@@ -221,7 +242,12 @@ export default function EmailEditorPage() {
 			if (latestQuery.data.files) {
 				setFiles(latestQuery.data.files as Record<string, string>);
 				filesRef.current = latestQuery.data.files as Record<string, string>;
-				setEntry("index.tsx");
+				setEntry(
+					(latestQuery.data as { entryPath?: string }).entryPath ?? "index.tsx",
+				);
+				setExportName(
+					(latestQuery.data as { exportName?: string }).exportName ?? "default",
+				);
 			} else {
 				const h = latestQuery.data.html ?? "";
 				setHtml(h);
@@ -237,7 +263,9 @@ export default function EmailEditorPage() {
 		? false
 		: language === "html"
 			? html !== lastSavedHtml
-			: JSON.stringify(files ?? {}) !== JSON.stringify(lastSavedFiles ?? {});
+			: JSON.stringify(files ?? {}) !== JSON.stringify(lastSavedFiles ?? {}) ||
+				entry !== lastSavedEntry ||
+				exportName !== lastSavedExport;
 
 	// Show skeleton placeholder while queries are loading to avoid flashing incomplete header content
 	if (emailsQuery?.isPending || latestQuery.isPending) {
@@ -340,6 +368,8 @@ export default function EmailEditorPage() {
 									? {
 											emailId,
 											files: readOnlyVersion.files as Record<string, string>,
+											entryPath: entry,
+											exportName,
 										}
 									: {
 											emailId,

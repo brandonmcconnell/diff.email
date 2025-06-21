@@ -13,13 +13,21 @@ export const versionsRouter = router({
 				emailId: z.string().uuid(),
 				html: z.string().optional(),
 				files: z.record(z.string(), z.string()).optional(),
+				entryPath: z.string().optional(),
+				exportName: z.string().optional(),
 			}),
 		)
 		.mutation(async ({ input }) => {
-			const { emailId, html, files } = input;
+			const { emailId, html, files, entryPath, exportName } = input;
 			const [row] = await db
 				.insert(version)
-				.values({ emailId, html: html ?? null, files: files ?? null })
+				.values({
+					emailId,
+					html: html ?? null,
+					files: files ?? null,
+					entryPath: entryPath ?? null,
+					exportName: exportName ?? null,
+				})
 				.returning();
 			return row.id;
 		}),
@@ -50,6 +58,8 @@ export const versionsRouter = router({
 					emailId: input.emailId,
 					html: null,
 					files: { "index.tsx": defaultJsxTemplate },
+					entryPath: "index.tsx",
+					exportName: "default",
 					createdAt: new Date(),
 				} as const;
 			}
@@ -59,6 +69,8 @@ export const versionsRouter = router({
 				emailId: input.emailId,
 				html: defaultHtmlTemplate(e.name),
 				files: null,
+				entryPath: null,
+				exportName: null,
 				createdAt: new Date(),
 			} as const;
 		}),

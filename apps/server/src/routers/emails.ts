@@ -76,7 +76,12 @@ export const emailsRouter = router({
 
 			if (language === "jsx") {
 				const content = inputFiles ?? { "index.tsx": defaultJsxTemplate };
-				await db.insert(version).values({ emailId: row.id, files: content });
+				await db.insert(version).values({
+					emailId: row.id,
+					files: content,
+					entryPath: "index.tsx",
+					exportName: "default",
+				});
 			} else {
 				// HTML email - seed initial version (blank or provided)
 				const content =

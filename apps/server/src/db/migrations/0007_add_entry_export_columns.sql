@@ -1,0 +1,5 @@
+ALTER TABLE versions
+ADD COLUMN IF NOT EXISTS entry_path TEXT;
+
+ALTER TABLE versions
+ADD COLUMN IF NOT EXISTS export_name TEXT; 

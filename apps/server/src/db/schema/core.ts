@@ -62,6 +62,8 @@ export const version = pgTable("versions", {
 		.references(() => email.id, { onDelete: "cascade" }),
 	html: text("html"),
 	files: jsonb("files"),
+	entryPath: text("entry_path"),
+	exportName: text("export_name"),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.defaultNow()
 		.notNull(),

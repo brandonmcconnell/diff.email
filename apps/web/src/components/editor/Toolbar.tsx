@@ -126,7 +126,29 @@ export function Toolbar(props: Props) {
 			? document.body.classList.contains("zen-mode")
 			: false,
 	);
-	const toggleZenMode = useCallback(() => setZenMode((prev) => !prev), []);
+	const toggleZenMode = useCallback(() => {
+		setZenMode((prev) => !prev);
+
+		/**
+		 * TODO: resolve and remove this hackfix
+		 * I'm forcing a reflow to fix layout thrashing happening when exiting zen mode
+		 *
+		 * ? Suspicions & investigative reasoning
+		 * It appears to only affect code view on mobile, so I suspect the thrashing is
+		 * occurring in the Monaco setup somewhere, but I am implementing it universally
+		 * here for cover all bases just in case */
+		if (
+			typeof document !== "undefined" &&
+			typeof window !== "undefined" &&
+			!window.matchMedia("(min-width: 768px)")?.matches
+		) {
+			document.documentElement.style.display = "none";
+			setTimeout(() => {
+				void document.documentElement.offsetHeight;
+				document.documentElement.style.display = "";
+			}, 1);
+		}
+	}, []);
 
 	// Local saving state to show active style and spinner icon
 	const [isSaving, setIsSaving] = useState(false);

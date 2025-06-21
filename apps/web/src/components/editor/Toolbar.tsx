@@ -1,6 +1,12 @@
 "use client";
 import * as Select from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { CLIENTS, type Client, ENGINES, type Engine } from "@diff-email/shared";
 import {
@@ -102,6 +108,12 @@ export function Toolbar(props: Props) {
 		};
 	}, [zenMode]);
 
+	const webScreenshotsClasses = cn(
+		"h-7 bg-border/75 px-1.25 text-neutral-500",
+		"first-of-type:border-r-blue-200 data-[state=on]:border-blue-200 data-[state=on]:bg-blue-100/75 data-[state=on]:text-blue-500",
+		"dark:data-[state=on]:border-blue-400/25 dark:data-[state=on]:bg-blue-900/75 dark:data-[state=on]:text-blue-400 dark:first-of-type:border-r-blue-400/25",
+	);
+
 	return (
 		<div
 			className={cn(
@@ -118,12 +130,20 @@ export function Toolbar(props: Props) {
 					setMode(val === "web" ? "live" : "screenshot");
 				}}
 				variant="outline"
-				size="sm"
+				size="none"
 			>
-				<ToggleGroupItem value="web" aria-label="Web preview">
+				<ToggleGroupItem
+					value="web"
+					aria-label="Web preview"
+					className={webScreenshotsClasses}
+				>
 					<Globe size={14} />
 				</ToggleGroupItem>
-				<ToggleGroupItem value="screenshots" aria-label="Screenshots grid">
+				<ToggleGroupItem
+					value="screenshots"
+					aria-label="Screenshots grid"
+					className={webScreenshotsClasses}
+				>
 					<Images size={14} />
 				</ToggleGroupItem>
 			</ToggleGroup>
@@ -131,22 +151,43 @@ export function Toolbar(props: Props) {
 			{/* Email entry & export inputs (shown only if setters provided) */}
 			{setEntryPath && setExportName && (
 				<div className="flex items-center gap-1.5 max-md:hidden">
-					<input
-						type="text"
-						className="h-7 w-40 rounded border border-input bg-background px-2 text-xs"
-						placeholder="Entry file (e.g. index.tsx)"
-						value={entryPath ?? ""}
-						onChange={(e) => setEntryPath?.(e.target.value || undefined)}
-						title="File to import and bundle"
-					/>
-					<input
-						type="text"
-						className="h-7 w-28 rounded border border-input bg-background px-2 text-xs"
-						placeholder="Export name"
-						value={exportName ?? ""}
-						onChange={(e) => setExportName?.(e.target.value || "default")}
-						title="Named export to render"
-					/>
+					{/* Entry file path */}
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Input
+								type="text"
+								className="h-7 w-28 px-2 text-xs"
+								placeholder="index.tsx"
+								value={entryPath ?? ""}
+								onChange={(e) => setEntryPath?.(e.target.value)}
+								onBlur={(e) => {
+									if (!e.target.value.trim()) {
+										setEntryPath?.("index.tsx");
+									}
+								}}
+							/>
+						</TooltipTrigger>
+						<TooltipContent>Entry File</TooltipContent>
+					</Tooltip>
+
+					{/* Export name */}
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Input
+								type="text"
+								className="h-7 w-28 px-2 text-xs"
+								placeholder="default"
+								value={exportName ?? ""}
+								onChange={(e) => setExportName?.(e.target.value)}
+								onBlur={(e) => {
+									if (!e.target.value.trim()) {
+										setExportName?.("default");
+									}
+								}}
+							/>
+						</TooltipTrigger>
+						<TooltipContent>Export Name</TooltipContent>
+					</Tooltip>
 				</div>
 			)}
 

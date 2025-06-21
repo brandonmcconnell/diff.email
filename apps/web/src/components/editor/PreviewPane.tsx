@@ -241,19 +241,10 @@ export function PreviewPane({
 								// Create element with the component
 								console.log('Creating element with props:', props);
 								
-								// Import ReactDOMServer if not already available
+								// Get ReactDOMServer (may already be imported)
 								console.log('Getting ReactDOMServer...');
-								let ReactDOMServer;
-								if (window.ReactDOM && window.ReactDOM.renderToString) {
-									// Already available from earlier import
-									ReactDOMServer = window.ReactDOM;
-									console.log('Using existing ReactDOMServer');
-								} else {
-									// Need to import it
-									console.log('Importing ReactDOMServer...');
-									ReactDOMServer = await import('https://esm.sh/react-dom@18/server');
-									window.ReactDOM = ReactDOMServer;
-								}
+								const ReactDOMServerModule = window.ReactDOMServer || await import('https://esm.sh/react-dom@18/server');
+								window.ReactDOMServer = ReactDOMServerModule;
 								
 								// Create the element with the component and props
 								console.log('Creating element with component and props...');
@@ -269,7 +260,7 @@ export function PreviewPane({
 								
 								try {
 									// Use renderToString instead of renderToStaticMarkup for better error messages
-									htmlOutput = ReactDOMServer.renderToString(element);
+									htmlOutput = ReactDOMServerModule.renderToString(element);
 									console.log('Successfully rendered, HTML length:', htmlOutput.length);
 								} catch (renderError) {
 									console.error('ReactDOMServer render error:', renderError);
@@ -282,7 +273,7 @@ export function PreviewPane({
 										// Check if it's returning a React element
 										if (componentResult && typeof componentResult === 'object' && componentResult.$$typeof) {
 											console.log('Component returned React element directly, rendering that...');
-											htmlOutput = ReactDOMServer.renderToString(componentResult);
+											htmlOutput = ReactDOMServerModule.renderToString(componentResult);
 										} else {
 											throw new Error('Component did not return a React element');
 										}

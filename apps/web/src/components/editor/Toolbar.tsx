@@ -54,6 +54,8 @@ type Props = {
 	setExportName?: (e: string) => void;
 	/** Virtual file system (path -> contents) for validation */
 	files?: Record<string, string>;
+	/** Which high-level view is active (code editor or preview) */
+	view?: "editor" | "preview";
 };
 
 export function Toolbar(props: Props) {
@@ -75,6 +77,7 @@ export function Toolbar(props: Props) {
 		exportName,
 		setExportName,
 		files,
+		view = "preview",
 	} = props;
 
 	let [errorCount, warnCount, infoCount, debugCount, otherCount]: number[] =
@@ -311,18 +314,20 @@ export function Toolbar(props: Props) {
 					</Popover>
 				)}
 
-				{/* Dark mode toggle (light/dark) */}
-				<button
-					type="button"
-					className={cn(
-						"inline-flex size-7 items-center justify-center rounded-sm border border-border p-1 shadow-xs",
-						dark ? "bg-border" : "hover:bg-muted",
-					)}
-					onClick={() => setDark(!dark)}
-					title="Toggle dark mode"
-				>
-					{dark ? <Moon size={16} /> : <Sun size={16} />}
-				</button>
+				{/* Dark mode toggle (light/dark) – only visible in preview view */}
+				{view === "preview" && (
+					<button
+						type="button"
+						className={cn(
+							"inline-flex size-7 items-center justify-center rounded-sm border border-border p-1 shadow-xs",
+							dark ? "bg-border" : "hover:bg-muted",
+						)}
+						onClick={() => setDark(!dark)}
+						title="Toggle dark mode"
+					>
+						{dark ? <Moon size={16} /> : <Sun size={16} />}
+					</button>
+				)}
 
 				{/* Console toggle (error/warning/info) */}
 				<button

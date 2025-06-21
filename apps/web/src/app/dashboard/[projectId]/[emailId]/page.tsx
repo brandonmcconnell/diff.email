@@ -1,6 +1,7 @@
 "use client";
 import { EditorPane } from "@/components/editor/EditorPane";
 import { PreviewPane } from "@/components/editor/PreviewPane";
+import type { ConsoleMethod } from "@/components/editor/PreviewPane";
 import { Toolbar } from "@/components/editor/Toolbar";
 import { LanguageBadge } from "@/components/language-badge";
 import { PageHeader } from "@/components/page-header";
@@ -68,7 +69,7 @@ export default function EmailEditorPage() {
 	const [consoleLogs, setConsoleLogs] = useState<
 		Array<{
 			data: string[];
-			method: "error" | "warn";
+			method: ConsoleMethod;
 		}>
 	>([]);
 
@@ -266,6 +267,9 @@ export default function EmailEditorPage() {
 			: JSON.stringify(files ?? {}) !== JSON.stringify(lastSavedFiles ?? {}) ||
 				entry !== lastSavedEntry ||
 				exportName !== lastSavedExport;
+
+	// Track active tab ("editor" or "preview") to control Toolbar visibility
+	const [activeTab, setActiveTab] = useState<"editor" | "preview">("editor");
 
 	// Show skeleton placeholder while queries are loading to avoid flashing incomplete header content
 	if (emailsQuery?.isPending || latestQuery.isPending) {
@@ -512,6 +516,7 @@ export default function EmailEditorPage() {
 										setExportName={setExportName}
 										files={files}
 										onRun={handleRun}
+										view="preview"
 									/>
 									<PreviewPane
 										html={html}
@@ -522,7 +527,9 @@ export default function EmailEditorPage() {
 										mode={mode}
 										dark={dark}
 										showConsole={consoleVisible}
-										onLogsChange={setConsoleLogs}
+										onLogsChange={(
+											logs: Array<{ data: string[]; method: ConsoleMethod }>,
+										) => setConsoleLogs(logs)}
 										exportName={exportName}
 									/>
 								</div>
@@ -533,7 +540,8 @@ export default function EmailEditorPage() {
 					{/* Mobile (tabs) */}
 					<div className="flex min-h-0 flex-1 flex-col overflow-hidden border-t md:hidden">
 						<Tabs
-							defaultValue="editor"
+							value={activeTab}
+							onValueChange={(v) => setActiveTab(v as "editor" | "preview")}
 							className="relative flex h-full flex-col overflow-hidden"
 						>
 							<TabsContent
@@ -582,7 +590,9 @@ export default function EmailEditorPage() {
 									mode={mode}
 									dark={dark}
 									showConsole={consoleVisible}
-									onLogsChange={setConsoleLogs}
+									onLogsChange={(
+										logs: Array<{ data: string[]; method: ConsoleMethod }>,
+									) => setConsoleLogs(logs)}
 									exportName={exportName}
 								/>
 							</TabsContent>
@@ -616,6 +626,7 @@ export default function EmailEditorPage() {
 							setExportName={setExportName}
 							files={files}
 							onRun={handleRun}
+							view={activeTab}
 						/>
 					</div>
 				</>

@@ -538,15 +538,15 @@ export default function EmailEditorPage() {
 					</div>
 
 					{/* Mobile (tabs) */}
-					<div className="flex min-h-0 flex-1 flex-col overflow-hidden border-t md:hidden">
+					<div className="overflow-visible! flex min-h-0 flex-1 flex-col border-t md:hidden">
 						<Tabs
 							value={activeTab}
 							onValueChange={(v) => setActiveTab(v as "editor" | "preview")}
-							className="relative flex h-full flex-col overflow-hidden"
+							className="overflow-visible! relative flex h-full flex-col"
 						>
 							<TabsContent
 								value="editor"
-								className="flex min-h-0 flex-1 flex-col overflow-hidden"
+								className="overflow-visible! flex min-h-0 flex-1 flex-col"
 							>
 								{isReady && (
 									<EditorPane

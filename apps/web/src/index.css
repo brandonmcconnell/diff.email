@@ -114,29 +114,6 @@ body {
 	--sidebar-accent-foreground: oklch(0.985 0 0);
 	--sidebar-border: oklch(1 0 0 / 10%);
 	--sidebar-ring: oklch(0.556 0 0);
-	/* lang color - dark mode overrides */
-	--color-jsx-50: var(--color-indigo-50);
-	--color-jsx-100: var(--color-indigo-100);
-	--color-jsx-200: var(--color-indigo-200);
-	--color-jsx-300: var(--color-indigo-300);
-	--color-jsx-400: var(--color-indigo-400);
-	--color-jsx-500: var(--color-indigo-500);
-	--color-jsx-600: var(--color-indigo-600);
-	--color-jsx-700: var(--color-indigo-700);
-	--color-jsx-800: var(--color-indigo-800);
-	--color-jsx-900: var(--color-indigo-900);
-	--color-jsx-950: var(--color-indigo-950);
-	--color-html-50: var(--color-orange-50);
-	--color-html-100: var(--color-orange-100);
-	--color-html-200: var(--color-orange-200);
-	--color-html-300: var(--color-orange-300);
-	--color-html-400: var(--color-orange-400);
-	--color-html-500: var(--color-orange-500);
-	--color-html-600: var(--color-orange-600);
-	--color-html-700: var(--color-orange-700);
-	--color-html-800: var(--color-orange-800);
-	--color-html-900: var(--color-orange-900);
-	--color-html-950: var(--color-orange-950);
 }
 
 @theme inline {

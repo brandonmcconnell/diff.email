@@ -236,7 +236,7 @@ export const emailsRouter = router({
 
 			return { runId: runRow.id, resendId };
 		}),
-	update: protectedProcedure
+	manage: protectedProcedure
 		.input(
 			z.object({
 				id: z.string().uuid(),
@@ -262,6 +262,85 @@ export const emailsRouter = router({
 				.where(eq(email.id, id))
 				.returning();
 			return row;
+		}),
+	/**
+	 * Duplicate an email, optionally copying all versions.
+	 */
+	duplicate: protectedProcedure
+		.input(
+			z.object({
+				sourceEmailId: z.string().uuid(),
+				projectId: z.string().uuid(),
+				name: z.string().min(1),
+				description: z.string().optional(),
+				copyAllVersions: z.boolean().default(false),
+			}),
+		)
+		.mutation(async ({ ctx, input }) => {
+			const { sourceEmailId, projectId, name, description, copyAllVersions } =
+				input;
+			// Fetch source email to obtain language
+			const [srcEmail] = await db
+				.select({ language: email.language })
+				.from(email)
+				.where(eq(email.id, sourceEmailId));
+			if (!srcEmail) throw new Error("Source email not found");
+
+			// Create new email row
+			const [newEmailRow] = await db
+				.insert(email)
+				.values({
+					projectId,
+					name,
+					language: srcEmail.language,
+					...(description ? { description } : {}),
+				})
+				.returning();
+
+			// Determine versions to copy
+			let versionsToCopy: unknown;
+			if (copyAllVersions) {
+				versionsToCopy = await db
+					.select({
+						html: version.html,
+						files: version.files,
+						entryPath: version.entryPath,
+						exportName: version.exportName,
+						createdAt: version.createdAt,
+					})
+					.from(version)
+					.where(eq(version.emailId, sourceEmailId))
+					.orderBy(version.createdAt);
+			} else {
+				const [latestVersion] = await db
+					.select({
+						html: version.html,
+						files: version.files,
+						entryPath: version.entryPath,
+						exportName: version.exportName,
+						createdAt: version.createdAt,
+					})
+					.from(version)
+					.where(eq(version.emailId, sourceEmailId))
+					.orderBy(sql`created_at DESC`)
+					.limit(1);
+				versionsToCopy = latestVersion ? [latestVersion] : [];
+			}
+
+			if (versionsToCopy.length) {
+				await db.insert(version).values(
+					versionsToCopy.map((v) => ({
+						emailId: newEmailRow.id,
+						html: v.html,
+						files: v.files as unknown as Record<string, unknown> | null,
+						entryPath: v.entryPath,
+						exportName: v.exportName,
+						createdAt: v.createdAt,
+					})) as never[],
+				);
+			}
+
+			return newEmailRow;
 		}),
 	delete: protectedProcedure
 		.input(z.object({ id: z.string().uuid() }))

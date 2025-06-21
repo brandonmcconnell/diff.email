@@ -73,8 +73,8 @@ export default function EmailEditorPage() {
 		}>
 	>([]);
 
-	const updateEmail = useMutation(
-		trpc.emails.update.mutationOptions({
+	const manageEmail = useMutation(
+		trpc.emails.manage.mutationOptions({
 			onSuccess: () => {
 				queryClient.invalidateQueries({
 					queryKey: trpc.emails.list.queryKey({ projectId }),
@@ -320,7 +320,7 @@ export default function EmailEditorPage() {
 						defaultValue: emailName,
 					});
 					if (newTitle?.trim()) {
-						updateEmail.mutate({ id: emailId, name: newTitle.trim() });
+						manageEmail.mutate({ id: emailId, name: newTitle.trim() });
 					}
 				}}
 				onDelete={() =>

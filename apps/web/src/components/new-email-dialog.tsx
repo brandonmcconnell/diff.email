@@ -9,6 +9,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { Atom, CodeXml } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -40,11 +41,16 @@ const PLACEHOLDERS = [
 interface Props {
 	open: boolean;
 	onOpenChange: (v: boolean) => void;
-	onCreate: (title: string, language: "html" | "jsx") => void;
+	onCreate: (
+		title: string,
+		language: "html" | "jsx",
+		description?: string,
+	) => void;
 }
 
 export function NewEmailDialog({ open, onOpenChange, onCreate }: Props) {
 	const [title, setTitle] = useState("");
+	const [description, setDescription] = useState("");
 	const [lang, setLang] = useState<"html" | "jsx">("html");
 
 	// Shuffle-bag to cycle through all quotes before repeating
@@ -69,8 +75,9 @@ export function NewEmailDialog({ open, onOpenChange, onCreate }: Props) {
 
 	function handleCreate() {
 		if (!title.trim()) return;
-		onCreate(title.trim(), lang);
+		onCreate(title.trim(), lang, description.trim());
 		setTitle("");
+		setDescription("");
 		onOpenChange(false);
 	}
 
@@ -107,6 +114,22 @@ export function NewEmailDialog({ open, onOpenChange, onCreate }: Props) {
 							placeholder={placeholder}
 							value={title}
 							onChange={(e) => setTitle(e.target.value)}
+						/>
+					</div>
+
+					<div className="flex flex-col gap-2">
+						<Label
+							htmlFor="new-email-description"
+							className="font-medium text-sm"
+						>
+							Description
+						</Label>
+						<Textarea
+							id="new-email-description"
+							placeholder="Optional description"
+							value={description}
+							onChange={(e) => setDescription(e.target.value)}
+							className="min-h-[100px]"
 						/>
 					</div>
 

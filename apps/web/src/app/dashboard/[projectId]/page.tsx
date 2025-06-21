@@ -1,4 +1,5 @@
 "use client";
+import { DuplicateEmailDialog } from "@/components/duplicate-email-dialog";
 import { LanguageBadge } from "@/components/language-badge";
 import { DataList, ListSkeleton } from "@/components/list";
 import { NewEmailDialog } from "@/components/new-email-dialog";
@@ -47,8 +48,8 @@ export default function ProjectPage() {
 		}),
 	);
 
-	const updateEmail = useMutation(
-		trpc.emails.update.mutationOptions({
+	const manageEmail = useMutation(
+		trpc.emails.manage.mutationOptions({
 			onSuccess: () => {
 				queryClient.invalidateQueries({
 					queryKey: trpc.emails.list.queryKey({ projectId }),
@@ -59,6 +60,16 @@ export default function ProjectPage() {
 
 	const deleteEmail = useMutation(
 		trpc.emails.delete.mutationOptions({
+			onSuccess: () => {
+				queryClient.invalidateQueries({
+					queryKey: trpc.emails.list.queryKey({ projectId }),
+				});
+			},
+		}),
+	);
+
+	const duplicateEmail = useMutation(
+		trpc.emails.duplicate.mutationOptions({
 			onSuccess: () => {
 				queryClient.invalidateQueries({
 					queryKey: trpc.emails.list.queryKey({ projectId }),
@@ -85,9 +96,18 @@ export default function ProjectPage() {
 	);
 
 	const [createOpen, setCreateOpen] = useState(false);
+	const [duplicateSource, setDuplicateSource] = useState<{
+		id: string;
+		name: string;
+	} | null>(null);
+	const [duplicateOpen, setDuplicateOpen] = useState(false);
 
-	function handleCreate(title: string, language: "html" | "jsx") {
-		createEmail.mutate({ projectId, name: title, language });
+	function handleCreate(
+		title: string,
+		language: "html" | "jsx",
+		description?: string,
+	) {
+		createEmail.mutate({ projectId, name: title, language, description });
 	}
 
 	// Prefetch email editor pages and their latest version data for performance
@@ -240,8 +260,15 @@ export default function ProjectPage() {
 									defaultValue: item.name,
 								});
 								if (newTitle?.trim()) {
-									updateEmail.mutate({ id: item.id, name: newTitle.trim() });
+									manageEmail.mutate({ id: item.id, name: newTitle.trim() });
 								}
+							},
+						},
+						{
+							label: "Duplicate",
+							onSelect: (item) => {
+								setDuplicateSource({ id: item.id, name: item.name });
+								setDuplicateOpen(true);
 							},
 						},
 						{
@@ -290,6 +317,23 @@ export default function ProjectPage() {
 				onOpenChange={setCreateOpen}
 				onCreate={handleCreate}
 			/>
+
+			{duplicateSource && (
+				<DuplicateEmailDialog
+					open={duplicateOpen}
+					onOpenChange={setDuplicateOpen}
+					originalName={duplicateSource.name as string}
+					onDuplicate={(opts) => {
+						duplicateEmail.mutate({
+							sourceEmailId: duplicateSource.id,
+							projectId,
+							name: opts.name,
+							description: opts.description,
+							copyAllVersions: opts.copyAll,
+						});
+					}}
+				/>
+			)}
 		</div>
 	);
 }

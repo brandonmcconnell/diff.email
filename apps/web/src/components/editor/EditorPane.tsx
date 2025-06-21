@@ -75,6 +75,7 @@ export function EditorPane({
 	);
 	const [sidebarOpen, setSidebarOpen] = useState(false); // mobile overlay
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // desktop collapse
+	const [fontSize, setFontSize] = useState<number>(14);
 
 	const prevMapJson = React.useRef<string>("");
 	useEffect(() => {
@@ -149,6 +150,22 @@ export function EditorPane({
 				return "text";
 		}
 	}, [activeFile?.name]);
+
+	// Adjust Monaco font size based on Tailwind's md breakpoint (768px)
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		// Tailwind `md` breakpoint is 768px (min-width)
+		const mediaQuery = window.matchMedia("(min-width: 768px)");
+		const updateFontSize = (mq: MediaQueryList | MediaQueryListEvent): void => {
+			// When the query matches, viewport is ≥ 768px (md and up)
+			setFontSize(mq.matches ? 14 : 12);
+		};
+		// Initial check
+		updateFontSize(mediaQuery);
+		// Listener for viewport changes
+		mediaQuery.addEventListener("change", updateFontSize);
+		return () => mediaQuery.removeEventListener("change", updateFontSize);
+	}, []);
 
 	// Configure compiler options once Monaco is mounted
 	const handleMount = React.useCallback(
@@ -351,7 +368,7 @@ export function EditorPane({
 					options={{
 						scrollBeyondLastLine: false,
 						automaticLayout: true,
-						fontSize: 14,
+						fontSize,
 						minimap: { enabled: false },
 						readOnly,
 					}}

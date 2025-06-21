@@ -323,10 +323,45 @@ export function PreviewPane({
 									throw renderError;
 								}
 								
-								// TODO: Remove this
 								console.log('Rendered HTML length:', htmlOutput.length);
-								console.warn('Testing console.warn');
-								console.error('Testing console.error');
+								// TODO: Remove this
+								console.log('Testing console.log', [1, 2, 3], { a: [1, 2, 3], b: { a: 1, b: [1, 2, new Map([[{a:1}, 2]])] } });
+								console.info('Testing console.info', [1, 2, 3], { a: [1, 2, 3], b: { a: 1, b: [1, 2, new Map([[{a:1}, 2]])] } });
+								console.warn('Testing console.warn', [1, 2, 3], { a: [1, 2, 3], b: { a: 1, b: [1, 2, new Map([[{a:1}, 2]])] } });
+								console.error('Testing console.error', [1, 2, 3], { a: [1, 2, 3], b: { a: 1, b: [1, 2, new Map([[{a:1}, 2]])] } });
+								console.debug('Testing console.debug', [1, 2, 3], { a: [1, 2, 3], b: { a: 1, b: [1, 2, new Map([[{a:1}, 2]])] } });
+								console.table([
+									{
+										id: 1,
+										name: "Alice",
+										age: 28,
+										occupation: "Engineer",
+										address: {
+											city: "Seattle",
+											state: "WA"
+										}
+									},
+									{
+										id: 2,
+										name: "Bob",
+										age: 34,
+										occupation: "Designer",
+										address: {
+											city: "Portland",
+											state: "OR"
+										}
+									},
+									{
+										id: 3,
+										name: "Carol",
+										age: 23,
+										occupation: "Developer",
+										address: {
+											city: "San Francisco",
+											state: "CA"
+										}
+									}
+								]);
 								
 								// Wrap in proper HTML structure
 								const fullHTML = '<!DOCTYPE html>' +

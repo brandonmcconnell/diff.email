@@ -206,7 +206,7 @@ body {
 		@apply border-border outline-ring/50;
 	}
 	body {
-		@apply bg-background text-foreground;
+		@bapply 100 text-for dark:bg-background text-foreground;
 	}
 	.pattern-background-lp-1-example {
 		background-image: url("data:image/svg+xml,%3Csvg width='140' height='16' viewBox='0 0 140 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cg clip-path='url(%23clip0_4133_10133)'%3E%3Cpath d='M-0.0390625 44C16.7069 44 23.8369 34.61 32.6009 24.676C41.5709 14.516 51.4569 4 70.0009 4C88.5449 4 98.4309 14.516 107.401 24.676C116.165 34.61 123.295 44 140.041 44M-0.0390625 28.004C16.7069 28 23.8369 18.612 32.6009 8.678C41.5709 -1.484 51.4569 -12 70.0009 -12C88.5449 -12 98.4309 -1.484 107.401 8.678C116.165 18.612 123.295 28 140.041 28.006M140.001 12.008C123.255 12.006 116.165 2.612 107.401 -7.322C98.4309 -17.484 88.5449 -28 70.0009 -28C51.4569 -28 41.5709 -17.484 32.6009 -7.322C23.8369 2.612 16.7069 12 -0.0390625 12.004' stroke-opacity='0.1' stroke='%2318181B'/%3E%3C/g%3E%3Cdefs%3E%3CclipPath id='clip0_4133_10133'%3E%3Crect width='140' height='16' fill='%23bfdbfe'/%3E%3C/clipPath%3E%3C/defs%3E%3C/svg%3E");
@@ -359,22 +359,28 @@ body.zen-mode .pt-16 {
 ===================== */
 .console-feed {
 	/* console-feed styles */
-	@apply h-40! overflow-y-auto! border-t! bg-muted! font-medium!;
+	@apply h-40! overflow-y-auto! border-t! bg-muted! dark:bg-neutral-900! font-medium!;
 	* {
 		@apply font-mono!;
 	}
 	[role="treeitem"] {
 		@apply [background:none]!;
 	}
-	/* size-4 for red circles in console-feed logs */
-	[data-method="error"],
-	[data-method="warn"] {
-		> div:first-child {
+	[data-method] {
+		@apply border-y! border-current/4!;
+		a {
+			@apply text-inherit! underline!;
+		}
+		> div:first-of-type {
+			position: relative !important;
 			@apply flex! size-4! items-center! justify-center! subpixel-antialiased! leading-none! font-medium!;
 			@apply p-0! ml-2! -mr-1! bg-[image:none]! before:text-base! before:text-white! font-mono!;
 			> * {
 				@apply hidden!;
 			}
+		}
+		&:has([aria-expanded="true"]) > div:nth-of-type(2) {
+			@apply flex! flex-col!;
 		}
 	}
 	/* text styles for console-feed logs with numeric counts */
@@ -382,19 +388,47 @@ body.zen-mode .pt-16 {
 		@apply font-medium! text-white! text-xs!;
 	}
 	/* red circle with X in non-numeric console-feed logs */
-	[data-method="error"] > div:first-child {
-		@apply bg-red-500! rounded-full!;
-		&::before {
-			@apply content-['×']!;
+	[data-method="error"] {
+		@apply bg-red-100! dark:bg-red-800/20! border-red-500/25! text-red-600! dark:text-red-300!;
+		> div:first-of-type {
+			@apply bg-red-400! rounded-full!;
+			&::before {
+				@apply content-['×']! text-red-900!;
+			}
 		}
 	}
 	/* yellow triangle with ! in non-numeric console-feed logs */
-	[data-method="warn"] > div:first-child {
-		--triangle-size: 10px;
-		@apply bg-yellow-500! text-neutral-900!;
-		clip-path: polygon(50% 0, 100% 100%, 0 100%) !important;
-		&::before {
-			@apply content-['!']! text-sm! text-black! font-bold! mt-0.5!;
+	[data-method="warn"] {
+		@apply bg-yellow-100/75! dark:bg-yellow-800/20! border-yellow-500/25! text-yellow-700! dark:text-yellow-200!;
+		> div:first-of-type {
+			--triangle-size: 10px;
+			@apply bg-yellow-400! text-neutral-900!;
+			clip-path: polygon(50% 0, 100% 100%, 0 100%) !important;
+			&::before {
+				@apply content-['!']! text-sm! text-yellow-900! font-bold! mt-0.5!;
+			}
+		}
+	}
+	/* red circle with X in non-numeric console-feed logs */
+	[data-method="debug"] {
+		@apply bg-fuchsia-100! dark:bg-fuchsia-800/20! border-fuchsia-500/25! text-fuchsia-700! dark:text-fuchsia-300!;
+		> div:first-of-type {
+			@apply bg-transparent! rounded-full!;
+			&::before {
+				mask: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 459 459'%3e%3cpath fill='%234D88FF' d='M433.5 127.5h-71.4a177.7 177.7 0 0 0-45.9-51L357 35.7 321.3 0l-56.1 56.1c-10.2-2.6-23-5.1-35.7-5.1s-25.5 2.5-35.7 5.1L137.7 0 102 35.7l40.8 40.8a177.7 177.7 0 0 0-45.9 51H25.5v51H79c-2.5 7.7-2.5 17.9-2.5 25.5v25.5h-51v51h51V306a88 88 0 0 0 2.5 25.5H25.5v51h71.4A152.2 152.2 0 0 0 229.5 459c56.1 0 107.1-30.6 132.6-76.5h71.4v-51H380c2.5-7.7 2.5-17.9 2.5-25.5v-25.5h51v-51h-51V204c0-7.7 0-17.9-2.5-25.5h53.5v-51zm-153 204h-102v-51h102v51zm0-102h-102v-51h102v51z'/%3e%3c/svg%3e");
+				@apply bg-fuchsia-600! dark:bg-fuchsia-400! mask-center! mask-no-repeat!;
+				@apply content-['']! text-fuchsia-900! absolute! inset-0! size-full!;
+			}
+		}
+	}
+	/* red circle with X in non-numeric console-feed logs */
+	[data-method="info"] {
+		@apply bg-blue-100! dark:bg-blue-800/20! border-blue-500/25! text-blue-700! dark:text-blue-300!;
+		> div:first-of-type {
+			@apply bg-blue-400! rounded-full!;
+			&::before {
+				@apply content-['ℹ']! text-blue-900!;
+			}
 		}
 	}
 }

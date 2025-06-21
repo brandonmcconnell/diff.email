@@ -241,9 +241,19 @@ export function PreviewPane({
 								// Create element with the component
 								console.log('Creating element with props:', props);
 								
-								// Import ReactDOMServer
-								console.log('Importing ReactDOMServer...');
-								const ReactDOMServer = await import('https://esm.sh/react-dom@18/server');
+								// Import ReactDOMServer if not already available
+								console.log('Getting ReactDOMServer...');
+								let ReactDOMServer;
+								if (window.ReactDOM && window.ReactDOM.renderToString) {
+									// Already available from earlier import
+									ReactDOMServer = window.ReactDOM;
+									console.log('Using existing ReactDOMServer');
+								} else {
+									// Need to import it
+									console.log('Importing ReactDOMServer...');
+									ReactDOMServer = await import('https://esm.sh/react-dom@18/server');
+									window.ReactDOM = ReactDOMServer;
+								}
 								
 								// Create the element with the component and props
 								console.log('Creating element with component and props...');

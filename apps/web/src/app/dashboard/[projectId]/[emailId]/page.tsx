@@ -461,14 +461,22 @@ export default function EmailEditorPage() {
 										<EditorPane
 											value={html}
 											onChange={(v) => {
+												if (isReadOnly) return; // Avoid loops in read-only mode
 												setHtml(v ?? "");
 												htmlRef.current = v ?? "";
 											}}
-											onFilesChange={(m, e) => {
-												setFiles(m);
-												filesRef.current = m;
-												setEntry(e);
-											}}
+											{...(language === "jsx"
+												? {
+														onFilesChange: (
+															m: Record<string, string>,
+															e: string,
+														) => {
+															setFiles(m);
+															filesRef.current = m;
+															setEntry(e);
+														},
+													}
+												: {})}
 											showSidebar={language === "jsx"}
 											readOnly={isReadOnly}
 											onSave={handleSave}
@@ -536,14 +544,22 @@ export default function EmailEditorPage() {
 									<EditorPane
 										value={html}
 										onChange={(v) => {
+											if (isReadOnly) return; // Avoid loops in read-only mode
 											setHtml(v ?? "");
 											htmlRef.current = v ?? "";
 										}}
-										onFilesChange={(m, e) => {
-											setFiles(m);
-											filesRef.current = m;
-											setEntry(e);
-										}}
+										{...(language === "jsx"
+											? {
+													onFilesChange: (
+														m: Record<string, string>,
+														e: string,
+													) => {
+														setFiles(m);
+														filesRef.current = m;
+														setEntry(e);
+													},
+												}
+											: {})}
 										showSidebar={language === "jsx"}
 										readOnly={isReadOnly}
 										onSave={handleSave}

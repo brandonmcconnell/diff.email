@@ -222,8 +222,9 @@ export function PageHeader({
 
 						{/* Title / subtitle */}
 						<div className="space-y-2">
-							<h1 className="flex items-center gap-2 font-bold text-2xl tracking-tight md:text-3xl">
+							<h1 className="block font-bold text-2xl tracking-tight md:text-3xl">
 								<span>{data.name}</span>
+								{afterTitle && " "}
 								{afterTitle}
 							</h1>
 							{subtitle && (

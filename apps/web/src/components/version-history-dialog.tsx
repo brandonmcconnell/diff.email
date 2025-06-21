@@ -62,6 +62,7 @@ export function VersionHistoryDialog({
 	});
 
 	const versions = historyQuery.data ?? [];
+	const viewingLatest = readOnlyVersion?.id == null;
 
 	// Compute display number: newest = N, oldest = 1
 	function getLabel(idx: number) {
@@ -138,10 +139,9 @@ export function VersionHistoryDialog({
 								</p>
 							)}
 							{versions.map((v: VersionData, idx: number) => {
-								const isActive =
-									readOnlyVersion?.id === null
-										? idx === 0
-										: v.id === readOnlyVersion?.id;
+								const isActive = viewingLatest
+									? idx === 0
+									: v.id === readOnlyVersion?.id;
 								return (
 									<div
 										key={v.id}
@@ -160,10 +160,7 @@ export function VersionHistoryDialog({
 											className={cn(
 												"font-mono",
 												isActive
-													? cn(
-															"font-extrabold",
-															readOnlyVersion?.id !== null && "text-amber-600",
-														)
+													? cn("font-bold", !viewingLatest && "text-amber-600")
 													: "font-normal",
 											)}
 										>
@@ -171,9 +168,25 @@ export function VersionHistoryDialog({
 											{idx === 0 && (
 												<Badge
 													variant="secondary"
-													className="rounded-full font-sans text-xs tracking-wide"
+													className={cn(
+														"rounded-full font-sans text-xs tracking-wide",
+														"bg-neutral-600/10 text-neutral-600",
+														"dark:bg-neutral-100/10 dark:text-neutral-300/90!",
+													)}
 												>
-													Latest
+													latest
+												</Badge>
+											)}
+											{isActive && !viewingLatest && (
+												<Badge
+													variant="secondary"
+													className={cn(
+														"rounded-full font-sans text-xs tracking-wide",
+														"bg-amber-600/20 text-amber-700",
+														"dark:bg-amber-700/30 dark:text-amber-500/90!",
+													)}
+												>
+													viewing
 												</Badge>
 											)}
 										</button>

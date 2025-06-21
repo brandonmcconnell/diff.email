@@ -23,7 +23,7 @@ import { trpc } from "@/utils/trpc";
 import { usePersistentState } from "@/utils/usePersistentState";
 import type { Client, Engine } from "@diff-email/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Split, X } from "lucide-react";
+import { CircleFadingArrowUp, X } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -339,7 +339,7 @@ export default function EmailEditorPage() {
 				/>
 			</PageHeader>
 			{isReadOnly && (
-				<div className="flex items-center justify-between bg-amber-100 px-4 py-2 text-amber-900! text-sm dark:bg-amber-950/80 dark:text-amber-600!">
+				<div className="flex items-center justify-between bg-amber-100 px-4 py-1 text-amber-700! text-sm md:py-2 dark:bg-amber-950/80 dark:text-amber-600!">
 					<span className="font-medium tabular-nums">
 						Version{" "}
 						<span className="font-mono">
@@ -354,7 +354,7 @@ export default function EmailEditorPage() {
 							title="Exit read-only"
 							className="flex items-center gap-1 text-[inherit]! hover:bg-amber-500/25 dark:hover:bg-amber-900! dark:hover:text-white!"
 						>
-							<X className="size-4" />
+							<X className="size-4.5" />
 							<span className="max-md:hidden">Exit</span>
 						</Button>
 						<Button
@@ -436,11 +436,11 @@ export default function EmailEditorPage() {
 									toast.error(`Failed to branch: ${message}`);
 								}
 							}}
-							title="Branch from this version (coming soon)"
+							title="Restore from this version"
 							className="flex items-center gap-1 text-[inherit]! hover:bg-amber-500/25 dark:hover:bg-amber-900! dark:hover:text-white!"
 						>
-							<Split className="size-4" />
-							<span className="max-md:hidden">Branch</span>
+							<CircleFadingArrowUp className="size-4.5" />
+							<span className="max-md:hidden">Restore</span>
 						</Button>
 					</div>
 				</div>

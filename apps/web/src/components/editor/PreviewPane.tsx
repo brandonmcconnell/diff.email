@@ -8,7 +8,7 @@ import { useComputedTheme } from "@/hooks/useComputedTheme";
 import { bundle } from "@/lib/bundler";
 // import { cn } from "@/lib/utils"; // removed unused helper
 import type { Client, Engine } from "@diff-email/shared";
-import { Console } from "console-feed";
+import { Console, type Hook } from "console-feed";
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as React from "react";
 
@@ -28,12 +28,12 @@ interface Props {
 	onLogsChange?: (
 		logs: Array<{
 			data: string[];
-			method: "error" | "warn";
+			method: ConsoleMethod;
 		}>,
 	) => void;
 }
 
-type ConsoleMethod = "log" | "info" | "warn" | "error" | "debug";
+export type ConsoleMethod = Parameters<Parameters<typeof Hook>[1]>[0]["method"];
 interface ConsoleMessage {
 	id: string;
 	method: ConsoleMethod;
@@ -56,7 +56,7 @@ export function PreviewPane({
 	const [logs, setLogs] = useState<
 		Array<{
 			data: string[];
-			method: "error" | "warn";
+			method: ConsoleMethod;
 		}>
 	>([]);
 
@@ -73,7 +73,7 @@ export function PreviewPane({
 			if (e.data.type === "console") {
 				setLogs((prev) => [
 					...prev,
-					{ method: e.data.method as "error" | "warn", data: e.data.args },
+					{ method: e.data.method as ConsoleMethod, data: e.data.args },
 				]);
 			} else if (e.data.type === "console_clear") {
 				setLogs([]);

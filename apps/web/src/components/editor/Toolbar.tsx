@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import type { ConsoleMethod } from "./PreviewPane";
 
 type Props = {
 	language?: "jsx" | "html";
@@ -40,7 +41,7 @@ type Props = {
 	setConsoleVisible: (v: boolean) => void;
 	consoleLogs: Array<{
 		data: string[];
-		method: "error" | "warn";
+		method: ConsoleMethod;
 	}>;
 	/** Whether there are unsaved changes */
 	isDirty: boolean;
@@ -76,23 +77,45 @@ export function Toolbar(props: Props) {
 		files,
 	} = props;
 
-	const errorCount = consoleLogs.filter((l) => l.method === "error").length;
-	const warnCount = consoleLogs.filter((l) => l.method === "warn").length;
-	const infoCount = consoleLogs.filter(
-		(l) => l.method !== "error" && l.method !== "warn",
-	).length;
+	let [errorCount, warnCount, infoCount, debugCount, otherCount]: number[] =
+		Array(5).fill(0);
+	for (const log of consoleLogs) {
+		switch (log.method) {
+			case "error":
+				errorCount++;
+				break;
+			case "warn":
+				warnCount++;
+				break;
+			case "info":
+				infoCount++;
+				break;
+			case "debug":
+				debugCount++;
+				break;
+			default:
+				otherCount++;
+				break;
+		}
+	}
 	const consoleBadgeCounts: [number, string][] = [
 		[errorCount, "bg-red-600"],
 		[warnCount, "bg-yellow-600"],
+		[debugCount, "bg-fuchsia-600"],
 		[infoCount, "bg-blue-600"],
+		[otherCount, "bg-neutral-500"],
 	];
-	const consoleBadgeClasses = (count: number) =>
-		cn(
-			"flex h-4 min-w-4 items-center justify-center rounded-full font-mono",
-			"font-medium text-[12px] text-white leading-none tracking-wide subpixel-antialiased",
+	const consoleBadgeClasses = (count: number) => {
+		return cn(
+			"flex h-4 min-w-4 items-center justify-center font-mono subpixel-antialiased",
+			"font-medium text-[12px] text-white leading-none tracking-wide",
+			"first-of-type:rounded-l-full last-of-type:rounded-r-full",
 			// fine-tuned padding to display single-digit badges as circles
 			count < 10 ? "px-1" : "px-1.25",
+			"first-of-type:not-last-of-type:pl-1.5",
+			"last-of-type:not-first-of-type:pr-1.5",
 		);
+	};
 
 	// Local zen mode state (not persisted)
 	const [zenMode, setZenMode] = useState<boolean>(
@@ -179,7 +202,9 @@ export function Toolbar(props: Props) {
 					type="button"
 					className={cn(
 						"inline-flex size-7 items-center justify-center rounded-r-none rounded-l-sm border border-border p-1 shadow-xs",
-						mode === "live" ? "bg-border" : "hover:bg-muted",
+						mode === "live"
+							? "z-1 bg-border"
+							: "border-r-transparent hover:bg-muted",
 					)}
 					onClick={() => setMode("live")}
 					title="Web preview"
@@ -190,7 +215,9 @@ export function Toolbar(props: Props) {
 					type="button"
 					className={cn(
 						"-ml-px inline-flex size-7 items-center justify-center rounded-r-sm rounded-l-none border border-border p-1 shadow-xs",
-						mode === "screenshot" ? "bg-border" : "hover:bg-muted",
+						mode === "screenshot"
+							? "z-1 bg-border"
+							: "border-l-transparent hover:bg-muted",
 					)}
 					onClick={() => setMode("screenshot")}
 					title="Screenshots grid"
@@ -308,17 +335,19 @@ export function Toolbar(props: Props) {
 					title="Toggle console"
 				>
 					<Terminal size={16} />
-					{consoleBadgeCounts.map(
-						([count, color]) =>
-							count > 0 && (
-								<span
-									key={color}
-									className={cn(consoleBadgeClasses(count), color)}
-								>
-									{count}
-								</span>
-							),
-					)}
+					<div className="hidden items-center gap-px md:flex">
+						{consoleBadgeCounts.map(
+							([count, color]) =>
+								count > 0 && (
+									<span
+										key={color}
+										className={cn(consoleBadgeClasses(count), color)}
+									>
+										{count}
+									</span>
+								),
+						)}
+					</div>
 				</button>
 
 				{/* Zen mode toggle (full screen) */}

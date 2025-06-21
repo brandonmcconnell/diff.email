@@ -1,7 +1,6 @@
 "use client";
 import * as Select from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
 	Tooltip,
 	TooltipContent,
@@ -17,11 +16,13 @@ import {
 	Maximize2,
 	Minimize2,
 	Moon,
+	RefreshCcw,
 	Save,
 	Sun,
 	Terminal,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
 type Props = {
 	language?: "jsx" | "html";
@@ -99,6 +100,32 @@ export function Toolbar(props: Props) {
 	);
 	const toggleZenMode = useCallback(() => setZenMode((prev) => !prev), []);
 
+	// Local saving state to show active style and spinner icon
+	const [isSaving, setIsSaving] = useState(false);
+
+	const handleSave = useCallback(async () => {
+		if (readOnly || isSaving) return;
+		setIsSaving(true);
+		const start = Date.now();
+
+		const saveOperation = Promise.resolve(onSave());
+
+		try {
+			await toast.promise(saveOperation, {
+				loading: "Saving…",
+				success: "Saved!",
+				error: (err) => err.message ?? "Failed to save",
+			});
+		} finally {
+			const elapsed = Date.now() - start;
+			const minVisible = 300; // ensure spinner shown
+			window.setTimeout(
+				() => setIsSaving(false),
+				Math.max(0, minVisible - elapsed),
+			);
+		}
+	}, [onSave, readOnly, isSaving]);
+
 	useEffect(() => {
 		if (typeof document !== "undefined") {
 			document.body.classList[zenMode ? "add" : "remove"]("zen-mode");
@@ -110,12 +137,6 @@ export function Toolbar(props: Props) {
 		};
 	}, [zenMode]);
 
-	const webScreenshotsClasses = cn(
-		"h-7 bg-border/75 px-1.25 text-neutral-500",
-		"first-of-type:border-r-blue-200 data-[state=on]:border-blue-200 data-[state=on]:bg-blue-100/75 data-[state=on]:text-blue-500",
-		"dark:data-[state=on]:border-blue-400/25 dark:data-[state=on]:bg-blue-900/75 dark:data-[state=on]:text-blue-400 dark:first-of-type:border-r-blue-400/25",
-	);
-
 	return (
 		<div
 			className={cn(
@@ -124,31 +145,30 @@ export function Toolbar(props: Props) {
 			)}
 		>
 			{/* View Toggle (Web vs Screenshots) */}
-			<ToggleGroup
-				type="single"
-				value={mode === "live" ? "web" : "screenshots"}
-				onValueChange={(val) => {
-					if (!val) return;
-					setMode(val === "web" ? "live" : "screenshot");
-				}}
-				variant="outline"
-				size="none"
-			>
-				<ToggleGroupItem
-					value="web"
-					aria-label="Web preview"
-					className={webScreenshotsClasses}
+			<div className="flex items-center gap-0">
+				<button
+					type="button"
+					className={cn(
+						"inline-flex size-7 items-center justify-center rounded-r-none rounded-l-sm border border-border p-1 shadow-xs",
+						mode === "live" ? "bg-border" : "hover:bg-muted",
+					)}
+					onClick={() => setMode("live")}
+					title="Web preview"
 				>
-					<Globe size={14} />
-				</ToggleGroupItem>
-				<ToggleGroupItem
-					value="screenshots"
-					aria-label="Screenshots grid"
-					className={webScreenshotsClasses}
+					<Globe size={16} />
+				</button>
+				<button
+					type="button"
+					className={cn(
+						"-ml-px inline-flex size-7 items-center justify-center rounded-r-sm rounded-l-none border border-border p-1 shadow-xs",
+						mode === "screenshot" ? "bg-border" : "hover:bg-muted",
+					)}
+					onClick={() => setMode("screenshot")}
+					title="Screenshots grid"
 				>
-					<Images size={14} />
-				</ToggleGroupItem>
-			</ToggleGroup>
+					<Images size={16} />
+				</button>
+			</div>
 
 			{/* Email entry & export inputs (shown only if setters provided) */}
 			{language === "jsx" && setEntryPath && setExportName && (
@@ -193,11 +213,11 @@ export function Toolbar(props: Props) {
 				</div>
 			)}
 
-			<div className="ml-auto flex items-center gap-1.5">
+			<div className="ml-auto flex items-center gap-1.25">
 				<button
 					type="button"
 					className={cn(
-						"rounded border border-neutral-800/15 p-1",
+						"inline-flex size-7 items-center justify-center rounded-sm border border-border p-1 shadow-xs",
 						dark ? "bg-border" : "hover:bg-muted",
 					)}
 					onClick={() => setDark(!dark)}
@@ -209,7 +229,7 @@ export function Toolbar(props: Props) {
 				<button
 					type="button"
 					className={cn(
-						"flex items-center gap-1 rounded border border-neutral-800/15 p-1",
+						"flex h-7 min-w-7 items-center gap-1 rounded-sm border border-border px-1.25 shadow-xs",
 						consoleVisible ? "bg-border" : "hover:bg-muted",
 					)}
 					onClick={() => setConsoleVisible(!consoleVisible)}
@@ -233,7 +253,7 @@ export function Toolbar(props: Props) {
 				<button
 					type="button"
 					className={cn(
-						"rounded border border-neutral-800/15 p-1",
+						"inline-flex size-7 items-center justify-center rounded-sm border border-border p-1 shadow-xs",
 						zenMode ? "bg-border" : "hover:bg-muted",
 					)}
 					onClick={toggleZenMode}
@@ -245,14 +265,18 @@ export function Toolbar(props: Props) {
 				<button
 					type="button"
 					className={cn(
-						"relative flex items-center rounded border border-neutral-800/15 p-1",
-						(!isDirty || readOnly) && "bg-muted text-muted-foreground",
+						"relative flex h-7 min-w-7 items-center rounded-sm border border-border px-1.25 shadow-xs hover:bg-muted",
+						isSaving && "bg-border",
 					)}
-					onClick={readOnly ? undefined : onSave}
-					disabled={readOnly}
+					onClick={handleSave}
+					disabled={readOnly || isSaving}
 					title={readOnly ? "Read-only" : "Save version"}
 				>
-					<Save size={16} />
+					{isSaving ? (
+						<RefreshCcw size={16} className="animate-spin" />
+					) : (
+						<Save size={16} />
+					)}
 					<div
 						className={cn(
 							"inline-flex items-center justify-end",

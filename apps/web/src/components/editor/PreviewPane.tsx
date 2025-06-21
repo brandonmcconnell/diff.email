@@ -190,12 +190,12 @@ export function PreviewPane({
 								console.log('Attempting to import bundle...');
 								
 								// Import React modules first
-								const React = (await import('https://esm.sh/react@18')).default || (await import('https://esm.sh/react@18'));
-								const ReactJSXRuntime = await import('https://esm.sh/react@18/jsx-runtime');
+								const React = (await import('https://esm.sh/react@19')).default || (await import('https://esm.sh/react@19'));
+								const ReactJSXRuntime = await import('https://esm.sh/react@19/jsx-runtime');
 								
 								// Import React Email components to ensure they're available
 								console.log('Importing React Email components...');
-								const ReactEmailComponents = await import('https://esm.sh/@react-email/components@0.0.31');
+								const ReactEmailComponents = await import('https://esm.sh/@react-email/components@0.1.0');
 								
 								// Make React and React Email components available globally before importing the component
 								window.React = React;
@@ -236,14 +236,14 @@ export function PreviewPane({
 								const props = Component.PreviewProps || {};
 								
 								// Import ReactDOMServer for server-side rendering
-								const ReactDOMServer = await import('https://esm.sh/react-dom@18/server');
+								const ReactDOMServer = await import('https://esm.sh/react-dom@19/server');
 								
 								// Create element with the component
 								console.log('Creating element with props:', props);
 								
 								// Get ReactDOMServer (may already be imported)
 								console.log('Getting ReactDOMServer...');
-								const ReactDOMServerModule = window.ReactDOMServer || await import('https://esm.sh/react-dom@18/server');
+								const ReactDOMServerModule = window.ReactDOMServer || await import('https://esm.sh/react-dom@19/server');
 								window.ReactDOMServer = ReactDOMServerModule;
 								
 								// Create the element with the component and props
@@ -259,19 +259,54 @@ export function PreviewPane({
 								let htmlOutput;
 								
 								try {
-									// First try with the direct component result for React Email components
-									console.log('Checking if this is a React Email component...');
-									const componentResult = Component(props);
+									// For React Email components, we need to handle them specially
+									console.log('Attempting to render email component...');
 									
-									if (componentResult && typeof componentResult === 'object' && componentResult.$$typeof) {
-										console.log('React Email component detected, using renderToStaticMarkup...');
-										// React Email components return elements that need renderToStaticMarkup
-										htmlOutput = ReactDOMServerModule.renderToStaticMarkup(componentResult);
-									} else {
-										console.log('Standard component, using createElement + renderToString...');
-										// Standard components need createElement
-										htmlOutput = ReactDOMServerModule.renderToString(element);
+									// Since React Email components don't work well in the browser,
+									// we'll use a workaround by importing a browser-compatible version
+									console.log('Loading browser-compatible React Email render...');
+									
+									// Try multiple approaches to render React Email components
+									let rendered = false;
+									
+									// Approach 1: Try using the React Email render function
+									try {
+										const renderModule = await import('https://esm.sh/@react-email/render@1.1.2?target=es2020');
+										console.log('Render module loaded');
+										
+										if (renderModule.render) {
+											htmlOutput = await renderModule.render(element);
+											rendered = true;
+											console.log('Rendered with React Email render');
+										}
+									} catch (e) {
+										console.log('React Email render not available:', e.message);
 									}
+									
+									// Approach 2: Try calling the component directly and rendering the result
+									if (!rendered) {
+										try {
+											console.log('Trying direct component call...');
+											const componentResult = Component(props);
+											
+											// If it's a React element, try to render it
+											if (componentResult && typeof componentResult === 'object' && componentResult.$$typeof) {
+												// Use ReactDOMServer on the result
+												htmlOutput = ReactDOMServerModule.renderToStaticMarkup(componentResult);
+												rendered = true;
+												console.log('Rendered component result with ReactDOMServer');
+											}
+										} catch (e) {
+											console.log('Direct component call failed:', e.message);
+										}
+									}
+									
+									// Approach 3: Use ReactDOMServer on the createElement result
+									if (!rendered) {
+										console.log('Using ReactDOMServer on element...');
+										htmlOutput = ReactDOMServerModule.renderToStaticMarkup(element);
+									}
+									
 									console.log('Successfully rendered, HTML length:', htmlOutput.length);
 								} catch (renderError) {
 									console.error('Render error details:', {

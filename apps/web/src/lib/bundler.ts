@@ -46,17 +46,17 @@ export async function bundle(
 		setup(build: esbuild.PluginBuild) {
 			// jsx-runtime shim
 			build.onResolve({ filter: /^react$/ }, () => ({
-				path: "https://esm.sh/react@18",
+				path: "https://esm.sh/react@19",
 				external: true,
 			}));
 
 			build.onResolve({ filter: /^react-dom$/ }, () => ({
-				path: "https://esm.sh/react-dom@18",
+				path: "https://esm.sh/react-dom@19",
 				external: true,
 			}));
 
 			build.onResolve({ filter: /^react\/jsx-runtime$/ }, () => ({
-				path: "https://esm.sh/react@18/jsx-runtime",
+				path: "https://esm.sh/react@19/jsx-runtime",
 				external: true,
 			}));
 

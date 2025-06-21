@@ -43,6 +43,13 @@
 			"when": 1750275176927,
 			"tag": "0005_parallel_lily_hollister",
 			"breakpoints": true
+		},
+		{
+			"idx": 6,
+			"version": "7",
+			"when": 1750471702233,
+			"tag": "0006_sparkling_lord_hawal",
+			"breakpoints": true
 		}
 	]
 }

@@ -37,6 +37,8 @@ export const project = pgTable("projects", {
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.defaultNow()
 		.notNull(),
+	// Optional description provided by the user
+	description: text("description"),
 });
 
 export const email = pgTable("emails", {
@@ -49,6 +51,8 @@ export const email = pgTable("emails", {
 		.defaultNow()
 		.notNull(),
 	language: emailLanguageEnum("language").default("html").notNull(),
+	// Optional description provided by the user
+	description: text("description"),
 });
 
 export const version = pgTable("versions", {

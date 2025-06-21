@@ -12,6 +12,7 @@ export const projectsRouter = router({
 			.select({
 				id: project.id,
 				name: project.name,
+				description: project.description,
 				userId: project.userId,
 				createdAt: project.createdAt,
 				count: sql<number>`count(${email.id})::int`.as("count"),
@@ -23,28 +24,36 @@ export const projectsRouter = router({
 			.leftJoin(email, eq(project.id, email.projectId))
 			.leftJoin(user, eq(project.userId, user.id))
 			.where(eq(project.userId, userId))
-			.groupBy(project.id, user.name, user.email);
+			.groupBy(project.id, project.description, user.name, user.email);
 		return rows;
 	}),
 	create: protectedProcedure
 		.input(
 			z.object({
 				name: z.string().min(1),
+				description: z.string().optional(),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
 			const userId = ctx.session.user.id;
+			const { name, description } = input;
 			const [row] = await db
 				.insert(project)
-				.values({ name: input.name, userId })
+				.values({ name, userId, ...(description ? { description } : {}) })
 				.returning();
 			return row;
 		}),
 	update: protectedProcedure
-		.input(z.object({ id: z.string().uuid(), name: z.string().min(1) }))
+		.input(
+			z.object({
+				id: z.string().uuid(),
+				name: z.string().min(1),
+				description: z.string().optional(),
+			}),
+		)
 		.mutation(async ({ ctx, input }) => {
 			const userId = ctx.session.user.id;
-			const { id, name } = input;
+			const { id, name, description } = input;
 			// Ensure project belongs to user
 			const [existing] = await db
 				.select({ id: project.id })
@@ -54,7 +63,7 @@ export const projectsRouter = router({
 			// TODO: optionally check userId once user FK exists
 			const [row] = await db
 				.update(project)
-				.set({ name })
+				.set({ name, ...(description !== undefined ? { description } : {}) })
 				.where(eq(project.id, id))
 				.returning();
 			return row;

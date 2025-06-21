@@ -20,6 +20,7 @@ export const emailsRouter = router({
 					id: email.id,
 					projectId: email.projectId,
 					name: email.name,
+					description: email.description,
 					userId: project.userId,
 					createdAt: email.createdAt,
 					authorName: user.name,
@@ -39,6 +40,7 @@ export const emailsRouter = router({
 					user.name,
 					user.email,
 					email.language,
+					email.description,
 				);
 			return rows;
 		}),
@@ -47,16 +49,29 @@ export const emailsRouter = router({
 			z.object({
 				projectId: z.string().uuid(),
 				name: z.string().min(1),
+				description: z.string().optional(),
 				language: z.enum(["html", "jsx"]).default("html"),
 				html: z.string().optional(),
 				files: z.record(z.string(), z.string()).optional(),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
-			const { projectId, name, language, html, files: inputFiles } = input;
+			const {
+				projectId,
+				name,
+				description,
+				language,
+				html,
+				files: inputFiles,
+			} = input;
 			const [row] = await db
 				.insert(email)
-				.values({ projectId, name, language })
+				.values({
+					projectId,
+					name,
+					language,
+					...(description ? { description } : {}),
+				})
 				.returning();
 
 			if (language === "jsx") {
@@ -221,11 +236,12 @@ export const emailsRouter = router({
 			z.object({
 				id: z.string().uuid(),
 				name: z.string().min(1),
+				description: z.string().optional(),
 				language: z.enum(["html", "jsx"]).optional(),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
-			const { id, name, language } = input;
+			const { id, name, description, language } = input;
 			const [existing] = await db
 				.select({ id: email.id })
 				.from(email)
@@ -233,7 +249,11 @@ export const emailsRouter = router({
 			if (!existing) throw new Error("Email not found");
 			const [row] = await db
 				.update(email)
-				.set({ name, ...(language ? { language } : {}) })
+				.set({
+					name,
+					...(language ? { language } : {}),
+					...(description !== undefined ? { description } : {}),
+				})
 				.where(eq(email.id, id))
 				.returning();
 			return row;

@@ -263,11 +263,7 @@ export default function ProjectPage() {
 						},
 						{
 							label: "Description",
-							render: (item) =>
-								Math.random() > 0.5
-									? "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
-									: null,
-							dataCardProperty: "description",
+							render: (item) => item.description,
 						},
 						{
 							label: "Created",

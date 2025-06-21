@@ -195,8 +195,9 @@ export function Toolbar(props: Props) {
 	return (
 		<div
 			className={cn(
-				"flex items-center gap-2 border-b px-2 py-1",
+				"flex items-center gap-2 px-2 py-1",
 				"bg-muted/50 text-sm max-md:pb-safe-offset-1",
+				"max-md:border-t md:border-b",
 			)}
 		>
 			{/* View Toggle (Web vs Screenshots) */}

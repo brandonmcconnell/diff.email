@@ -2,6 +2,7 @@
 import { DuplicateEmailDialog } from "@/components/duplicate-email-dialog";
 import { LanguageBadge } from "@/components/language-badge";
 import { DataList, ListSkeleton } from "@/components/list";
+import { ManageEmailDialog } from "@/components/manage-email-dialog";
 import { NewEmailDialog } from "@/components/new-email-dialog";
 import { PageHeader } from "@/components/page-header";
 import { Input } from "@/components/ui/input";
@@ -100,7 +101,13 @@ export default function ProjectPage() {
 		id: string;
 		name: string;
 	} | null>(null);
+	const [manageSource, setManageSource] = useState<{
+		id: string;
+		name: string;
+		description?: string | null;
+	} | null>(null);
 	const [duplicateOpen, setDuplicateOpen] = useState(false);
+	const [manageOpen, setManageOpen] = useState(false);
 
 	function handleCreate(
 		title: string,
@@ -253,15 +260,20 @@ export default function ProjectPage() {
 					href={(e) => `/dashboard/${projectId}/${e.id}`}
 					actions={[
 						{
-							label: "Edit",
-							onSelect: async (item) => {
-								const newTitle = await prompt({
-									title: "Rename email",
-									defaultValue: item.name,
+							label: "Open",
+							onSelect: (item) => {
+								router.push(`/dashboard/${projectId}/${item.id}`);
+							},
+						},
+						{
+							label: "Manage",
+							onSelect: (item) => {
+								setManageSource({
+									id: item.id,
+									name: item.name,
+									description: item.description,
 								});
-								if (newTitle?.trim()) {
-									manageEmail.mutate({ id: item.id, name: newTitle.trim() });
-								}
+								setManageOpen(true);
 							},
 						},
 						{
@@ -291,6 +303,7 @@ export default function ProjectPage() {
 						{
 							label: "Description",
 							render: (item) => item.description,
+							dataCardProperty: "description",
 						},
 						{
 							label: "Created",
@@ -330,6 +343,22 @@ export default function ProjectPage() {
 							name: opts.name,
 							description: opts.description,
 							copyAllVersions: opts.copyAll,
+						});
+					}}
+				/>
+			)}
+
+			{manageSource && (
+				<ManageEmailDialog
+					open={manageOpen}
+					onOpenChange={setManageOpen}
+					initialName={manageSource.name}
+					initialDescription={manageSource.description}
+					onSave={(opts) => {
+						manageEmail.mutate({
+							id: manageSource.id,
+							name: opts.name,
+							description: opts.description,
 						});
 					}}
 				/>

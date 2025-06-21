@@ -353,3 +353,48 @@ body.zen-mode .page-header {
 body.zen-mode .pt-16 {
 	padding-top: 0 !important;
 }
+
+/* =====================
+   Console Feed Styles
+===================== */
+.console-feed {
+	/* console-feed styles */
+	@apply h-40! overflow-y-auto! border-t! bg-muted! font-medium!;
+	* {
+		@apply font-mono!;
+	}
+	[role="treeitem"] {
+		@apply [background:none]!;
+	}
+	/* size-4 for red circles in console-feed logs */
+	[data-method="error"],
+	[data-method="warn"] {
+		> div:first-child {
+			@apply flex! size-4! items-center! justify-center! subpixel-antialiased! leading-none! font-medium!;
+			@apply p-0! ml-2! -mr-1! bg-[image:none]! before:text-base! before:text-white! font-mono!;
+			> * {
+				@apply hidden!;
+			}
+		}
+	}
+	/* text styles for console-feed logs with numeric counts */
+	.css-ex0crf {
+		@apply font-medium! text-white! text-xs!;
+	}
+	/* red circle with X in non-numeric console-feed logs */
+	[data-method="error"] > div:first-child {
+		@apply bg-red-500! rounded-full!;
+		&::before {
+			@apply content-['×']!;
+		}
+	}
+	/* yellow triangle with ! in non-numeric console-feed logs */
+	[data-method="warn"] > div:first-child {
+		--triangle-size: 10px;
+		@apply bg-yellow-500! text-neutral-900!;
+		clip-path: polygon(50% 0, 100% 100%, 0 100%) !important;
+		&::before {
+			@apply content-['!']! text-sm! text-black! font-bold! mt-0.5!;
+		}
+	}
+}

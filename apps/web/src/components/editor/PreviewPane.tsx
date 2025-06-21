@@ -319,6 +319,8 @@ export function PreviewPane({
 								}
 								
 								console.log('Rendered HTML length:', htmlOutput.length);
+								console.warn('Rendered HTML length:', htmlOutput.length);
+								console.error('Rendered HTML length:', htmlOutput.length);
 								
 								// Wrap in proper HTML structure
 								const fullHTML = '<!DOCTYPE html>' +
@@ -406,25 +408,7 @@ export function PreviewPane({
 				/>
 			</div>
 			{showConsole && (
-				<div
-					className={cn(
-						// console-feed styles
-						"h-40 overflow-y-auto border-t bg-muted font-medium",
-						// console-feed global font styles
-						"[&_*]:font-mono!",
-						// size-4 for red circles in console-feed logs
-						"[&_.css-ex0crf,&_.css-k2zzbo]:flex! [&_.css-ex0crf,&_.css-k2zzbo]:size-4!",
-						"[&_.css-ex0crf,&_.css-k2zzbo]:items-center! [&_.css-ex0crf,&_.css-k2zzbo]:justify-center!",
-						"[&_.css-ex0crf,&_.css-k2zzbo]:subpixel-antialiased! [&_.css-ex0crf,&_.css-k2zzbo]:leading-none!",
-						"[&_.css-ex0crf,&_.css-k2zzbo]:font-medium!",
-						// text styles for console-feed logs with numeric counts
-						"[&_.css-ex0crf]:font-medium! [&_.css-ex0crf]:text-white! [&_.css-ex0crf]:text-xs!",
-						// red circle with X in non-numeric console-feed logs
-						"[&_.css-k2zzbo]:bg-[image:none]! [&_.css-k2zzbo]:[background:#dc2727]",
-						"[&_.css-k2zzbo]:rounded-full! [&_.css-k2zzbo]:before:content-['×']!",
-						"[&_.css-k2zzbo]:before:text-base! [&_.css-k2zzbo]:before:text-white!",
-					)}
-				>
+				<div className="console-feed">
 					<Console logs={consoleMessages} variant={theme} />
 				</div>
 			)}

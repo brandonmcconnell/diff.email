@@ -193,10 +193,24 @@ export function PreviewPane({
 								const React = (await import('https://esm.sh/react@18')).default || (await import('https://esm.sh/react@18'));
 								const ReactJSXRuntime = await import('https://esm.sh/react@18/jsx-runtime');
 								
-								// Make React available globally before importing the component
+								// Import React Email components to ensure they're available
+								console.log('Importing React Email components...');
+								const ReactEmailComponents = await import('https://esm.sh/@react-email/components@0.0.31');
+								
+								// Make React and React Email components available globally before importing the component
 								window.React = React;
 								window['react'] = React;
 								window['react/jsx-runtime'] = ReactJSXRuntime;
+								
+								// Make React Email components available globally
+								window['@react-email/components'] = ReactEmailComponents;
+								
+								// Also expose individual components on the window
+								for (const [key, value] of Object.entries(ReactEmailComponents)) {
+									if (key !== 'default' && typeof value !== 'undefined') {
+										window[key] = value;
+									}
+								}
 
 								// Now import the user's component
 								console.log('Importing user component from blob...');
@@ -227,25 +241,45 @@ export function PreviewPane({
 								// Create element with the component
 								console.log('Creating element with props:', props);
 								
-								// Import React Email render function
-								console.log('Importing React Email render function...');
-								const { render } = await import('https://esm.sh/@react-email/render@1.0.1');
+								// Import ReactDOMServer
+								console.log('Importing ReactDOMServer...');
+								const ReactDOMServer = await import('https://esm.sh/react-dom@18/server');
 								
 								// Create the element with the component and props
 								console.log('Creating element with component and props...');
 								const element = React.createElement(Component, props);
 								
-								// Use React Email's render function which handles React Email components properly
-								console.log('Rendering with React Email render...');
+								// Debug what we're about to render
+								console.log('Element type:', element.type);
+								console.log('Element props keys:', element.props ? Object.keys(element.props) : 'no props');
+								
+								// Try to render with ReactDOMServer
+								console.log('Rendering with ReactDOMServer...');
 								let htmlOutput;
 								
 								try {
-									// React Email's render function returns a promise
-									htmlOutput = await render(element);
+									// Use renderToString instead of renderToStaticMarkup for better error messages
+									htmlOutput = ReactDOMServer.renderToString(element);
 									console.log('Successfully rendered, HTML length:', htmlOutput.length);
 								} catch (renderError) {
-									console.error('React Email render error:', renderError);
-									throw renderError;
+									console.error('ReactDOMServer render error:', renderError);
+									
+									// Try a different approach - check if the component returns a React element directly
+									try {
+										console.log('Trying direct component call...');
+										const componentResult = Component(props);
+										
+										// Check if it's returning a React element
+										if (componentResult && typeof componentResult === 'object' && componentResult.$$typeof) {
+											console.log('Component returned React element directly, rendering that...');
+											htmlOutput = ReactDOMServer.renderToString(componentResult);
+										} else {
+											throw new Error('Component did not return a React element');
+										}
+									} catch (directError) {
+										console.error('Direct render error:', directError);
+										throw renderError;
+									}
 								}
 								
 								console.log('Rendered HTML length:', htmlOutput.length);

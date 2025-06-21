@@ -99,11 +99,11 @@ export function Toolbar(props: Props) {
 		}
 	}
 	const consoleBadgeCounts: [number, string][] = [
-		[errorCount, "bg-red-600"],
-		[warnCount, "bg-yellow-600"],
-		[debugCount, "bg-fuchsia-600"],
-		[infoCount, "bg-blue-600"],
-		[otherCount, "bg-neutral-500"],
+		[errorCount, "bg-red-500 md:bg-red-600"],
+		[warnCount, "bg-amber-500 md:bg-yellow-600"],
+		[debugCount, "bg-fuchsia-500 md:bg-fuchsia-600"],
+		[infoCount, "bg-blue-500 md:bg-blue-600"],
+		[otherCount, "bg-neutral-400 md:bg-neutral-500"],
 	];
 	const consoleBadgeClasses = (count: number) => {
 		return cn(
@@ -345,6 +345,23 @@ export function Toolbar(props: Props) {
 									>
 										{count}
 									</span>
+								),
+						)}
+					</div>
+					<div
+						className={cn(
+							"grid auto-cols-fr grid-flow-col grid-rows-2 gap-px md:hidden",
+							"rounded border border-transparent p-0.5",
+							consoleVisible && "border-neutral-900/20 bg-white",
+						)}
+					>
+						{consoleBadgeCounts.map(
+							([count, color]) =>
+								count > 0 && (
+									<div
+										key={color}
+										className={cn("box-content size-1.5 rounded-full", color)}
+									/>
 								),
 						)}
 					</div>

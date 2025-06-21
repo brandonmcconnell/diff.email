@@ -74,7 +74,10 @@ export default function Header({ className }: HeaderProps) {
 					</Link>
 					<Button
 						variant="outline"
-						className="flex h-9 items-center justify-center px-3 md:hidden"
+						className={cn(
+							"flex h-9 items-center justify-center px-3 md:hidden",
+							isMenuOpen && "max-md:bg-muted",
+						)}
 						onClick={toggleMenu}
 						aria-label={isMenuOpen ? "Close menu" : "Open menu"}
 					>
@@ -90,6 +93,7 @@ export default function Header({ className }: HeaderProps) {
 						"max-md:fixed max-md:top-16 max-md:left-0 max-md:flex-col max-md:gap-1",
 						"max-md:bg-background max-md:px-[inherit] max-md:pt-2.5 max-md:pb-3.5",
 						"max-md:border-border max-md:border-b",
+						"max-md:-z-1 max-md:shadow-lg",
 						// Hide mobile menu if not open
 						isMenuOpen ? null : "max-md:hidden!",
 					)}

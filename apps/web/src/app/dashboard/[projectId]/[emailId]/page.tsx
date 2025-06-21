@@ -269,7 +269,7 @@ export default function EmailEditorPage() {
 				exportName !== lastSavedExport;
 
 	// Track active tab ("editor" or "preview") to control Toolbar visibility
-	const [activeTab, setActiveTab] = useState<"editor" | "preview">("editor");
+	const [view, setView] = useState<"editor" | "preview">("editor");
 
 	// Show skeleton placeholder while queries are loading to avoid flashing incomplete header content
 	if (emailsQuery?.isPending || latestQuery.isPending) {
@@ -540,8 +540,8 @@ export default function EmailEditorPage() {
 					{/* Mobile (tabs) */}
 					<div className="overflow-visible! flex min-h-0 flex-1 flex-col border-t md:hidden">
 						<Tabs
-							value={activeTab}
-							onValueChange={(v) => setActiveTab(v as "editor" | "preview")}
+							value={view}
+							onValueChange={(v) => setView(v as "editor" | "preview")}
 							className="overflow-visible! relative flex h-full flex-col"
 						>
 							<TabsContent
@@ -626,7 +626,7 @@ export default function EmailEditorPage() {
 							setExportName={setExportName}
 							files={files}
 							onRun={handleRun}
-							view={activeTab}
+							view={view}
 						/>
 					</div>
 				</>

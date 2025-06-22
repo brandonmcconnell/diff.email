@@ -14,6 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { getGravatarUrl } from "@/lib/gravatar";
 import { trpc } from "@/utils/trpc";
+import { useMutation } from "@tanstack/react-query";
 import { ExternalLink } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -25,25 +26,19 @@ export default function AccountSettingsPage() {
 		return getGravatarUrl(email, 80);
 	}, [session?.user.email]);
 
-	// @ts-ignore firstName/lastName added in backend, typing not regenerated yet
-	const [firstName, setFirstName] = useState(session?.user.firstName ?? "");
-	// @ts-ignore
-	const [lastName, setLastName] = useState(session?.user.lastName ?? "");
+	const [firstName, setFirstName] = useState(
+		(session?.user as { firstName?: string })?.firstName ?? "",
+	);
+	const [lastName, setLastName] = useState(
+		(session?.user as { lastName?: string })?.lastName ?? "",
+	);
 	const [email, setEmail] = useState(session?.user.email ?? "");
 
-	type ProfileClient = {
-		profile: {
-			update: (input: {
-				firstName: string;
-				lastName: string;
-				email: string;
-			}) => Promise<unknown>;
-		};
-	};
+	const updateProfile = useMutation(trpc.profile.update.mutationOptions());
 
 	async function handleSave() {
 		try {
-			await (trpc as unknown as ProfileClient).profile.update({
+			await updateProfile.mutateAsync({
 				firstName,
 				lastName,
 				email,

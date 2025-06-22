@@ -58,8 +58,6 @@ export default function UserMenu() {
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end" className="w-48">
-				<DropdownMenuLabel>My Account</DropdownMenuLabel>
-				<DropdownMenuSeparator />
 				<DropdownMenuItem asChild>
 					<Link href="/settings">Account Settings</Link>
 				</DropdownMenuItem>

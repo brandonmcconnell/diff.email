@@ -1,4 +1,7 @@
-import { boolean, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import type { auth } from "@/lib/auth";
+import { boolean, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+
+type User = typeof auth.$Infer.Session.user;
 
 export const user = pgTable("user", {
 	id: text("id").primaryKey(),
@@ -10,7 +13,7 @@ export const user = pgTable("user", {
 	image: text("image"),
 	createdAt: timestamp("created_at").notNull(),
 	updatedAt: timestamp("updated_at").notNull(),
-});
+} satisfies Record<keyof User, unknown>);
 
 export const session = pgTable("session", {
 	id: text("id").primaryKey(),

@@ -13,10 +13,12 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { getGravatarUrl } from "@/lib/gravatar";
+import { confirmDeletion } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
 import { useMutation } from "@tanstack/react-query";
-import { ExternalLink } from "lucide-react";
-import { useMemo, useState } from "react";
+import { ExternalLink, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 export default function AccountSettingsPage() {
 	const { session } = useRequireAuth();
@@ -26,26 +28,74 @@ export default function AccountSettingsPage() {
 		return getGravatarUrl(email, 80);
 	}, [session?.user.email]);
 
-	const [firstName, setFirstName] = useState(
-		(session?.user as { firstName?: string })?.firstName ?? "",
-	);
-	const [lastName, setLastName] = useState(
-		(session?.user as { lastName?: string })?.lastName ?? "",
-	);
-	const [email, setEmail] = useState(session?.user.email ?? "");
+	useEffect(() => {
+		console.log(session);
+	}, [session]);
+
+	const [firstName, setFirstName] = useState("");
+	const [lastName, setLastName] = useState("");
+	const [email, setEmail] = useState("");
+	// Existing values for placeholders / fallbacks
+	const existingFirstName =
+		(session?.user as { firstName?: string })?.firstName ?? "";
+	const existingLastName =
+		(session?.user as { lastName?: string })?.lastName ?? "";
+	const existingEmail = session?.user.email ?? "";
 
 	const updateProfile = useMutation(trpc.profile.update.mutationOptions());
 
 	async function handleSave() {
-		try {
-			await updateProfile.mutateAsync({
-				firstName,
-				lastName,
-				email,
-			});
-		} catch (e: unknown) {
-			console.error(e);
-		}
+		// If nothing was entered, no-op
+		if (![firstName, lastName, email].some((v) => v.trim())) return;
+
+		const payload = {
+			firstName: firstName.trim() || existingFirstName,
+			lastName: lastName.trim() || existingLastName,
+			email: email.trim() || existingEmail,
+		} as const;
+
+		await toast.promise(
+			async () => {
+				await updateProfile.mutateAsync(payload);
+			},
+			{
+				loading: "Saving…",
+				success: "Profile updated!",
+				error: (err) =>
+					typeof err === "string" ? err : ((err as Error)?.message ?? "Error"),
+			},
+		);
+	}
+
+	// Delete account mutation
+	const deleteAccount = useMutation(
+		trpc.profile.deleteAccount.mutationOptions(),
+	);
+
+	async function handleDelete() {
+		const userEmail = session?.user.email ?? "your account";
+		await confirmDeletion(
+			{
+				id: session?.user.id ?? "me",
+				name: userEmail,
+				type: "account",
+			},
+			async () => {
+				await toast.promise(
+					async () => {
+						await deleteAccount.mutateAsync();
+					},
+					{
+						loading: "Deleting account…",
+						success: "Account deleted.",
+						error: (err) =>
+							typeof err === "string"
+								? err
+								: ((err as Error)?.message ?? "Error"),
+					},
+				);
+			},
+		);
 	}
 
 	return (
@@ -114,6 +164,7 @@ export default function AccountSettingsPage() {
 								id="firstName"
 								value={firstName}
 								onChange={(e) => setFirstName(e.target.value)}
+								placeholder={existingFirstName}
 							/>
 						</div>
 						<div className="space-y-2">
@@ -122,6 +173,7 @@ export default function AccountSettingsPage() {
 								id="lastName"
 								value={lastName}
 								onChange={(e) => setLastName(e.target.value)}
+								placeholder={existingLastName}
 							/>
 						</div>
 						<div className="space-y-2 md:col-span-2">
@@ -131,12 +183,19 @@ export default function AccountSettingsPage() {
 								type="email"
 								value={email}
 								onChange={(e) => setEmail(e.target.value)}
+								placeholder={existingEmail}
 							/>
 						</div>
 					</div>
 				</CardContent>
 				<CardFooter className="flex justify-end border-t">
-					<Button onClick={handleSave}>Save</Button>
+					<Button onClick={handleSave} disabled={updateProfile.isPending}>
+						{updateProfile.isPending ? (
+							<Loader2 className="animate-spin" size={16} />
+						) : (
+							"Save"
+						)}
+					</Button>
 				</CardFooter>
 			</Card>
 
@@ -153,7 +212,17 @@ export default function AccountSettingsPage() {
 					<p className="text-destructive text-sm">
 						This action cannot be undone!
 					</p>
-					<Button variant="destructive">Delete account</Button>
+					<Button
+						variant="destructive"
+						onClick={handleDelete}
+						disabled={deleteAccount.isPending}
+					>
+						{deleteAccount.isPending ? (
+							<Loader2 className="animate-spin" size={16} />
+						) : (
+							"Delete account"
+						)}
+					</Button>
 				</CardFooter>
 			</Card>
 

@@ -25,4 +25,9 @@ export const profileRouter = router({
 				.where(eq(user.id, ctx.session.user.id));
 			return { success: true };
 		}),
+	deleteAccount: protectedProcedure.mutation(async ({ ctx }) => {
+		// Delete the currently authenticated user and cascade via FK constraints.
+		await db.delete(user).where(eq(user.id, ctx.session.user.id));
+		return { success: true };
+	}),
 });

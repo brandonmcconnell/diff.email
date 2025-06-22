@@ -150,16 +150,17 @@ export function DataList<T extends BasicItem>({
 				className={cn("grid gap-4", view === "list" && "md:hidden")}
 				style={{ gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))" }}
 			>
-				{items.map((item) => {
-					return (
-						<div
-							key={item.id}
-							className="flex min-h-[125px] flex-col gap-2 rounded-md border p-4"
+				{items.map((item) => (
+					<div key={item.id} className="relative rounded-md border">
+						{/* Main clickable area */}
+						<Link
+							href={href(item)}
+							className="flex min-h-[125px] flex-col gap-2 rounded-md p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 						>
-							{/* Name link */}
-							<Link href={href(item)} className="truncate font-medium">
+							{/* Name (title) */}
+							<div className="truncate font-medium">
 								{render ? render(item, "grid") : item.name}
-							</Link>
+							</div>
 
 							{/* Description (optional) */}
 							{cardColumnMap.description && (
@@ -168,53 +169,55 @@ export function DataList<T extends BasicItem>({
 								</span>
 							)}
 
-							{/* Bottom row: details + actions */}
-							<div className="mt-auto flex items-end justify-between gap-2">
-								{/* Details stack (left) */}
-								{(cardColumnMap.detailLabel || cardColumnMap.detail) && (
-									<div className="flex flex-col">
-										{cardColumnMap.detailLabel && (
-											<span className="text-muted-foreground text-xs">
-												{cardColumnMap.detailLabel.render(item)}
-											</span>
-										)}
-										{cardColumnMap.detail && (
-											<span className="text-sm">
-												{cardColumnMap.detail.render(item)}
-											</span>
-										)}
-									</div>
-								)}
+							{/* Details section (bottom-left) */}
+							{(cardColumnMap.detailLabel || cardColumnMap.detail) && (
+								<div
+									className={cn(
+										"mt-auto flex flex-col",
+										hasActions && "max-w-[calc(100%---spacing(9))]",
+									)}
+								>
+									{cardColumnMap.detailLabel && (
+										<span className="text-muted-foreground text-xs">
+											{cardColumnMap.detailLabel.render(item)}
+										</span>
+									)}
+									{cardColumnMap.detail && (
+										<span className="text-sm">
+											{cardColumnMap.detail.render(item)}
+										</span>
+									)}
+								</div>
+							)}
+						</Link>
 
-								{/* Actions (right) */}
-								{hasActions && (
-									<DropdownMenu>
-										<DropdownMenuTrigger asChild>
-											<Button
-												variant="outline"
-												size="icon"
-												className="shrink-0"
-											>
-												<EllipsisVertical className="size-4" />
-											</Button>
-										</DropdownMenuTrigger>
-										<DropdownMenuContent align="end">
-											{actions?.map((a) => (
-												<DropdownMenuItem
-													key={a.label}
-													className={a.className}
-													onSelect={() => a.onSelect(item)}
-												>
-													{a.label}
-												</DropdownMenuItem>
-											))}
-										</DropdownMenuContent>
-									</DropdownMenu>
-								)}
-							</div>
-						</div>
-					);
-				})}
+						{/* Actions button (absolute, not inside link) */}
+						{hasActions && (
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button
+										variant="outline"
+										size="icon"
+										className="absolute right-4 bottom-4 shrink-0"
+									>
+										<EllipsisVertical className="size-4" />
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end">
+									{actions?.map((a) => (
+										<DropdownMenuItem
+											key={a.label}
+											className={a.className}
+											onSelect={() => a.onSelect(item)}
+										>
+											{a.label}
+										</DropdownMenuItem>
+									))}
+								</DropdownMenuContent>
+							</DropdownMenu>
+						)}
+					</div>
+				))}
 			</div>
 
 			<div

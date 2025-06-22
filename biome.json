@@ -16,7 +16,8 @@
 			".vscode",
 			"routeTree.gen.ts",
 			"src-tauri",
-			".nuxt"
+			".nuxt",
+			"apps/web/src/components/pro-blocks"
 		]
 	},
 	"formatter": {

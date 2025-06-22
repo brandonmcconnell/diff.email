@@ -179,6 +179,18 @@ body {
 }
 
 @layer base {
+	:where(*) {
+		&:not(
+				.monaco-editor,
+				.monaco-editor *,
+				.monaco-diff-editor,
+				.monaco-diff-editor *,
+				.monaco-component,
+				.monaco-component *
+			) {
+			@apply text-pretty;
+		}
+	}
 	* {
 		@apply border-border outline-ring/50;
 	}

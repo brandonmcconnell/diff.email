@@ -1,20 +1,26 @@
 import { QueryCache, QueryClient } from "@tanstack/react-query";
-import { createTRPCClient, httpBatchLink } from "@trpc/client";
+import { TRPCClientError, createTRPCClient, httpBatchLink } from "@trpc/client";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { toast } from "sonner";
 import type { AppRouter } from "../../../server/src/routers";
 
+function isUnauthError(err: unknown): err is TRPCClientError<AppRouter> {
+	return err instanceof TRPCClientError && err.shape?.code === "UNAUTHORIZED";
+}
+
 export const queryClient = new QueryClient({
 	queryCache: new QueryCache({
 		onError: (error) => {
-			toast.error(error.message, {
-				action: {
-					label: "retry",
-					onClick: () => {
-						queryClient.invalidateQueries();
+			if (isUnauthError(error)) {
+				toast.error(error.message, {
+					action: {
+						label: "retry",
+						onClick: () => {
+							queryClient.invalidateQueries();
+						},
 					},
-				},
-			});
+				});
+			}
 		},
 	}),
 });

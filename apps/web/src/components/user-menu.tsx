@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
 import { getGravatarUrl } from "@/lib/gravatar";
+import { queryClient } from "@/utils/trpc";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
@@ -65,13 +66,9 @@ export default function UserMenu() {
 				<DropdownMenuItem
 					variant="destructive"
 					onSelect={() => {
-						authClient.signOut({
-							fetchOptions: {
-								onSuccess: () => {
-									router.push("/");
-								},
-							},
-						});
+						authClient.signOut();
+						queryClient.clear();
+						router.replace("/sign-in");
 					}}
 				>
 					Sign Out

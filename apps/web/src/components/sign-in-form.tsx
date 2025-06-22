@@ -10,8 +10,10 @@ import { Label } from "./ui/label";
 
 export default function SignInForm({
 	onSwitchToSignUp,
+	redirectTo,
 }: {
 	onSwitchToSignUp: () => void;
+	redirectTo?: string;
 }) {
 	const router = useRouter();
 	const { isPending } = authClient.useSession();
@@ -29,7 +31,7 @@ export default function SignInForm({
 				},
 				{
 					onSuccess: () => {
-						router.push("/dashboard");
+						router.push(redirectTo || "/dashboard");
 						toast.success("Sign in successful");
 					},
 					onError: (error) => {

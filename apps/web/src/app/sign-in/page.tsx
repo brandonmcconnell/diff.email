@@ -1,8 +1,16 @@
 "use client";
 
 import SignInForm from "@/components/sign-in-form";
-import { redirect } from "next/navigation";
+import { redirect, useSearchParams } from "next/navigation";
 
 export default function SignInPage() {
-	return <SignInForm onSwitchToSignUp={() => redirect("/sign-up")} />;
+	const searchParams = useSearchParams();
+	const next = searchParams.get("next");
+
+	return (
+		<SignInForm
+			onSwitchToSignUp={() => redirect("/sign-up")}
+			redirectTo={next ? decodeURIComponent(next) : undefined}
+		/>
+	);
 }

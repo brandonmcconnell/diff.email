@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "../index.css";
+import AuthRouteGuard from "@/components/auth-route-guard";
 import Header from "@/components/header";
 import Providers from "@/components/providers";
 
@@ -32,7 +33,7 @@ export default function RootLayout({
 				<Providers>
 					<div className="grid h-svh grid-rows-[auto_1fr] pt-16">
 						<Header className="h-16" />
-						{children}
+						<AuthRouteGuard>{children}</AuthRouteGuard>
 					</div>
 				</Providers>
 			</body>

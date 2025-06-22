@@ -1,6 +1,7 @@
 import { authClient } from "@/lib/auth-client";
 import { useForm } from "@tanstack/react-form";
-import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import z from "zod/v4";
 import Loader from "./loader";
@@ -14,6 +15,8 @@ export default function SignInForm({
 	onSwitchToSignUp: () => void;
 }) {
 	const router = useRouter();
+	const searchParams = useSearchParams();
+	const redirectTo = searchParams?.get("redirect");
 	const { isPending } = authClient.useSession();
 
 	const form = useForm({
@@ -29,7 +32,14 @@ export default function SignInForm({
 				},
 				{
 					onSuccess: () => {
-						router.push("/dashboard");
+						// Set login marker cookie using js-cookie (30-day expiry)
+						Cookies.set("diffemail_logged_in", "true", {
+							expires: 30,
+							path: "/",
+							sameSite: "lax",
+						});
+
+						router.push(redirectTo ?? "/dashboard");
 						toast.success("Sign in successful");
 					},
 					onError: (error) => {

@@ -11,14 +11,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { authClient } from "@/lib/auth-client";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { getGravatarUrl } from "@/lib/gravatar";
 import { trpc } from "@/utils/trpc";
 import { ExternalLink } from "lucide-react";
 import { useMemo, useState } from "react";
 
 export default function AccountSettingsPage() {
-	const { data: session } = authClient.useSession();
+	const { session } = useRequireAuth();
 
 	const avatarUrl = useMemo(() => {
 		const email = session?.user.email ?? "placeholder@example.com";

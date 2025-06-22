@@ -42,6 +42,7 @@
 		"clsx": "^2.1.1",
 		"console-feed": "^3.8.0",
 		"crypto-js": "^4.2.0",
+		"js-cookie": "^3.0.5",
 		"lucide-react": "^0.516.0",
 		"monaco-editor": "^0.52.2",
 		"next": "15.3.0",
@@ -58,6 +59,7 @@
 	"devDependencies": {
 		"@tailwindcss/postcss": "^4",
 		"@tanstack/react-query-devtools": "^5.80.5",
+		"@types/js-cookie": "^3.0.6",
 		"@types/node": "^20",
 		"@types/react": "^19",
 		"@types/react-dom": "^19",

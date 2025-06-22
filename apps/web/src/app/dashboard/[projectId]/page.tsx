@@ -9,7 +9,7 @@ import { PageHeader } from "@/components/page-header";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { authClient } from "@/lib/auth-client";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { prompt } from "@/lib/dialogs";
 import { confirmDeletion } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
@@ -29,7 +29,7 @@ export default function ProjectPage() {
 	const router = useRouter();
 	const params = useParams<{ projectId: string }>();
 	const projectId = params.projectId;
-	const { data: session, isPending } = authClient.useSession();
+	const { session, isPending } = useRequireAuth();
 
 	const queryClient = useQueryClient();
 
@@ -153,10 +153,6 @@ export default function ProjectPage() {
 			},
 		}),
 	);
-
-	useEffect(() => {
-		if (!session && !isPending) router.push("/sign-in");
-	}, [session, isPending, router]);
 
 	if (isPending || emailsQuery?.isPending) {
 		return (

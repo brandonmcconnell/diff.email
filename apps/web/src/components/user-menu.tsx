@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
 import { getGravatarUrl } from "@/lib/gravatar";
+import Cookies from "js-cookie";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
@@ -68,6 +69,8 @@ export default function UserMenu() {
 						authClient.signOut({
 							fetchOptions: {
 								onSuccess: () => {
+									// Remove login marker cookie
+									Cookies.remove("diffemail_logged_in", { path: "/" });
 									router.push("/");
 								},
 							},

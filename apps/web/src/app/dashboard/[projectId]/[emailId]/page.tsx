@@ -17,6 +17,7 @@ import {
 	type ReadOnlyVersion,
 	VersionHistoryDialog,
 } from "@/components/version-history-dialog";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { prompt } from "@/lib/dialogs";
 import { confirmDeletion } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
@@ -29,6 +30,8 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 export default function EmailEditorPage() {
+	const { isPending } = useRequireAuth();
+
 	const params = useParams<{ projectId: string; emailId: string }>();
 	const projectId = params.projectId;
 	const emailId = params.emailId;
@@ -272,7 +275,7 @@ export default function EmailEditorPage() {
 	const [view, setView] = useState<"editor" | "preview">("editor");
 
 	// Show skeleton placeholder while queries are loading to avoid flashing incomplete header content
-	if (emailsQuery?.isPending || latestQuery.isPending) {
+	if (isPending || emailsQuery?.isPending || latestQuery.isPending) {
 		return (
 			<div className="animate-pulse bg-background">
 				{/* Header skeleton */}

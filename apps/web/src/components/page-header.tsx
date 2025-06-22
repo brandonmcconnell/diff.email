@@ -25,6 +25,7 @@ import {
 	Plus,
 	Settings2,
 	Slash,
+	Home,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -86,7 +87,12 @@ export function PageHeader({
 	const crumbs: React.ReactNode[] = [
 		<BreadcrumbItem key="home">
 			<BreadcrumbLink asChild>
-				<Link href="/dashboard">Dashboard</Link>
+				<Link href="/dashboard" className="flex items-center gap-1">
+					{/* Show house icon on screens smaller than md */}
+					<Home className="md:hidden size-4" aria-label="Dashboard" />
+					{/* Show text on md and larger */}
+					<span className="max-md:hidden">Dashboard</span>
+				</Link>
 			</BreadcrumbLink>
 		</BreadcrumbItem>,
 	];

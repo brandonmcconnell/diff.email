@@ -13,8 +13,9 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { authClient } from "@/lib/auth-client";
 import { getGravatarUrl } from "@/lib/gravatar";
+import { trpc } from "@/utils/trpc";
 import { ExternalLink } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 export default function AccountSettingsPage() {
 	const { data: session } = authClient.useSession();
@@ -24,10 +25,33 @@ export default function AccountSettingsPage() {
 		return getGravatarUrl(email, 80);
 	}, [session?.user.email]);
 
-	// Derive first/last from full name if available (client-side only for placeholder purposes)
-	const [derivedFirstName = "", derivedLastName = ""] = (
-		session?.user.name ?? " "
-	).split(" ");
+	// @ts-ignore firstName/lastName added in backend, typing not regenerated yet
+	const [firstName, setFirstName] = useState(session?.user.firstName ?? "");
+	// @ts-ignore
+	const [lastName, setLastName] = useState(session?.user.lastName ?? "");
+	const [email, setEmail] = useState(session?.user.email ?? "");
+
+	type ProfileClient = {
+		profile: {
+			update: (input: {
+				firstName: string;
+				lastName: string;
+				email: string;
+			}) => Promise<unknown>;
+		};
+	};
+
+	async function handleSave() {
+		try {
+			await (trpc as unknown as ProfileClient).profile.update({
+				firstName,
+				lastName,
+				email,
+			});
+		} catch (e: unknown) {
+			console.error(e);
+		}
+	}
 
 	return (
 		<div className="container mx-auto flex flex-col gap-6 p-4 md:gap-8 md:p-6">
@@ -91,24 +115,33 @@ export default function AccountSettingsPage() {
 					<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 						<div className="space-y-2">
 							<Label htmlFor="firstName">First name</Label>
-							<Input id="firstName" defaultValue={derivedFirstName} />
+							<Input
+								id="firstName"
+								value={firstName}
+								onChange={(e) => setFirstName(e.target.value)}
+							/>
 						</div>
 						<div className="space-y-2">
 							<Label htmlFor="lastName">Last name</Label>
-							<Input id="lastName" defaultValue={derivedLastName} />
+							<Input
+								id="lastName"
+								value={lastName}
+								onChange={(e) => setLastName(e.target.value)}
+							/>
 						</div>
 						<div className="space-y-2 md:col-span-2">
 							<Label htmlFor="email">Email address</Label>
 							<Input
 								id="email"
 								type="email"
-								defaultValue={session?.user.email ?? ""}
+								value={email}
+								onChange={(e) => setEmail(e.target.value)}
 							/>
 						</div>
 					</div>
 				</CardContent>
 				<CardFooter className="flex justify-end border-t">
-					<Button>Save</Button>
+					<Button onClick={handleSave}>Save</Button>
 				</CardFooter>
 			</Card>
 

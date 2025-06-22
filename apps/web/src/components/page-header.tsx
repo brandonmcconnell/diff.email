@@ -21,11 +21,11 @@ import {
 	Check,
 	ChevronsUpDown,
 	FolderPlus,
+	Home,
 	MailPlus,
 	Plus,
 	Settings2,
 	Slash,
-	Home,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -89,7 +89,7 @@ export function PageHeader({
 			<BreadcrumbLink asChild>
 				<Link href="/dashboard" className="flex items-center gap-1">
 					{/* Show house icon on screens smaller than md */}
-					<Home className="md:hidden size-4" aria-label="Dashboard" />
+					<Home className="size-4 md:hidden" aria-label="Dashboard" />
 					{/* Show text on md and larger */}
 					<span className="max-md:hidden">Dashboard</span>
 				</Link>
@@ -253,22 +253,22 @@ export function PageHeader({
 									<DropdownMenuTrigger asChild>
 										<div>
 											<Button variant="outline" className="max-md:hidden">
-												Edit
+												Manage
 											</Button>
 											<Button
 												variant="outline"
 												size="icon"
 												className="md:hidden"
-												title="Edit"
+												title="Manage"
 											>
-												<Settings2 aria-label="Edit" />
+												<Settings2 aria-label="Manage" />
 											</Button>
 										</div>
 									</DropdownMenuTrigger>
 									<DropdownMenuContent align="end">
 										{onRename && (
 											<DropdownMenuItem onSelect={onRename}>
-												Rename
+												Manage
 											</DropdownMenuItem>
 										)}
 										{onDelete && (

@@ -3,6 +3,7 @@ import { DuplicateEmailDialog } from "@/components/duplicate-email-dialog";
 import { LanguageBadge } from "@/components/language-badge";
 import { DataList, ListSkeleton } from "@/components/list";
 import { ManageEmailDialog } from "@/components/manage-email-dialog";
+import { ManageProjectDialog } from "@/components/manage-project-dialog";
 import { NewEmailDialog } from "@/components/new-email-dialog";
 import { PageHeader } from "@/components/page-header";
 import { Input } from "@/components/ui/input";
@@ -108,6 +109,7 @@ export default function ProjectPage() {
 	} | null>(null);
 	const [duplicateOpen, setDuplicateOpen] = useState(false);
 	const [manageOpen, setManageOpen] = useState(false);
+	const [manageProjectOpen, setManageProjectOpen] = useState(false);
 
 	function handleCreate(
 		title: string,
@@ -191,14 +193,8 @@ export default function ProjectPage() {
 			<PageHeader
 				data={{ id: projectId, name: projectName ?? "", type: "project" }}
 				subtitle="Manage versioned email documents for this project."
-				onRename={async () => {
-					const newName = await prompt({
-						title: "Rename project",
-						defaultValue: projectName ?? "",
-					});
-					if (newName?.trim()) {
-						updateProject.mutate({ id: projectId, name: newName.trim() });
-					}
+				onRename={() => {
+					setManageProjectOpen(true);
 				}}
 				onDelete={() =>
 					confirmDeletion(
@@ -208,7 +204,7 @@ export default function ProjectPage() {
 				}
 				onCreate={() => setCreateOpen(true)}
 			>
-				<div className="contents flex-col gap-3 md:flex md:flex-row md:items-center">
+				<div className="contents flex-col gap-[inherit] md:flex md:flex-row md:items-center">
 					<ToggleGroup
 						type="single"
 						value={view}
@@ -363,6 +359,19 @@ export default function ProjectPage() {
 					}}
 				/>
 			)}
+
+			<ManageProjectDialog
+				open={manageProjectOpen}
+				onOpenChange={setManageProjectOpen}
+				initialName={projectName ?? ""}
+				onSave={(opts) => {
+					updateProject.mutate({
+						id: projectId,
+						name: opts.name,
+						description: opts.description,
+					});
+				}}
+			/>
 		</div>
 	);
 }

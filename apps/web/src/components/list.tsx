@@ -67,7 +67,9 @@ function renderEmpty({
 // Generic simple list pattern for projects, emails, etc.
 export interface BasicItem {
 	id: string;
-	name: string | React.ReactNode;
+	name: string;
+	description?: string | null;
+	createdAt: string;
 }
 
 export interface ListAction<T extends BasicItem> {

@@ -1,5 +1,7 @@
 "use client";
 import { DataList, ListSkeleton } from "@/components/list";
+import type { BasicItem } from "@/components/list";
+import { ManageProjectDialog } from "@/components/manage-project-dialog";
 import { PageHeader } from "@/components/page-header";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,6 +21,14 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useState } from "react";
+
+// Explicit project item type to avoid `any` casts
+interface ProjectListItem extends BasicItem {
+	userId: string;
+	authorName?: string | null;
+	count?: number;
+	type: "project";
+}
 
 export default function Dashboard() {
 	const router = useRouter();
@@ -63,9 +73,15 @@ export default function Dashboard() {
 		"ui-view",
 		"grid",
 	);
-	const filteredProjects = (projectsQuery.data ?? []).filter(
-		(p: { name: string }) => p.name.toLowerCase().includes(query.toLowerCase()),
-	);
+	const [manageSource, setManageSource] = useState<{
+		id: string;
+		name: string;
+		description?: string | null;
+	} | null>(null);
+	const [manageOpen, setManageOpen] = useState(false);
+	const filteredProjects = (projectsQuery.data ?? []).filter((p) =>
+		p.name.toLowerCase().includes(query.toLowerCase()),
+	) as ProjectListItem[];
 
 	// helper create function
 	async function handleCreate() {
@@ -77,7 +93,7 @@ export default function Dashboard() {
 
 	// Prefetch project pages for performance
 	useLayoutEffect(() => {
-		for (const p of filteredProjects satisfies Array<{ id: string }>) {
+		for (const p of filteredProjects) {
 			router.prefetch(`/dashboard/${p.id}`);
 			// Prefetch emails list to avoid skeleton on project page
 			const opts = trpc.emails.list.queryOptions({ projectId: p.id });
@@ -87,7 +103,7 @@ export default function Dashboard() {
 
 	// After email lists are in cache, prefetch email editor pages and their latest versions
 	useLayoutEffect(() => {
-		for (const p of filteredProjects satisfies Array<{ id: string }>) {
+		for (const p of filteredProjects) {
 			const emails = queryClient.getQueryData(
 				trpc.emails.list.queryKey({ projectId: p.id }),
 			) as Array<{ id: string }> | undefined;
@@ -148,7 +164,7 @@ export default function Dashboard() {
 				subtitle="Organize your projects and emails."
 				onCreate={handleCreate}
 			>
-				<div className="contents flex-col gap-3 md:flex md:flex-row md:items-center">
+				<div className="contents flex-col gap-[inherit] md:flex md:flex-row md:items-center">
 					<ToggleGroup
 						type="single"
 						value={view}
@@ -178,20 +194,25 @@ export default function Dashboard() {
 
 			{/* Body */}
 			<div className="container mx-auto px-4 py-6 lg:px-6">
-				<DataList
+				<DataList<ProjectListItem>
 					items={filteredProjects}
 					href={(p) => `/dashboard/${p.id}`}
 					actions={[
 						{
-							label: "Edit",
-							onSelect: async (item) => {
-								const newName = await prompt({
-									title: "Rename project",
-									defaultValue: item.name,
+							label: "Open",
+							onSelect: (item) => {
+								router.push(`/dashboard/${item.id}`);
+							},
+						},
+						{
+							label: "Manage",
+							onSelect: (item) => {
+								setManageSource({
+									id: item.id,
+									name: item.name,
+									description: item.description ?? undefined,
 								});
-								if (newName?.trim()) {
-									updateProject.mutate({ id: item.id, name: newName.trim() });
-								}
+								setManageOpen(true);
 							},
 						},
 						{
@@ -207,6 +228,11 @@ export default function Dashboard() {
 					createLabel="New project"
 					createIcon={FolderPlus}
 					columns={[
+						{
+							label: "Description",
+							render: (item) => item.description,
+							dataCardProperty: "description",
+						},
 						{
 							label: "Created",
 							render: (item) => new Date(item.createdAt).toLocaleDateString(),
@@ -225,6 +251,22 @@ export default function Dashboard() {
 					view={view}
 				/>
 			</div>
+
+			{manageSource && (
+				<ManageProjectDialog
+					open={manageOpen}
+					onOpenChange={setManageOpen}
+					initialName={manageSource.name}
+					initialDescription={manageSource.description}
+					onSave={(opts) => {
+						updateProject.mutate({
+							id: manageSource.id,
+							name: opts.name,
+							description: opts.description,
+						});
+					}}
+				/>
+			)}
 		</div>
 	);
 }

@@ -268,6 +268,7 @@ export function Toolbar(props: Props) {
 												"before:pointer-events-none before:border-0 before:bg-destructive/20",
 												"before:animation-duration-1250 before:animate-ping before:transition-opacity",
 												"hover:before:opacity-0 data-[state=open]:before:opacity-0",
+												// TODO: Fix this: This style does not appear to getting applied as expected.
 												"data-[state=open]:bg-border! data-[state=closed]:hover:bg-muted!",
 											)
 										: "border-border hover:bg-muted",

@@ -144,6 +144,11 @@ export default function EmailEditorPage() {
 
 	const isReadOnly = readOnlyVersion !== null;
 
+	// Determine current version ID for screenshot operations
+	const currentVersionId = (readOnlyVersion?.id ??
+		latestQuery.data?.id ??
+		"") as string;
+
 	useEffect(() => {
 		if (!latestQuery.data) return;
 		if (language === "html") {
@@ -466,6 +471,7 @@ export default function EmailEditorPage() {
 									if (!isReady) return null;
 									return (
 										<EditorPane
+											key={currentVersionId || "live"}
 											value={html}
 											onChange={(v) => {
 												if (isReadOnly) return; // Avoid loops in read-only mode
@@ -534,6 +540,8 @@ export default function EmailEditorPage() {
 											logs: Array<{ data: string[]; method: ConsoleMethod }>,
 										) => setConsoleLogs(logs)}
 										exportName={exportName}
+										emailId={emailId}
+										versionId={currentVersionId}
 									/>
 								</div>
 							</ResizablePanel>
@@ -553,6 +561,7 @@ export default function EmailEditorPage() {
 							>
 								{isReady && (
 									<EditorPane
+										key={currentVersionId || "live"}
 										value={html}
 										onChange={(v) => {
 											if (isReadOnly) return; // Avoid loops in read-only mode
@@ -597,6 +606,8 @@ export default function EmailEditorPage() {
 										logs: Array<{ data: string[]; method: ConsoleMethod }>,
 									) => setConsoleLogs(logs)}
 									exportName={exportName}
+									emailId={emailId}
+									versionId={currentVersionId}
 								/>
 							</TabsContent>
 

@@ -560,7 +560,8 @@ export function PreviewPane({
 	}, [dialogOpen, mode, completedSet]);
 
 	const pendingCount = selectedCombos.size;
-	const quotaRemaining = Number.POSITIVE_INFINITY; // unlimited during beta
+	const quotaRemaining = 10;
+	const hasUnlimitedPlan = quotaRemaining === Number.POSITIVE_INFINITY;
 
 	const engineState = (eng: Engine): "all" | "none" | "some" => {
 		let selected = 0;
@@ -724,16 +725,11 @@ export function PreviewPane({
 																value={comboKey}
 																disabled={alreadyShot}
 																className={cn(
-																	"border border-foreground/15! hover:border-transparent!",
-																	selected && "border-transparent!",
-																	alreadyShot
-																		? "cursor-not-allowed bg-muted! text-muted-foreground! opacity-50"
-																		: selected
-																			? cn(
-																					"bg-emerald-500/25! text-emerald-800! dark:text-emerald-400!",
-																					"hover:bg-primary/90 hover:text-primary-foreground/90",
-																				)
-																			: "bg-transparent text-foreground",
+																	"border border-transparent!",
+																	alreadyShot || selected
+																		? "bg-emerald-500/25! text-emerald-800! dark:text-emerald-400!"
+																		: "not-hover:border-foreground/15! bg-transparent text-foreground",
+																	alreadyShot && "opacity-35",
 																)}
 															>
 																{clientLabels[cl]}
@@ -757,16 +753,25 @@ export function PreviewPane({
 										/>
 										<p
 											className={cn(
-												"mt-1 text-muted-foreground text-xs",
-												pendingCount > quotaRemaining &&
-													"font-semibold text-destructive",
+												"mt-1.5 font-medium text-muted-foreground text-xs",
+												pendingCount > quotaRemaining && "text-destructive",
 											)}
 										>
-											{quotaRemaining - pendingCount} of{" "}
-											{quotaRemaining === Number.POSITIVE_INFINITY
-												? "unlimited"
-												: quotaRemaining}{" "}
-											remaining this month
+											{hasUnlimitedPlan ? (
+												<span>
+													You are on the beta{" "}
+													<span className="font-bold">unlimited plan</span>.
+													Enjoy!
+												</span>
+											) : (
+												<>
+													<span className="font-bold">
+														{quotaRemaining - pendingCount}
+													</span>{" "}
+													of <span className="font-bold">{quotaRemaining}</span>{" "}
+													remaining this month
+												</>
+											)}
 										</p>
 									</div>
 								</div>

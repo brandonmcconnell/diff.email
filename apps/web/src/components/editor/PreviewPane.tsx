@@ -512,20 +512,52 @@ export function PreviewPane({
 		trpc.emails.sendTestAndRun.mutationOptions(),
 	);
 
+	// Set of combos already completed in the current run (for disabling UI & pre-selecting)
+	const completedSet = React.useMemo(
+		() =>
+			new Set(
+				(
+					runData?.screenshots as
+						| { client: Client; engine: Engine }[]
+						| undefined
+				)?.map((s) => `${s.client}|${s.engine}`) ?? [],
+			),
+		[runData],
+	);
+
+	// Default full-selection set and state holding current selection
 	const defaultSelected = React.useMemo(
 		() => new Set(combos.map(({ client, engine }) => `${client}|${engine}`)),
 		[combos],
 	);
 	const [selectedCombos, setSelectedCombos] =
 		useState<Set<string>>(defaultSelected);
-	const toggleCombo = (key: string) => {
-		setSelectedCombos((prev) => {
-			const next = new Set(prev);
-			if (next.has(key)) next.delete(key);
-			else next.add(key);
-			return next;
-		});
-	};
+
+	// When dialog opens (or completed screenshots update), pre-select any combos that still need to run.
+	useEffect(() => {
+		if (!dialogOpen || mode !== "screenshot") return;
+
+		const missing = combos.filter(
+			({ client, engine }) => !completedSet.has(`${client}|${engine}`),
+		);
+		const nextSet = new Set<string>(
+			missing.map(({ client, engine }) => `${client}|${engine}`),
+		);
+
+		// Only update if the preset differs – avoids clobbering user toggles.
+		if (nextSet.size !== selectedCombos.size) {
+			setSelectedCombos(nextSet);
+			return;
+		}
+		for (const key of nextSet) {
+			if (!selectedCombos.has(key)) {
+				setSelectedCombos(nextSet);
+				break;
+			}
+		}
+		// Intentionally omit `selectedCombos` & `combos` so we don't reset on every click.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [dialogOpen, mode, completedSet]);
 
 	const pendingCount = selectedCombos.size;
 	const quotaRemaining = Number.POSITIVE_INFINITY; // unlimited during beta
@@ -658,7 +690,7 @@ export function PreviewPane({
 													: "indeterminate";
 										return (
 											<div key={eng} className="space-y-2">
-												<Label className="flex cursor-pointer items-center gap-2">
+												<Label className="inline-flex cursor-pointer items-center gap-2">
 													<Checkbox
 														checked={groupChecked}
 														onCheckedChange={(val) =>
@@ -685,15 +717,23 @@ export function PreviewPane({
 													{clients.map((cl) => {
 														const comboKey = `${cl}|${eng}`;
 														const selected = selectedCombos.has(comboKey);
+														const alreadyShot = completedSet.has(comboKey);
 														return (
 															<ToggleGroupItem
 																key={comboKey}
 																value={comboKey}
+																disabled={alreadyShot}
 																className={cn(
-																	"border",
-																	selected
-																		? "bg-primary text-primary-foreground"
-																		: "bg-transparent text-foreground",
+																	"border border-foreground/15! hover:border-transparent!",
+																	selected && "border-transparent!",
+																	alreadyShot
+																		? "cursor-not-allowed bg-muted! text-muted-foreground! opacity-50"
+																		: selected
+																			? cn(
+																					"bg-emerald-500/25! text-emerald-800! dark:text-emerald-400!",
+																					"hover:bg-primary/90 hover:text-primary-foreground/90",
+																				)
+																			: "bg-transparent text-foreground",
 																)}
 															>
 																{clientLabels[cl]}
@@ -722,7 +762,10 @@ export function PreviewPane({
 													"font-semibold text-destructive",
 											)}
 										>
-											{quotaRemaining - pendingCount} of {quotaRemaining}{" "}
+											{quotaRemaining - pendingCount} of{" "}
+											{quotaRemaining === Number.POSITIVE_INFINITY
+												? "unlimited"
+												: quotaRemaining}{" "}
 											remaining this month
 										</p>
 									</div>

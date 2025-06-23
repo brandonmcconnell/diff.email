@@ -112,7 +112,7 @@ export function Toolbar(props: Props) {
 		return cn(
 			"flex h-4 min-w-4 items-center justify-center font-mono subpixel-antialiased",
 			"font-medium text-[12px] text-white leading-none tracking-wide",
-			"first-of-type:rounded-l-full last-of-type:rounded-r-full",
+			"first-of-type:rounded-l last-of-type:rounded-r",
 			// fine-tuned padding to display single-digit badges as circles
 			count < 10 ? "px-1" : "px-1.25",
 			"first-of-type:not-last-of-type:pl-1.5",

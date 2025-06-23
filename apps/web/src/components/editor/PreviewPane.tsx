@@ -116,8 +116,12 @@ export function PreviewPane({
 	// Common constants for screenshot grid
 	const clients: Client[] = ["gmail", "outlook", "yahoo", "aol", "icloud"];
 	const engines: Engine[] = ["chromium", "firefox", "webkit"];
-	const combos = clients.flatMap((cl) =>
-		engines.map((en) => ({ client: cl, engine: en })),
+	const combos = React.useMemo(
+		() =>
+			clients.flatMap((cl) =>
+				engines.map((en) => ({ client: cl, engine: en })),
+			),
+		[clients, engines],
 	);
 
 	useEffect(() => {
@@ -551,31 +555,22 @@ export function PreviewPane({
 	const [selectedCombos, setSelectedCombos] =
 		useState<Set<string>>(defaultSelected);
 
-	// When dialog opens (or completed screenshots update), pre-select any combos that still need to run.
+	// When dialog opens or completed screenshots change, pre-select any combos that still need to run.
+	const prevCompletedRef = React.useRef(completedCombos);
 	useEffect(() => {
 		if (!dialogOpen || mode !== "screenshot") return;
+
+		// Only react when the completed set actually changes to avoid overriding manual toggles.
+		if (prevCompletedRef.current === completedCombos) return;
+		prevCompletedRef.current = completedCombos;
 
 		const missing = combos.filter(
 			({ client, engine }) => !completedCombos.has(`${client}|${engine}`),
 		);
-		const nextSet = new Set<string>(
-			missing.map(({ client, engine }) => `${client}|${engine}`),
+		setSelectedCombos(
+			new Set(missing.map(({ client, engine }) => `${client}|${engine}`)),
 		);
-
-		// Only update if the preset differs – avoids clobbering user toggles.
-		if (nextSet.size !== selectedCombos.size) {
-			setSelectedCombos(nextSet);
-			return;
-		}
-		for (const key of nextSet) {
-			if (!selectedCombos.has(key)) {
-				setSelectedCombos(nextSet);
-				break;
-			}
-		}
-		// Intentionally omit `selectedCombos` & `combos` so we don't reset on every click.
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [dialogOpen, mode, completedCombos, combos, selectedCombos]);
+	}, [dialogOpen, mode, completedCombos, combos]);
 
 	const pendingCount = selectedCombos.size;
 	const quotaRemaining = Number.POSITIVE_INFINITY;

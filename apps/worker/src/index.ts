@@ -85,6 +85,14 @@ async function mouseClickCenter(
 }
 
 //--------------------------------------------------------------------------
+// Utility: reject after N ms (used for Promise.race watchdog)
+function delayReject(ms: number, msg: string): Promise<never> {
+	return new Promise((_, reject) =>
+		setTimeout(() => reject(new Error(msg)), ms),
+	);
+}
+
+//--------------------------------------------------------------------------
 // Helper: wait for an email to arrive in the mailbox and open it.
 async function waitForEmail(
 	page: Page,
@@ -203,21 +211,26 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 			throw new Error("Job is missing subjectToken; cannot locate email");
 		}
 
-		log.info({ subjectToken }, "Waiting for email to appear");
-		await waitForEmail(page, client, subjectToken);
+		const buffer: Buffer = await Promise.race([
+			(async () => {
+				log.info({ subjectToken }, "Waiting for email to appear");
+				await waitForEmail(page, client, subjectToken);
 
-		const bodyHandle = await page.waitForSelector(
-			selectors[client].messageBody,
-			{
-				timeout: 10_000,
-			},
-		);
-		if (!bodyHandle) {
-			throw new Error("Message body element not found after opening email");
-		}
-
-		const buffer = await bodyHandle.screenshot({ type: "png" });
-		log.info({ bytes: buffer.length }, "Screenshot captured");
+				const bodyHandle = await page.waitForSelector(
+					selectors[client].messageBody,
+					{
+						timeout: 10_000,
+					},
+				);
+				if (!bodyHandle) {
+					throw new Error("Message body element not found after opening email");
+				}
+				const png = await bodyHandle.screenshot({ type: "png" });
+				log.info({ bytes: png.length }, "Screenshot captured");
+				return png;
+			})(),
+			delayReject(90_000, "Timed out waiting for email + capture > 90s"),
+		]);
 
 		await context.close();
 

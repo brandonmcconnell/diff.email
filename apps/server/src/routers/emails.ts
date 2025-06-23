@@ -119,7 +119,7 @@ export const emailsRouter = router({
 			}
 			// Send via Resend
 			const res: CreateEmailResponse = await resend.emails.send({
-				from: "Diff.email <noreply@diff.email>",
+				from: "diff.email DONOTREPLY <donotreply@diff.email>",
 				to,
 				subject,
 				html: htmlContent,
@@ -180,7 +180,7 @@ export const emailsRouter = router({
 			if (!htmlContent) throw new Error("Version does not contain HTML");
 			// Send email via Resend with the token appended to subject
 			const res: CreateEmailResponse = await resend.emails.send({
-				from: "Diff.email <noreply@diff.email>",
+				from: "diff.email DONOTREPLY <donotreply@diff.email>",
 				to,
 				subject: subjectWithToken,
 				html: htmlContent,

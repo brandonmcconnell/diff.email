@@ -1,4 +1,5 @@
 import { and, desc, eq } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { z } from "zod/v4";
 import { db } from "../db";
 import { run, screenshot, version } from "../db/schema/core";
@@ -35,6 +36,27 @@ export const runsRouter = router({
 				throw new Error("Version not found");
 			}
 			const expectedShots = clients.length;
+			const monthlyQuota = 100; // TODO: move to env/config/db, will be user/plan/org/team-specific
+			const startOfMonth = new Date();
+			startOfMonth.setUTCDate(1);
+			startOfMonth.setUTCHours(0, 0, 0, 0);
+			// Count existing screenshots for user this month
+			if (!ctx.session?.user?.id) throw new Error("Not authenticated");
+			const userId = ctx.session.user.id;
+			const result = await db.execute<{
+				count: number;
+			}>(
+				sql /*sql*/`SELECT count(s.id)::int FROM screenshots s
+					JOIN runs r ON s.run_id = r.id
+					JOIN emails e ON r.email_id = e.id
+					JOIN projects p ON e.project_id = p.id
+					WHERE p.user_id = ${userId} AND s.created_at >= ${startOfMonth}`,
+			);
+			const used = Number(result.rows?.[0]?.count ?? 0);
+			const willUse = clients.length;
+			if (used + willUse > monthlyQuota) {
+				throw new Error("Monthly screenshot quota exceeded");
+			}
 			const [row] = await db
 				.insert(run)
 				.values({ emailId, versionId, expectedShots })

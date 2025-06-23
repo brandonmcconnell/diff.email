@@ -1,13 +1,28 @@
 "use client";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 import {
 	ResizableHandle,
 	ResizablePanel,
 	ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useComputedTheme } from "@/hooks/useComputedTheme";
 import { bundle } from "@/lib/bundler";
+import { cn, pluralize } from "@/lib/utils";
 // import { cn } from "@/lib/utils"; // removed unused helper
 import type { Client, Engine } from "@diff-email/shared";
+import { Label } from "@radix-ui/react-label";
 import { Console, type Hook } from "console-feed";
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as React from "react";
@@ -47,6 +62,7 @@ export function PreviewPane({
 	exportName = "default",
 	mode,
 	dark,
+	screenshotUrl,
 	showConsole = false,
 	onLogsChange,
 }: Props) {
@@ -90,6 +106,13 @@ export function PreviewPane({
 
 	// Resolve effective entry (default to index.tsx)
 	const effectiveEntry = entry ?? "index.tsx";
+
+	// Common constants for screenshot grid
+	const clients: Client[] = ["gmail", "outlook", "yahoo", "aol", "icloud"];
+	const engines: Engine[] = ["chromium", "firefox", "webkit"];
+	const combos = clients.flatMap((cl) =>
+		engines.map((en) => ({ client: cl, engine: en })),
+	);
 
 	useEffect(() => {
 		if (!iframeRef.current) return;
@@ -470,15 +493,65 @@ export function PreviewPane({
 			}) as ConsoleMessage,
 	);
 
+	// Screenshot generation dialog state
+	const [dialogOpen, setDialogOpen] = useState(false);
+	const defaultSelected = React.useMemo(
+		() => new Set(combos.map(({ client, engine }) => `${client}|${engine}`)),
+		[combos],
+	);
+	const [selectedCombos, setSelectedCombos] =
+		useState<Set<string>>(defaultSelected);
+	const toggleCombo = (key: string) => {
+		setSelectedCombos((prev) => {
+			const next = new Set(prev);
+			if (next.has(key)) next.delete(key);
+			else next.add(key);
+			return next;
+		});
+	};
+
+	const pendingCount = selectedCombos.size;
+	const quotaRemaining = 5; // TODO: fetch real quota
+
+	const engineState = (eng: Engine): "all" | "none" | "some" => {
+		let selected = 0;
+		for (const cl of clients) {
+			if (selectedCombos.has(`${cl}|${eng}`)) selected++;
+		}
+		if (selected === 0) return "none";
+		if (selected === clients.length) return "all";
+		return "some";
+	};
+
+	const toggleEngineGroup = (eng: Engine, newChecked: boolean | string) => {
+		setSelectedCombos((prev) => {
+			const next = new Set(prev);
+			for (const cl of clients) {
+				const key = `${cl}|${eng}`;
+				if (newChecked) {
+					next.add(key);
+				} else {
+					next.delete(key);
+				}
+			}
+			return next;
+		});
+	};
+
+	// Add handler function after toggleEngineGroup
+	const setEngineValues = (eng: Engine, values: string[]) => {
+		setSelectedCombos((prev) => {
+			const next = new Set(prev);
+			// remove all combos for this engine
+			for (const cl of clients) next.delete(`${cl}|${eng}`);
+			// add back selected values
+			for (const v of values) next.add(v);
+			return next;
+		});
+	};
+
 	if (mode === "screenshot") {
 		// Static list of 5×3 = 15 client/engine combos (placeholder phase)
-		const clients: Client[] = ["gmail", "outlook", "yahoo", "aol", "icloud"];
-		const engines: Engine[] = ["chromium", "firefox", "webkit"];
-
-		const combos = clients.flatMap((c) =>
-			engines.map((e) => ({ client: c, engine: e })),
-		);
-
 		const clientLabels: Record<Client, string> = {
 			gmail: "Gmail",
 			outlook: "Outlook",
@@ -492,27 +565,156 @@ export function PreviewPane({
 			webkit: "Safari",
 		};
 
+		const notStarted = !screenshotUrl; // crude detection for now
+
 		return (
-			<div className="h-full w-full overflow-auto p-4">
-				<div className="grid auto-rows-[200px] grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
-					{combos.map(({ client, engine }) => (
-						<div
-							key={`${client}-${engine}`}
-							className="relative overflow-hidden rounded-lg border bg-card shadow-sm"
-						>
-							{/* Placeholder thumbnail */}
-							<div className="absolute inset-0 bg-linear-to-br from-muted/50 to-muted" />
-							{/* Label bar */}
-							<div className="absolute inset-x-1 bottom-1 block gap-1 rounded-md bg-black/40 px-2.5 py-1.5 font-medium text-white text-xs backdrop-blur-sm">
-								<span className="font-semibold">{clientLabels[client]}</span>{" "}
-								<span className="mx-0.5 select-none font-light text-xs opacity-50">
-									•
-								</span>{" "}
-								<span>{engineLabels[engine]}</span>
-							</div>
-						</div>
-					))}
+			<div className="relative h-full w-full overflow-auto p-4">
+				<div className={notStarted ? "opacity-100" : undefined}>
+					<div className="grid auto-rows-[200px] grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
+						{combos.map(({ client, engine }) => {
+							return (
+								<div
+									key={`${client}${engine}`}
+									className="relative overflow-hidden rounded-lg border bg-card shadow-sm"
+								>
+									<div className="absolute inset-0 bg-linear-to-br from-muted/50 to-muted" />
+									<div className="absolute inset-x-0.75 bottom-0.75 rounded-md bg-linear-to-r from-background to-background/50 px-2.5 py-1.5 font-medium text-foreground text-xs backdrop-blur-sm">
+										<span className="font-semibold">
+											{clientLabels[client]}
+										</span>
+										<span className="mx-1 select-none opacity-50">•</span>
+										<span>{engineLabels[engine]}</span>
+									</div>
+								</div>
+							);
+						})}
+					</div>
 				</div>
+
+				{notStarted && (
+					<div className="pointer-events-none sticky bottom-0 flex items-end justify-center p-6">
+						<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+							<DialogTrigger asChild>
+								<Button
+									className="pointer-events-auto rounded-full shadow-foreground/25 shadow-xl"
+									size="lg"
+								>
+									Generate screenshots
+								</Button>
+							</DialogTrigger>
+							<DialogContent className="sm:max-w-lg">
+								<DialogHeader>
+									<DialogTitle>Generate screenshots</DialogTitle>
+									<DialogDescription>
+										Select the clients and engines you want to use for the
+										screenshots.
+									</DialogDescription>
+								</DialogHeader>
+
+								<div className="space-y-4 py-2">
+									{engines.map((eng) => {
+										const state = engineState(eng);
+										const groupChecked =
+											state === "all"
+												? true
+												: state === "none"
+													? false
+													: "indeterminate";
+										return (
+											<div key={eng} className="space-y-2">
+												<Label className="flex cursor-pointer items-center gap-2">
+													<Checkbox
+														checked={groupChecked}
+														onCheckedChange={(val) =>
+															toggleEngineGroup(eng, !!val)
+														}
+													/>
+													<span className="font-medium text-sm">
+														{engineLabels[eng]}
+													</span>
+												</Label>
+												<ToggleGroup
+													type="multiple"
+													className={cn(
+														"grid w-full grid-cols-3 grid-rows-2 gap-2",
+														"*:rounded-md! md:flex",
+													)}
+													value={clients
+														.filter((cl) => selectedCombos.has(`${cl}|${eng}`))
+														.map((cl) => `${cl}|${eng}`)}
+													onValueChange={(vals) =>
+														setEngineValues(eng, vals as string[])
+													}
+												>
+													{clients.map((cl) => {
+														const comboKey = `${cl}|${eng}`;
+														const selected = selectedCombos.has(comboKey);
+														return (
+															<ToggleGroupItem
+																key={comboKey}
+																value={comboKey}
+																className={cn(
+																	"border",
+																	selected
+																		? "bg-primary text-primary-foreground"
+																		: "bg-transparent text-foreground",
+																)}
+															>
+																{clientLabels[cl]}
+															</ToggleGroupItem>
+														);
+													})}
+												</ToggleGroup>
+											</div>
+										);
+									})}
+
+									<div className="pt-4">
+										<p className="mb-1 text-sm">
+											This run will use <strong>{pendingCount}</strong>{" "}
+											{pluralize(pendingCount, "screenshot")}.
+										</p>
+										<Progress
+											value={
+												((quotaRemaining - pendingCount) / quotaRemaining) * 100
+											}
+										/>
+										<p
+											className={cn(
+												"mt-1 text-muted-foreground text-xs",
+												pendingCount > quotaRemaining &&
+													"font-semibold text-destructive",
+											)}
+										>
+											{quotaRemaining - pendingCount} of {quotaRemaining}{" "}
+											remaining this month
+										</p>
+									</div>
+								</div>
+
+								<DialogFooter className="pt-2">
+									<Button
+										disabled={
+											pendingCount === 0 || pendingCount > quotaRemaining
+										}
+										onClick={() => {
+											// TODO: trigger save & run mutation
+											setDialogOpen(false);
+										}}
+									>
+										Run now
+									</Button>
+									<Button
+										variant="secondary"
+										onClick={() => setDialogOpen(false)}
+									>
+										Cancel
+									</Button>
+								</DialogFooter>
+							</DialogContent>
+						</Dialog>
+					</div>
+				)}
 			</div>
 		);
 	}
@@ -533,7 +735,7 @@ export function PreviewPane({
 
 			{/* Divider / handle */}
 			<ResizableHandle
-				className={showConsole ? undefined : "pointer-events-none opacity-0"}
+				className={showConsole ? undefined : "pointer-events-none"}
 			/>
 
 			{/* Console panel (collapsible) */}

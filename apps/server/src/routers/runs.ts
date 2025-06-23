@@ -27,6 +27,30 @@ export const runsRouter = router({
 		.mutation(async ({ ctx, input }) => {
 			const { emailId, versionId, clients, dark, subjectToken, messageId } =
 				input;
+
+			// Deduplicate against existing screenshots for this email (any version)
+			// Fetch existing client/engine pairs already captured for this email
+			const existingRows = await db
+				.select({ client: screenshot.client, engine: screenshot.engine })
+				.from(screenshot)
+				.innerJoin(run, eq(screenshot.runId, run.id))
+				.where(eq(run.emailId, emailId));
+
+			const existingSet = new Set<string>();
+			for (const r of existingRows) {
+				if (r.client && r.engine) {
+					existingSet.add(`${r.client as string}|${r.engine as string}`);
+				}
+			}
+
+			const uniqueClients = clients.filter(
+				(c) => !existingSet.has(`${c.client}|${c.engine}`),
+			);
+
+			if (uniqueClients.length === 0) {
+				throw new Error("Requested screenshots have already been generated");
+			}
+
 			// fetch HTML for the version to embed in job data
 			const [versionRow] = await db
 				.select()
@@ -35,7 +59,7 @@ export const runsRouter = router({
 			if (!versionRow) {
 				throw new Error("Version not found");
 			}
-			const expectedShots = clients.length;
+			const expectedShots = uniqueClients.length;
 			const monthlyQuota = 100; // TODO: move to env/config/db, will be user/plan/org/team-specific
 			const startOfMonth = new Date();
 			startOfMonth.setUTCDate(1);
@@ -67,7 +91,7 @@ export const runsRouter = router({
 			}
 			// Enqueue a job per client/engine pair
 			await Promise.all(
-				clients.map((c) =>
+				uniqueClients.map((c) =>
 					screenshotsQueue.add(
 						"screenshot",
 						{

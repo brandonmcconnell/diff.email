@@ -466,11 +466,12 @@ export function PreviewPane({
 
 		if (dark) {
 			root.classList.add("dark");
-			// Ensure browser default styles respect dark mode.
 			root.style.colorScheme = "dark";
+			root.style.backgroundColor = "black";
 		} else {
 			root.classList.remove("dark");
 			root.style.colorScheme = "light";
+			root.style.backgroundColor = "white";
 		}
 	}, [dark]);
 
@@ -529,14 +530,18 @@ export function PreviewPane({
 		[runData],
 	);
 
-	// Derive a live processing collection by subtracting completed combos from in-flight ones
-	const processingActiveCombos = React.useMemo(() => {
-		const next = new Set<string>();
-		for (const key of processingCombos) {
-			if (!completedCombos.has(key)) next.add(key);
-		}
-		return next;
-	}, [processingCombos, completedCombos]);
+	// Remove combos from processing set as soon as they become completed
+	useEffect(() => {
+		if (completedCombos.size === 0) return;
+		setProcessingCombos((prev) => {
+			if (prev.size === 0) return prev;
+			const next = new Set(prev);
+			for (const key of completedCombos) {
+				next.delete(key);
+			}
+			return next;
+		});
+	}, [completedCombos]);
 
 	// Default full-selection set and state holding current selection
 	const defaultSelected = React.useMemo(
@@ -570,7 +575,7 @@ export function PreviewPane({
 		}
 		// Intentionally omit `selectedCombos` & `combos` so we don't reset on every click.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [dialogOpen, mode, completedCombos]);
+	}, [dialogOpen, mode, completedCombos, combos, selectedCombos]);
 
 	const pendingCount = selectedCombos.size;
 	const quotaRemaining = Number.POSITIVE_INFINITY;
@@ -737,8 +742,7 @@ export function PreviewPane({
 														const comboKey = `${cl}|${eng}`;
 														const isSelected = selectedCombos.has(comboKey);
 														const isCompleted = completedCombos.has(comboKey);
-														const isProcessing =
-															processingActiveCombos.has(comboKey);
+														const isProcessing = processingCombos.has(comboKey);
 														return (
 															<ToggleGroupItem
 																key={comboKey}
@@ -802,8 +806,14 @@ export function PreviewPane({
 											pendingCount === 0 || pendingCount > quotaRemaining
 										}
 										onClick={async () => {
-											// Mark these combos as in processing before calling the mutation
-											setProcessingCombos(new Set(selectedCombos));
+											// Mark new combos as processing (merge with any already in-flight)
+											setProcessingCombos((prev) => {
+												const next = new Set(prev);
+												for (const k of selectedCombos) {
+													next.add(k);
+												}
+												return next;
+											});
 											const result = await sendTestAndRun.mutateAsync({
 												emailId,
 												versionId,

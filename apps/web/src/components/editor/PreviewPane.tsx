@@ -26,7 +26,6 @@ import type { Client, Engine } from "@diff-email/shared";
 import { Label } from "@radix-ui/react-label";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Console, type Hook } from "console-feed";
-import { Loader } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as React from "react";
 
@@ -159,7 +158,7 @@ export function PreviewPane({
 
 						(function(){
 							const METHODS=['log','info','warn','error','debug'];
-							METHODS.forEach((m)=>{
+							for (const m of METHODS) {
 								const orig = console[m];
 								console[m] = function(...args){
 									// Convert args to serializable format
@@ -180,7 +179,7 @@ export function PreviewPane({
 									window.parent.postMessage({type:'console', method:m, args: serializableArgs}, '*');
 									orig.apply(console, args);
 								};
-							});
+							}
 						})();
 
 						window.addEventListener('error', function(e){
@@ -534,9 +533,7 @@ export function PreviewPane({
 	const processingActiveCombos = React.useMemo(() => {
 		const next = new Set<string>();
 		for (const key of processingCombos) {
-			if (!completedCombos.has(key)) {
-				next.add(key);
-			}
+			if (!completedCombos.has(key)) next.add(key);
 		}
 		return next;
 	}, [processingCombos, completedCombos]);
@@ -571,8 +568,9 @@ export function PreviewPane({
 				break;
 			}
 		}
-		// The linter requires exhaustive deps; including `combos` and `selectedCombos` is safe here.
-	}, [dialogOpen, mode, completedCombos, combos, selectedCombos]);
+		// Intentionally omit `selectedCombos` & `combos` so we don't reset on every click.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [dialogOpen, mode, completedCombos]);
 
 	const pendingCount = selectedCombos.size;
 	const quotaRemaining = Number.POSITIVE_INFINITY;
@@ -754,9 +752,6 @@ export function PreviewPane({
 																	isCompleted && "opacity-35",
 																)}
 															>
-																{isProcessing && (
-																	<Loader className="-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2 size-4 animate-spin" />
-																)}
 																{clientLabels[cl]}
 															</ToggleGroupItem>
 														);

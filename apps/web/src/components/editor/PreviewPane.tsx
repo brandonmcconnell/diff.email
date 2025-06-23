@@ -859,6 +859,7 @@ export function PreviewPane({
 			{/* Divider / handle */}
 			<ResizableHandle
 				className={showConsole ? undefined : "pointer-events-none"}
+				withHandle
 			/>
 
 			{/* Console panel (collapsible) */}

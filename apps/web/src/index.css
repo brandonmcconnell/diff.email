@@ -348,7 +348,7 @@ body.zen-mode .pt-16 {
 ===================== */
 .console-feed {
 	/* console-feed styles */
-	@apply h-40! overflow-y-auto! border-t! bg-muted! dark:bg-neutral-900! font-medium!;
+	@apply h-40! overflow-y-auto! bg-muted! dark:bg-neutral-900! font-medium!;
 	* {
 		@apply font-mono!;
 	}
@@ -357,6 +357,9 @@ body.zen-mode .pt-16 {
 	}
 	[data-method] {
 		@apply border-y! border-current/4!;
+		&:first-of-type {
+			@apply border-t-0!;
+		}
 		a {
 			@apply text-inherit! underline!;
 		}
@@ -403,9 +406,11 @@ body.zen-mode .pt-16 {
 		@apply bg-fuchsia-100! dark:bg-fuchsia-800/20! border-fuchsia-500/25! text-fuchsia-700! dark:text-fuchsia-300!;
 		> div:first-of-type {
 			@apply bg-transparent! rounded-full!;
+			/* ? `dark:` tw variant cannot be used inside an actual `::before`, so declaring these here outside it */
+			@apply before:bg-fuchsia-500! before:dark:bg-fuchsia-400!;
 			&::before {
 				mask: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 459 459'%3e%3cpath fill='%234D88FF' d='M433.5 127.5h-71.4a177.7 177.7 0 0 0-45.9-51L357 35.7 321.3 0l-56.1 56.1c-10.2-2.6-23-5.1-35.7-5.1s-25.5 2.5-35.7 5.1L137.7 0 102 35.7l40.8 40.8a177.7 177.7 0 0 0-45.9 51H25.5v51H79c-2.5 7.7-2.5 17.9-2.5 25.5v25.5h-51v51h51V306a88 88 0 0 0 2.5 25.5H25.5v51h71.4A152.2 152.2 0 0 0 229.5 459c56.1 0 107.1-30.6 132.6-76.5h71.4v-51H380c2.5-7.7 2.5-17.9 2.5-25.5v-25.5h51v-51h-51V204c0-7.7 0-17.9-2.5-25.5h53.5v-51zm-153 204h-102v-51h102v51zm0-102h-102v-51h102v51z'/%3e%3c/svg%3e");
-				@apply bg-fuchsia-600! dark:bg-fuchsia-400! mask-center! mask-no-repeat!;
+				@apply mask-center! mask-no-repeat!;
 				@apply content-['']! text-fuchsia-900! absolute! inset-0! size-full!;
 			}
 		}

@@ -1,25 +1,38 @@
 import type { Client } from "@diff-email/shared";
 
-export const searchInputSelectors: Record<Client, string> = {
-	gmail: "form[role='search'] input:not([disabled])",
-	outlook: "input#topSearchInput",
-	yahoo: "[data-search-form-id] input:not([disabled]):not([aria-hidden=true])",
-	aol: "[data-search-form-id] input:not([disabled]):not([aria-hidden=true])",
-	icloud: "ui-autocomplete-token-field",
+type SelectorGroup = {
+	readonly searchInput: string;
+	readonly searchResult: string;
+	readonly messageBody: string;
 };
 
-export const searchResultSelectors: Record<Client, string> = {
-	gmail: "[role='main'] .bog > [data-thread-id]",
-	outlook: "[data-convid][role='option']",
-	yahoo: "[data-test-id='message-list-item'] [id^='email-subject-']",
-	aol: "[data-test-id='message-list-item'] [data-test-id='message-subject']",
-	icloud: ".thread-list-item",
-};
-
-export const messageBodySelectors: Record<Client, string> = {
-	gmail: ".ii.gt",
-	outlook: "[tabindex='0'][aria-label='Message body']",
-	yahoo: "[data-test-id='message-view-body-content']",
-	aol: "[data-test-id='message-view-body']",
-	icloud: ".conversation-list-item iframe[sandbox]",
+export const selectors: Record<Client, SelectorGroup> = {
+	gmail: {
+		searchInput: "form[role='search'] input:not([disabled])",
+		searchResult: "[role='main'] .bog > [data-thread-id]",
+		messageBody: ".ii.gt",
+	},
+	outlook: {
+		searchInput: "input#topSearchInput",
+		searchResult: "[data-convid][role='option']",
+		messageBody: "[tabindex='0'][aria-label='Message body']",
+	},
+	yahoo: {
+		searchInput:
+			"[data-search-form-id] input:not([disabled]):not([aria-hidden=true])",
+		searchResult: "[data-test-id='message-list-item'] [id^='email-subject-']",
+		messageBody: "[data-test-id='message-view-body-content']",
+	},
+	aol: {
+		searchInput:
+			"[data-search-form-id] input:not([disabled]):not([aria-hidden=true])",
+		searchResult:
+			"[data-test-id='message-list-item'] [data-test-id='message-subject']",
+		messageBody: "[data-test-id='message-view-body']",
+	},
+	icloud: {
+		searchInput: "ui-autocomplete-token-field",
+		searchResult: ".thread-list-item",
+		messageBody: ".conversation-list-item iframe[sandbox]",
+	},
 };

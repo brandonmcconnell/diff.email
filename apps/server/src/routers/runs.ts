@@ -28,13 +28,13 @@ export const runsRouter = router({
 			const { emailId, versionId, clients, dark, subjectToken, messageId } =
 				input;
 
-			// Deduplicate against existing screenshots for this email (any version)
-			// Fetch existing client/engine pairs already captured for this email
+			// Deduplicate against existing screenshots for the *same version*.
+			// Fetch existing client/engine pairs already captured for this version.
 			const existingRows = await db
 				.select({ client: screenshot.client, engine: screenshot.engine })
 				.from(screenshot)
 				.innerJoin(run, eq(screenshot.runId, run.id))
-				.where(eq(run.emailId, emailId));
+				.where(eq(run.versionId, versionId));
 
 			const existingSet = new Set<string>();
 			for (const r of existingRows) {

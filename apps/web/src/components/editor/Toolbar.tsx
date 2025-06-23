@@ -181,7 +181,15 @@ export function Toolbar(props: Props) {
 	})();
 
 	const handleSave = useCallback(async () => {
+		// Bail early if the button is disabled for other reasons.
 		if (readOnly || isSaving) return;
+
+		// If there is nothing new to persist, surface a quick toast and exit.
+		if (!isDirty) {
+			toast.success("No new changes to save");
+			return;
+		}
+
 		setIsSaving(true);
 		const start = Date.now();
 
@@ -201,7 +209,7 @@ export function Toolbar(props: Props) {
 				Math.max(0, minVisible - elapsed),
 			);
 		}
-	}, [onSave, readOnly, isSaving]);
+	}, [onSave, readOnly, isSaving, isDirty]);
 
 	useEffect(() => {
 		if (typeof document !== "undefined") {

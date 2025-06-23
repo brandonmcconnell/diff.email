@@ -26,6 +26,7 @@ import type { Client, Engine } from "@diff-email/shared";
 import { Label } from "@radix-ui/react-label";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Console, type Hook } from "console-feed";
+import { Loader } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as React from "react";
 
@@ -354,7 +355,7 @@ export function PreviewPane({
 								
 								console.log('Rendered HTML length:', htmlOutput.length);
 								// TODO: Remove this
-								console.log('Testing console.log', [1, 2, 3], { a: [1, 2, 3], b: { a: 1, b: [1, 2, new Map([[{a:1}, 2]])] } });
+								console.log('Testing console.log', [1, 2, 3], { a: [1, 2, 3], b: { a: 1, b: [1, 2, 3], c: { a: 1, b: [1, 2, new Map([[{a:1}, 2]])] } } });
 								console.info('Testing console.info', [1, 2, 3], { a: [1, 2, 3], b: { a: 1, b: [1, 2, new Map([[{a:1}, 2]])] } });
 								console.warn('Testing console.warn', [1, 2, 3], { a: [1, 2, 3], b: { a: 1, b: [1, 2, new Map([[{a:1}, 2]])] } });
 								console.error('Testing console.error', [1, 2, 3], { a: [1, 2, 3], b: { a: 1, b: [1, 2, new Map([[{a:1}, 2]])] } });
@@ -507,13 +508,17 @@ export function PreviewPane({
 		refetchInterval: 4_000,
 	});
 	const [dialogOpen, setDialogOpen] = useState(false);
+	// Keep track of combos currently being processed (queued but not yet completed)
+	const [processingCombos, setProcessingCombos] = useState<Set<string>>(
+		new Set(),
+	);
 	// Prepare mutation for sending test email & starting screenshot run.
 	const sendTestAndRun = useMutation(
 		trpc.emails.sendTestAndRun.mutationOptions(),
 	);
 
 	// Set of combos already completed in the current run (for disabling UI & pre-selecting)
-	const completedSet = React.useMemo(
+	const completedCombos = React.useMemo(
 		() =>
 			new Set(
 				(
@@ -524,6 +529,17 @@ export function PreviewPane({
 			),
 		[runData],
 	);
+
+	// Derive a live processing collection by subtracting completed combos from in-flight ones
+	const processingActiveCombos = React.useMemo(() => {
+		const next = new Set<string>();
+		for (const key of processingCombos) {
+			if (!completedCombos.has(key)) {
+				next.add(key);
+			}
+		}
+		return next;
+	}, [processingCombos, completedCombos]);
 
 	// Default full-selection set and state holding current selection
 	const defaultSelected = React.useMemo(
@@ -538,7 +554,7 @@ export function PreviewPane({
 		if (!dialogOpen || mode !== "screenshot") return;
 
 		const missing = combos.filter(
-			({ client, engine }) => !completedSet.has(`${client}|${engine}`),
+			({ client, engine }) => !completedCombos.has(`${client}|${engine}`),
 		);
 		const nextSet = new Set<string>(
 			missing.map(({ client, engine }) => `${client}|${engine}`),
@@ -555,9 +571,8 @@ export function PreviewPane({
 				break;
 			}
 		}
-		// Intentionally omit `selectedCombos` & `combos` so we don't reset on every click.
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [dialogOpen, mode, completedSet]);
+		// The linter requires exhaustive deps; including `combos` and `selectedCombos` is safe here.
+	}, [dialogOpen, mode, completedCombos, combos, selectedCombos]);
 
 	const pendingCount = selectedCombos.size;
 	const quotaRemaining = Number.POSITIVE_INFINITY;
@@ -618,7 +633,11 @@ export function PreviewPane({
 			webkit: "Safari",
 		};
 
-		const notStarted = !screenshotUrl; // crude detection for now
+		// Determine if any screenshots are still missing or in-flight
+		const hasMissingShots = combos.some(
+			({ client, engine }) => !completedCombos.has(`${client}|${engine}`),
+		);
+		const notStarted = !screenshotUrl; // crude initial detection prior to any run
 
 		return (
 			<div className="relative h-full w-full overflow-auto p-4">
@@ -660,7 +679,8 @@ export function PreviewPane({
 					</div>
 				</div>
 
-				{notStarted && (
+				{/* Show the generate button/dialog only when there are screenshots still missing */}
+				{hasMissingShots && (
 					<div className="pointer-events-none sticky bottom-0 flex items-end justify-center p-6">
 						<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
 							<DialogTrigger asChild>
@@ -717,21 +737,26 @@ export function PreviewPane({
 												>
 													{clients.map((cl) => {
 														const comboKey = `${cl}|${eng}`;
-														const selected = selectedCombos.has(comboKey);
-														const alreadyShot = completedSet.has(comboKey);
+														const isSelected = selectedCombos.has(comboKey);
+														const isCompleted = completedCombos.has(comboKey);
+														const isProcessing =
+															processingActiveCombos.has(comboKey);
 														return (
 															<ToggleGroupItem
 																key={comboKey}
 																value={comboKey}
-																disabled={alreadyShot}
+																disabled={isCompleted || isProcessing}
 																className={cn(
 																	"border border-transparent!",
-																	alreadyShot || selected
+																	isCompleted || isProcessing || isSelected
 																		? "bg-emerald-500/25! text-emerald-800! dark:text-emerald-400!"
 																		: "not-hover:border-foreground/15! bg-transparent text-foreground",
-																	alreadyShot && "opacity-35",
+																	isCompleted && "opacity-35",
 																)}
 															>
+																{isProcessing && (
+																	<Loader className="-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2 size-4 animate-spin" />
+																)}
 																{clientLabels[cl]}
 															</ToggleGroupItem>
 														);
@@ -782,6 +807,8 @@ export function PreviewPane({
 											pendingCount === 0 || pendingCount > quotaRemaining
 										}
 										onClick={async () => {
+											// Mark these combos as in processing before calling the mutation
+											setProcessingCombos(new Set(selectedCombos));
 											const result = await sendTestAndRun.mutateAsync({
 												emailId,
 												versionId,

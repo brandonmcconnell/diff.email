@@ -12,10 +12,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { authClient } from "@/lib/auth-client";
 import { getGravatarUrl } from "@/lib/gravatar";
 import { confirmDeletion } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -42,12 +43,35 @@ export default function AccountSettingsPage() {
 		(session?.user as { lastName?: string })?.lastName ?? "";
 	const existingEmail = session?.user.email ?? "";
 
-	const updateProfile = useMutation(trpc.profile.update.mutationOptions());
+	const queryClient = useQueryClient();
+	const [saving, setSaving] = useState(false);
+
+	const updateProfile = useMutation({
+		...trpc.profile.update.mutationOptions(),
+		onSuccess: async () => {
+			// Refresh current route so header and placeholders update instantly
+			window.location.reload();
+
+			// TODO: Figure out why the invalidation below doesn't work, then remove the above refresh workaround
+			// await authClient.getSession({ query: { disableCookieCache: true } }).catch(() => {});
+			// // Invalidate all queries (includes session) so UI updates
+			// queryClient.invalidateQueries();
+			// setFirstName("");
+			// setLastName("");
+			// setEmail("");
+			// setSaving(false);
+		},
+		onError: () => {
+			setSaving(false);
+		},
+	});
 
 	async function handleSave() {
+		if (saving) return;
 		// If nothing was entered, no-op
 		if (![firstName, lastName, email].some((v) => v.trim())) return;
 
+		setSaving(true);
 		const payload = {
 			firstName: firstName.trim() || existingFirstName,
 			lastName: lastName.trim() || existingLastName,
@@ -165,6 +189,7 @@ export default function AccountSettingsPage() {
 								value={firstName}
 								onChange={(e) => setFirstName(e.target.value)}
 								placeholder={existingFirstName}
+								disabled={updateProfile.isPending || saving}
 							/>
 						</div>
 						<div className="space-y-2">
@@ -174,6 +199,7 @@ export default function AccountSettingsPage() {
 								value={lastName}
 								onChange={(e) => setLastName(e.target.value)}
 								placeholder={existingLastName}
+								disabled={updateProfile.isPending || saving}
 							/>
 						</div>
 						<div className="space-y-2 md:col-span-2">
@@ -184,12 +210,16 @@ export default function AccountSettingsPage() {
 								value={email}
 								onChange={(e) => setEmail(e.target.value)}
 								placeholder={existingEmail}
+								disabled={updateProfile.isPending || saving}
 							/>
 						</div>
 					</div>
 				</CardContent>
 				<CardFooter className="flex justify-end border-t">
-					<Button onClick={handleSave} disabled={updateProfile.isPending}>
+					<Button
+						onClick={handleSave}
+						disabled={updateProfile.isPending || saving}
+					>
 						{updateProfile.isPending ? (
 							<Loader2 className="animate-spin" size={16} />
 						) : (

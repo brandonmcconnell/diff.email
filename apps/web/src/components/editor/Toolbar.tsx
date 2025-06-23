@@ -235,7 +235,7 @@ export function Toolbar(props: Props) {
 				<button
 					type="button"
 					className={cn(
-						"inline-flex size-7 items-center justify-center rounded-r-none rounded-l-sm border border-border p-1 shadow-xs",
+						"inline-flex size-7 @xl/preview:w-auto items-center justify-center @xl/preview:gap-2 rounded-r-none rounded-l-sm border border-border p-1 @xl/preview:px-2 shadow-xs",
 						mode === "live"
 							? "z-1 bg-border"
 							: "border-r-transparent hover:bg-muted",
@@ -243,12 +243,13 @@ export function Toolbar(props: Props) {
 					onClick={() => setMode("live")}
 					title="Web preview"
 				>
-					<Globe size={16} />
+					<Globe size={16} />{" "}
+					<span className="@max-xl/preview:hidden">Live Preview</span>
 				</button>
 				<button
 					type="button"
 					className={cn(
-						"-ml-px inline-flex size-7 items-center justify-center rounded-r-sm rounded-l-none border border-border p-1 shadow-xs",
+						"-ml-px inline-flex size-7 @xl/preview:w-auto items-center justify-center @xl/preview:gap-2 rounded-r-sm rounded-l-none border border-border p-1 @xl/preview:px-2 shadow-xs",
 						mode === "screenshot"
 							? "z-1 bg-border"
 							: "border-l-transparent hover:bg-muted",
@@ -256,7 +257,8 @@ export function Toolbar(props: Props) {
 					onClick={() => setMode("screenshot")}
 					title="Screenshots grid"
 				>
-					<Images size={16} />
+					<Images size={16} />{" "}
+					<span className="@max-xl/preview:hidden">Screenshots</span>
 				</button>
 			</div>
 

@@ -665,7 +665,7 @@ export function PreviewPane({
 						<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
 							<DialogTrigger asChild>
 								<Button
-									className="pointer-events-auto rounded-full shadow-foreground/25 shadow-xl"
+									className="pointer-events-auto rounded-full shadow-black/25 shadow-xl dark:shadow-black"
 									size="lg"
 								>
 									Generate screenshots

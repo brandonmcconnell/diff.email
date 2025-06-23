@@ -471,9 +471,48 @@ export function PreviewPane({
 	);
 
 	if (mode === "screenshot") {
+		// Static list of 5×3 = 15 client/engine combos (placeholder phase)
+		const clients: Client[] = ["gmail", "outlook", "yahoo", "aol", "icloud"];
+		const engines: Engine[] = ["chromium", "firefox", "webkit"];
+
+		const combos = clients.flatMap((c) =>
+			engines.map((e) => ({ client: c, engine: e })),
+		);
+
+		const clientLabels: Record<Client, string> = {
+			gmail: "Gmail",
+			outlook: "Outlook",
+			yahoo: "Yahoo",
+			aol: "AOL",
+			icloud: "iCloud",
+		};
+		const engineLabels: Record<Engine, string> = {
+			chromium: "Chrome",
+			firefox: "Firefox",
+			webkit: "Safari",
+		};
+
 		return (
-			<div className="flex h-full w-full items-center justify-center bg-muted">
-				<p className="text-muted-foreground text-sm">Screenshots TBD…</p>
+			<div className="h-full w-full overflow-auto p-4">
+				<div className="grid auto-rows-[200px] grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
+					{combos.map(({ client, engine }) => (
+						<div
+							key={`${client}-${engine}`}
+							className="relative overflow-hidden rounded-lg border bg-card shadow-sm"
+						>
+							{/* Placeholder thumbnail */}
+							<div className="absolute inset-0 bg-linear-to-br from-muted/50 to-muted" />
+							{/* Label bar */}
+							<div className="absolute inset-x-1 bottom-1 block gap-1 rounded-md bg-black/40 px-2.5 py-1.5 font-medium text-white text-xs backdrop-blur-sm">
+								<span className="font-semibold">{clientLabels[client]}</span>{" "}
+								<span className="mx-0.5 select-none font-light text-xs opacity-50">
+									•
+								</span>{" "}
+								<span>{engineLabels[engine]}</span>
+							</div>
+						</div>
+					))}
+				</div>
 			</div>
 		);
 	}

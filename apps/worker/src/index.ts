@@ -16,6 +16,11 @@ import type { Client, ScreenshotJobData } from "@diff-email/shared";
 import { db } from "@server/db";
 import { run, screenshot } from "@server/db/schema/core";
 import { redis, screenshotsQueue } from "@server/lib/queue";
+import {
+	messageBodySelectors,
+	searchInputSelectors,
+	searchResultSelectors,
+} from "./selectors";
 
 // -------------------------------------------------------------------------
 // Environment helpers
@@ -228,16 +233,8 @@ async function openMailboxMessage(
 	// Navigate to inbox/root first so the search UI is present.
 	await page.goto(baseUrls[client], { waitUntil: "domcontentloaded" });
 
-	const searchSelectors: Record<Client, string> = {
-		gmail: 'form[role="search"] input:not([disabled])',
-		outlook: "input#topSearchInput",
-		yahoo:
-			"[data-search-form-id] input:not([disabled]):not([aria-hidden=true])",
-		aol: "[data-search-form-id] input:not([disabled]):not([aria-hidden=true])",
-		icloud: "ui-autocomplete-token-field",
-	};
-
-	const selector = searchSelectors[client as keyof typeof searchSelectors];
+	const selector =
+		searchInputSelectors[client as keyof typeof searchInputSelectors];
 	if (!selector) throw new Error(`Search selector not defined for ${client}`);
 
 	await page.waitForSelector(selector, { timeout: 10000 });

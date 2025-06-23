@@ -10,17 +10,14 @@ import { put } from "@vercel/blob";
 import { type Job, Worker } from "bullmq";
 import { eq } from "drizzle-orm";
 import { type Page, chromium, firefox, webkit } from "playwright";
+import type { ElementHandle } from "playwright";
 
 import type { Client, ScreenshotJobData } from "@diff-email/shared";
 // --- Shared imports from the server package ------------------------------
 import { db } from "@server/db";
 import { run, screenshot } from "@server/db/schema/core";
 import { redis, screenshotsQueue } from "@server/lib/queue";
-import {
-	messageBodySelectors,
-	searchInputSelectors,
-	searchResultSelectors,
-} from "./selectors";
+import { selectors } from "./selectors";
 
 // -------------------------------------------------------------------------
 // Environment helpers
@@ -77,6 +74,80 @@ async function getStorageStatePath(
 }
 
 //--------------------------------------------------------------------------
+// Utility: click the geometrical center of an element via real mouse event.
+async function mouseClickCenter(
+	page: Page,
+	handle: ElementHandle,
+): Promise<void> {
+	const box = await handle.boundingBox();
+	if (!box) throw new Error("Could not obtain bounding box for element");
+	await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+}
+
+//--------------------------------------------------------------------------
+// Helper: wait for an email to arrive in the mailbox and open it.
+async function waitForEmail(
+	page: Page,
+	client: Client,
+	subjectToken: string,
+	timeoutMs = 90_000,
+): Promise<void> {
+	const start = Date.now();
+	const { searchInput, searchResult, messageBody } = selectors[client];
+
+	const baseUrls: Record<Client, string> = {
+		gmail: "https://mail.google.com/mail/u/0/#inbox",
+		outlook: "https://outlook.live.com/mail/0/",
+		yahoo: "https://mail.yahoo.com/",
+		aol: "https://mail.aol.com/",
+		icloud: "https://www.icloud.com/mail",
+	};
+
+	await page.goto(baseUrls[client], { waitUntil: "domcontentloaded" });
+
+	while (Date.now() - start < timeoutMs) {
+		// Focus and search
+		await page.waitForSelector(searchInput, { timeout: 10_000 });
+		if (client === "icloud") {
+			// iCloud token field is a web-component; requires real mouse click then typing
+			const handle = await page.$(searchInput);
+			if (!handle) throw new Error("iCloud search field not found");
+			await mouseClickCenter(page, handle);
+			await page.keyboard.type(subjectToken, { delay: 50 });
+		} else {
+			// Ensure input is focused before filling, in case .fill alone doesn't trigger events
+			await page.click(searchInput, { clickCount: 1 });
+			await page.fill(searchInput, subjectToken);
+		}
+		await page.keyboard.press("Enter");
+
+		try {
+			await page.waitForSelector(searchResult, { timeout: 5_000 });
+			const first = await page.$(searchResult);
+			if (!first) throw new Error("Search result element vanished");
+
+			if (client === "icloud") {
+				// iCloud requires real mouse clicks
+				await mouseClickCenter(page, first);
+			} else {
+				await first.click();
+			}
+
+			// Wait for the message body to render
+			await page.waitForSelector(messageBody, { timeout: 10_000 });
+			return; // success
+		} catch (e) {
+			// Email not yet found – wait and retry
+			await page.waitForTimeout(5_000);
+		}
+	}
+
+	throw new Error(
+		`Email with token ${subjectToken} not found in ${client} within ${timeoutMs} ms`,
+	);
+}
+
+//--------------------------------------------------------------------------
 async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 	const { runId, html, client, engine, dark, subjectToken, messageId } =
 		job.data;
@@ -128,39 +199,24 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 		// Dark mode emulation
 		await page.emulateMedia({ colorScheme: dark ? "dark" : "light" });
 
-		let captured = false;
-		if (subjectToken) {
-			try {
-				log.info({ subjectToken }, "Opening webmail client to locate email");
-				await openMailboxMessage(page, client, subjectToken, messageId);
-				captured = true;
-			} catch (err) {
-				log.warn({ err }, "Deep-link flow failed, falling back to setContent");
-			}
+		if (!subjectToken) {
+			throw new Error("Job is missing subjectToken; cannot locate email");
 		}
 
-		if (!captured) {
-			log.warn(
-				"Falling back to raw HTML render – email message could not be located",
-			);
-			const fallbackHtml = `<!DOCTYPE html>
-			<html lang="en">
-			<head>
-			<meta charset="utf-8" />
-			<title>diff.email – Fallback Screenshot</title>
-			<style>
-				body{display:flex;align-items:center;justify-content:center;height:100vh;margin:0;font-family:system-ui,Arial,sans-serif;background:#f6f7f9;color:#444;text-align:center;padding:2rem}
-				h1{font-size:1.5rem;max-width:28rem;line-height:1.4}
-			</style>
-			</head>
-			<body>
-				<h1>⚠️ diff.email could not locate the sent message in the mailbox, so this placeholder screenshot was taken instead.</h1>
-			</body>
-			</html>`;
-			await page.setContent(fallbackHtml, { waitUntil: "load" });
+		log.info({ subjectToken }, "Waiting for email to appear");
+		await waitForEmail(page, client, subjectToken);
+
+		const bodyHandle = await page.waitForSelector(
+			selectors[client].messageBody,
+			{
+				timeout: 10_000,
+			},
+		);
+		if (!bodyHandle) {
+			throw new Error("Message body element not found after opening email");
 		}
 
-		const buffer = await page.screenshot();
+		const buffer = await bodyHandle.screenshot({ type: "png" });
 		log.info({ bytes: buffer.length }, "Screenshot captured");
 
 		await context.close();
@@ -185,82 +241,6 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 		log.error({ err }, "Processing failed");
 		throw err; // let BullMQ mark job as failed
 	}
-}
-
-// ------------------------------------------------------------------------
-// Helper: open Gmail and locate the message containing the unique token.
-async function openGmailMessage(
-	page: Page,
-	token: string,
-	messageId?: string,
-): Promise<void> {
-	// Navigate to Gmail search URL. We rely on persistent login state.
-	const q = messageId ? `rfc822msgid:${messageId}` : token;
-	await page.goto(
-		`https://mail.google.com/mail/u/0/#search/${encodeURIComponent(q)}`,
-		{ waitUntil: "domcontentloaded" },
-	);
-	// Wait for search results table
-	await page.waitForSelector('table[role="grid"] tr', { timeout: 15000 });
-	// Click the first email row
-	const firstRow = await page.$('table[role="grid"] tr');
-	if (!firstRow) throw new Error("No search rows found");
-	await firstRow.click();
-	// Wait for message view to render - 'div[role="main"] img' etc.
-	await page.waitForSelector('div[role="main"]', { timeout: 10000 });
-}
-
-// ------------------------------------------------------------------------
-// Helper: open mailbox for other clients via subject search token.
-async function openMailboxMessage(
-	page: Page,
-	client: Client,
-	token: string,
-	messageId?: string,
-): Promise<void> {
-	if (client === "gmail") {
-		return openGmailMessage(page, token, messageId);
-	}
-
-	const baseUrls: Record<Client, string> = {
-		gmail: "https://mail.google.com/mail/u/0/#inbox",
-		outlook: "https://outlook.live.com/mail/0/",
-		yahoo: "https://mail.yahoo.com/",
-		aol: "https://mail.aol.com/",
-		icloud: "https://www.icloud.com/mail",
-	};
-
-	// Navigate to inbox/root first so the search UI is present.
-	await page.goto(baseUrls[client], { waitUntil: "domcontentloaded" });
-
-	const selector =
-		searchInputSelectors[client as keyof typeof searchInputSelectors];
-	if (!selector) throw new Error(`Search selector not defined for ${client}`);
-
-	await page.waitForSelector(selector, { timeout: 10000 });
-	await page.fill(selector, token);
-	await page.keyboard.press("Enter");
-
-	// Wait for results table/grid to appear and click first row.
-	await page.waitForTimeout(3000); // allow results to load
-
-	// General fallbacks – may need per-client tuning.
-	const firstRowCandidates = [
-		'[data-convid][data-focusable-row="true"]',
-		"tr[jscontroller]",
-		'div[role="checkbox"]',
-		'div[role="listitem"]',
-	];
-
-	for (const cand of firstRowCandidates) {
-		const el = await page.$(cand);
-		if (el) {
-			await el.click();
-			break;
-		}
-	}
-
-	await page.waitForSelector('div[role="main"]', { timeout: 10000 });
 }
 
 export const worker = new Worker<ScreenshotJobData>(

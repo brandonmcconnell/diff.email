@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db";
 import { user } from "../db/schema/auth";
@@ -14,13 +14,31 @@ export const profileRouter = router({
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
+			// Guard: prevent changing email to one that already exists on a different account.
+			// Use a case-insensitive lookup (`lower(email) = $email`) and explicitly skip the
+			// current user row.
+			const normalizedEmail = input.email.trim().toLowerCase();
+			if (normalizedEmail.length > 0) {
+				const [existing] = await db
+					.select({ id: user.id })
+					.from(user)
+					// lower(email) = $1 AND id <> $2
+					.where(
+						sql`lower(${user.email}) = ${normalizedEmail} and ${user.id} <> ${ctx.session.user.id}`,
+					)
+					.limit(1);
+
+				if (existing) {
+					throw new Error("Email address already in use");
+				}
+			}
 			await db
 				.update(user)
 				.set({
 					firstName: input.firstName,
 					lastName: input.lastName,
 					name: `${input.firstName} ${input.lastName}`,
-					email: input.email,
+					email: normalizedEmail,
 				})
 				.where(eq(user.id, ctx.session.user.id));
 			return { success: true };

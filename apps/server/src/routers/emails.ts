@@ -1,5 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { defaultHtmlTemplate, defaultJsxTemplate } from "@diff-email/shared";
+import {
+	type Client,
+	defaultHtmlTemplate,
+	defaultJsxTemplate,
+} from "@diff-email/shared";
 import { eq } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import type { CreateEmailResponse } from "resend";
@@ -149,7 +153,7 @@ export const emailsRouter = router({
 			z.object({
 				emailId: z.string().uuid(),
 				versionId: z.string().uuid(),
-				to: z.string().email(),
+				to: z.string().email().optional(),
 				subject: z.string().min(1).default("Test email from diff.email"),
 				clients: z
 					.array(
@@ -178,10 +182,41 @@ export const emailsRouter = router({
 
 			const htmlContent = v.html;
 			if (!htmlContent) throw new Error("Version does not contain HTML");
+
+			// Determine recipient list – either provided `to` or mapped from selected clients.
+			const clientToEnv: Record<Client, string | undefined> = {
+				gmail: process.env.GMAIL_USER,
+				outlook: process.env.OUTLOOK_USER,
+				yahoo: process.env.YAHOO_USER,
+				aol: process.env.AOL_USER,
+				icloud: process.env.ICLOUD_USER,
+			};
+
+			// Build unique list of addresses.
+			const toAddresses: string[] = to
+				? [to]
+				: Array.from(
+						new Set(
+							clients.map((c) => {
+								const addr = clientToEnv[c.client];
+								if (!addr) {
+									throw new Error(
+										`Missing env var for ${c.client.toUpperCase()}_USER`,
+									);
+								}
+								return addr;
+							}),
+						),
+					);
+
+			// Resend accepts string | string[] for "to"; use array if multiple.
+			const resendTo: string | string[] =
+				toAddresses.length === 1 ? toAddresses[0] : toAddresses;
+
 			// Send email via Resend with the token appended to subject
 			const res: CreateEmailResponse = await resend.emails.send({
 				from: "diff.email DONOTREPLY <donotreply@diff.email>",
-				to,
+				to: resendTo,
 				subject: subjectWithToken,
 				html: htmlContent,
 			});
@@ -197,7 +232,7 @@ export const emailsRouter = router({
 			await db.insert(sentEmail).values({
 				versionId,
 				resendId,
-				to,
+				to: toAddresses.join(","),
 			});
 
 			// Insert run row with expected shot count
@@ -298,9 +333,16 @@ export const emailsRouter = router({
 				.returning();
 
 			// Determine versions to copy
-			let versionsToCopy: unknown;
+			type VersionRow = {
+				html: string | null;
+				files: unknown;
+				entryPath: string | null;
+				exportName: string | null;
+				createdAt: Date;
+			};
+			let versionsToCopy: VersionRow[] = [];
 			if (copyAllVersions) {
-				versionsToCopy = await db
+				versionsToCopy = (await db
 					.select({
 						html: version.html,
 						files: version.files,
@@ -310,7 +352,7 @@ export const emailsRouter = router({
 					})
 					.from(version)
 					.where(eq(version.emailId, sourceEmailId))
-					.orderBy(version.createdAt);
+					.orderBy(version.createdAt)) as VersionRow[];
 			} else {
 				const [latestVersion] = await db
 					.select({
@@ -324,10 +366,12 @@ export const emailsRouter = router({
 					.where(eq(version.emailId, sourceEmailId))
 					.orderBy(sql`created_at DESC`)
 					.limit(1);
-				versionsToCopy = latestVersion ? [latestVersion] : [];
+				if (latestVersion) {
+					versionsToCopy = [latestVersion as VersionRow];
+				}
 			}
 
-			if (versionsToCopy.length) {
+			if (versionsToCopy.length > 0) {
 				await db.insert(version).values(
 					versionsToCopy.map((v) => ({
 						emailId: newEmailRow.id,

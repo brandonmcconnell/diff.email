@@ -20,9 +20,11 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useComputedTheme } from "@/hooks/useComputedTheme";
 import { bundle } from "@/lib/bundler";
 import { cn, pluralize } from "@/lib/utils";
+import { trpc } from "@/utils/trpc";
 // import { cn } from "@/lib/utils"; // removed unused helper
 import type { Client, Engine } from "@diff-email/shared";
 import { Label } from "@radix-ui/react-label";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Console, type Hook } from "console-feed";
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as React from "react";
@@ -46,6 +48,8 @@ interface Props {
 			method: ConsoleMethod;
 		}>,
 	) => void;
+	emailId: string;
+	versionId: string;
 }
 
 export type ConsoleMethod = Parameters<Parameters<typeof Hook>[1]>[0]["method"];
@@ -65,6 +69,8 @@ export function PreviewPane({
 	screenshotUrl,
 	showConsole = false,
 	onLogsChange,
+	emailId,
+	versionId,
 }: Props) {
 	const { theme } = useComputedTheme();
 	const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -494,7 +500,18 @@ export function PreviewPane({
 	);
 
 	// Screenshot generation dialog state
+	const [runId, setRunId] = useState<string | null>(null);
+	const { data: runData } = useQuery({
+		...trpc.runs.get.queryOptions({ runId: runId as string }),
+		enabled: !!runId,
+		refetchInterval: 4_000,
+	});
 	const [dialogOpen, setDialogOpen] = useState(false);
+	// Prepare mutation for sending test email & starting screenshot run.
+	const sendTestAndRun = useMutation(
+		trpc.emails.sendTestAndRun.mutationOptions(),
+	);
+
 	const defaultSelected = React.useMemo(
 		() => new Set(combos.map(({ client, engine }) => `${client}|${engine}`)),
 		[combos],
@@ -511,7 +528,7 @@ export function PreviewPane({
 	};
 
 	const pendingCount = selectedCombos.size;
-	const quotaRemaining = 5; // TODO: fetch real quota
+	const quotaRemaining = Number.POSITIVE_INFINITY; // unlimited during beta
 
 	const engineState = (eng: Engine): "all" | "none" | "some" => {
 		let selected = 0;
@@ -550,6 +567,9 @@ export function PreviewPane({
 		});
 	};
 
+	// screenshot type helper
+	type Shot = { client: Client; engine: Engine; url: string };
+
 	if (mode === "screenshot") {
 		// Static list of 5×3 = 15 client/engine combos (placeholder phase)
 		const clientLabels: Record<Client, string> = {
@@ -574,10 +594,26 @@ export function PreviewPane({
 						{combos.map(({ client, engine }) => {
 							return (
 								<div
-									key={`${client}${engine}`}
+									key={`${client}|${engine}`}
 									className="relative overflow-hidden rounded-lg border bg-card shadow-sm"
 								>
-									<div className="absolute inset-0 bg-linear-to-br from-muted/50 to-muted" />
+									{(() => {
+										const shot = (
+											runData?.screenshots as Shot[] | undefined
+										)?.find((s) => s.client === client && s.engine === engine);
+										if (shot) {
+											return (
+												<img
+													src={shot.url}
+													alt="screenshot"
+													className="absolute inset-0 h-full w-full object-cover"
+												/>
+											);
+										}
+										return (
+											<div className="absolute inset-0 bg-gradient-to-br from-muted/50 to-muted" />
+										);
+									})()}
 									<div className="absolute inset-x-0.75 bottom-0.75 rounded-md bg-linear-to-r from-background to-background/50 px-2.5 py-1.5 font-medium text-foreground text-xs backdrop-blur-sm">
 										<span className="font-semibold">
 											{clientLabels[client]}
@@ -697,8 +733,20 @@ export function PreviewPane({
 										disabled={
 											pendingCount === 0 || pendingCount > quotaRemaining
 										}
-										onClick={() => {
-											// TODO: trigger save & run mutation
+										onClick={async () => {
+											const result = await sendTestAndRun.mutateAsync({
+												emailId,
+												versionId,
+												clients: [...selectedCombos].map((k) => {
+													const [client, engine] = k.split("|") as [
+														Client,
+														Engine,
+													];
+													return { client, engine };
+												}),
+												dark,
+											});
+											setRunId(result.runId);
 											setDialogOpen(false);
 										}}
 									>

@@ -560,7 +560,7 @@ export function PreviewPane({
 	}, [dialogOpen, mode, completedSet]);
 
 	const pendingCount = selectedCombos.size;
-	const quotaRemaining = 10;
+	const quotaRemaining = Number.POSITIVE_INFINITY;
 	const hasUnlimitedPlan = quotaRemaining === Number.POSITIVE_INFINITY;
 
 	const engineState = (eng: Engine): "all" | "none" | "some" => {

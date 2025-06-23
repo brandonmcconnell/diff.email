@@ -858,7 +858,7 @@ export function PreviewPane({
 
 			{/* Divider / handle */}
 			<ResizableHandle
-				className={showConsole ? undefined : "pointer-events-none"}
+				className={showConsole ? undefined : "pointer-events-none hidden"}
 				withHandle
 			/>
 

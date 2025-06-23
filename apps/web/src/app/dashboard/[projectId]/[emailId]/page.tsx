@@ -541,7 +541,7 @@ export default function EmailEditorPage() {
 					</div>
 
 					{/* Mobile (tabs) */}
-					<div className="overflow-visible! flex min-h-0 flex-1 flex-col border-t md:hidden">
+					<div className="@container/preview overflow-visible! flex min-h-0 flex-1 flex-col border-t md:hidden">
 						<Tabs
 							value={view}
 							onValueChange={(v) => setView(v as "editor" | "preview")}

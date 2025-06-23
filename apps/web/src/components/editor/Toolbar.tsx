@@ -226,41 +226,43 @@ export function Toolbar(props: Props) {
 		<div
 			className={cn(
 				"flex items-center gap-2 px-2 py-1",
-				"bg-muted/50 text-sm max-md:pb-safe-offset-1",
-				"max-md:border-t md:border-b",
+				"bg-muted/50 @max-xl/preview:pb-safe-offset-1 text-sm",
+				"@max-xl/preview:border-t md:border-b",
 			)}
 		>
 			{/* View Toggle (Web vs Screenshots) */}
-			<div className="flex items-center gap-0">
-				<button
-					type="button"
-					className={cn(
-						"inline-flex size-7 @xl/preview:w-auto items-center justify-center @xl/preview:gap-2 rounded-r-none rounded-l-sm border border-border p-1 @xl/preview:px-2 shadow-xs",
-						mode === "live"
-							? "z-1 bg-border"
-							: "border-r-transparent hover:bg-muted",
-					)}
-					onClick={() => setMode("live")}
-					title="Web preview"
-				>
-					<Globe size={16} />{" "}
-					<span className="@max-xl/preview:hidden">Live Preview</span>
-				</button>
-				<button
-					type="button"
-					className={cn(
-						"-ml-px inline-flex size-7 @xl/preview:w-auto items-center justify-center @xl/preview:gap-2 rounded-r-sm rounded-l-none border border-border p-1 @xl/preview:px-2 shadow-xs",
-						mode === "screenshot"
-							? "z-1 bg-border"
-							: "border-l-transparent hover:bg-muted",
-					)}
-					onClick={() => setMode("screenshot")}
-					title="Screenshots grid"
-				>
-					<Images size={16} />{" "}
-					<span className="@max-xl/preview:hidden">Screenshots</span>
-				</button>
-			</div>
+			{view === "preview" && (
+				<div className="flex items-center gap-0">
+					<button
+						type="button"
+						className={cn(
+							"inline-flex size-7 @xl/preview:w-auto items-center justify-center @xl/preview:gap-2 rounded-r-none rounded-l-sm border border-border p-1 @xl/preview:px-2 shadow-xs",
+							mode === "live"
+								? "z-1 bg-border"
+								: "border-r-transparent hover:bg-muted",
+						)}
+						onClick={() => setMode("live")}
+						title="Web preview"
+					>
+						<Globe size={16} />{" "}
+						<span className="@max-xl/preview:hidden">Live Preview</span>
+					</button>
+					<button
+						type="button"
+						className={cn(
+							"-ml-px inline-flex size-7 @xl/preview:w-auto items-center justify-center @xl/preview:gap-2 rounded-r-sm rounded-l-none border border-border p-1 @xl/preview:px-2 shadow-xs",
+							mode === "screenshot"
+								? "z-1 bg-border"
+								: "border-l-transparent hover:bg-muted",
+						)}
+						onClick={() => setMode("screenshot")}
+						title="Screenshots grid"
+					>
+						<Images size={16} />{" "}
+						<span className="@max-xl/preview:hidden">Screenshots</span>
+					</button>
+				</div>
+			)}
 
 			<div className="ml-auto flex items-center gap-1.25">
 				{/* Email entry & export inputs – Popover */}
@@ -364,47 +366,49 @@ export function Toolbar(props: Props) {
 				)}
 
 				{/* Console toggle (error/warning/info) */}
-				<button
-					type="button"
-					className={cn(
-						"flex h-7 min-w-7 items-center gap-1 rounded-sm border border-border px-1.25 shadow-xs",
-						consoleVisible ? "bg-border" : "hover:bg-muted",
-					)}
-					onClick={() => setConsoleVisible(!consoleVisible)}
-					title="Toggle console"
-				>
-					<Terminal size={16} />
-					<div className="hidden items-center gap-px md:flex">
-						{consoleBadgeCounts.map(
-							([count, color]) =>
-								count > 0 && (
-									<span
-										key={color}
-										className={cn(consoleBadgeClasses(count), color)}
-									>
-										{count}
-									</span>
-								),
-						)}
-					</div>
-					<div
+				{view === "preview" && mode === "live" && (
+					<button
+						type="button"
 						className={cn(
-							"grid auto-cols-fr grid-flow-col grid-rows-2 gap-px md:hidden",
-							"rounded border border-transparent p-0.5",
-							consoleVisible && "border-neutral-900/20 bg-white",
+							"flex h-7 min-w-7 items-center gap-1 rounded-sm border border-border px-1.25 shadow-xs",
+							consoleVisible ? "bg-border" : "hover:bg-muted",
 						)}
+						onClick={() => setConsoleVisible(!consoleVisible)}
+						title="Toggle console"
 					>
-						{consoleBadgeCounts.map(
-							([count, color]) =>
-								count > 0 && (
-									<div
-										key={color}
-										className={cn("box-content size-1.5 rounded-full", color)}
-									/>
-								),
-						)}
-					</div>
-				</button>
+						<Terminal size={16} />
+						<div className="hidden items-center gap-px md:flex">
+							{consoleBadgeCounts.map(
+								([count, color]) =>
+									count > 0 && (
+										<span
+											key={color}
+											className={cn(consoleBadgeClasses(count), color)}
+										>
+											{count}
+										</span>
+									),
+							)}
+						</div>
+						<div
+							className={cn(
+								"grid auto-cols-fr grid-flow-col grid-rows-2 gap-px md:hidden",
+								"rounded border border-transparent p-0.5",
+								consoleVisible && "border-neutral-900/20 bg-white",
+							)}
+						>
+							{consoleBadgeCounts.map(
+								([count, color]) =>
+									count > 0 && (
+										<div
+											key={color}
+											className={cn("box-content size-1.5 rounded-full", color)}
+										/>
+									),
+							)}
+						</div>
+					</button>
+				)}
 
 				{/* Zen mode toggle (full screen) */}
 				<button

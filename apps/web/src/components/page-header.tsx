@@ -208,8 +208,8 @@ export function PageHeader({
 	return (
 		<div
 			className={cn(
-				"page-header",
-				"border-border border-b bg-background py-4 md:py-6",
+				"page-header isolate z-1",
+				"relative border-border border-b bg-background py-4 md:py-6",
 				"bg-linear-to-b from-background to-[color-mix(in_srgb,var(--background)_90%,transparent)]",
 				className,
 			)}

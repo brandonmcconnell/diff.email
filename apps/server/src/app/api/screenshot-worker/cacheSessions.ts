@@ -93,56 +93,60 @@ function sessionStillValid(): boolean {
 	return res.status === 0;
 }
 
-if (!force) {
-	if (await blobExists()) {
-		if (sessionStillValid()) {
-			console.log("✅ session still valid, skip ->", key);
-			process.exit(0);
-		} else {
+async function main(): Promise<void> {
+	if (!force) {
+		if (await blobExists()) {
+			if (sessionStillValid()) {
+				console.log("✅ session still valid, skip ->", key);
+				return;
+			}
 			console.log("🔄 session invalid, refreshing ->", key);
 		}
 	}
+
+	// ---------------------------------------------------------------------------
+	// Step 1: Launch headed browser & wait for operator login --------------------
+	const browserType =
+		engine === "firefox" ? firefox : engine === "webkit" ? webkit : chromium;
+
+	console.log(`Launching ${engine} for ${client}.`);
+	const userDataDir = `/tmp/${client}-${engine}-cache`;
+	const context = await browserType.launchPersistentContext(userDataDir, {
+		headless: false,
+	});
+	const page = await context.newPage();
+
+	const loginUrl: Record<Client, string> = {
+		gmail: "https://mail.google.com/",
+		outlook: "https://outlook.live.com/mail/",
+		yahoo: "https://mail.yahoo.com/",
+		aol: "https://mail.aol.com/",
+		icloud: "https://www.icloud.com/mail",
+	};
+
+	await page.goto(loginUrl[client]);
+
+	console.log("\nPlease complete login in the opened browser window.");
+	console.log("Once your inbox fully loads, press <Enter> here to continue.");
+
+	await new Promise<void>((resolve) => {
+		process.stdin.once("data", () => resolve());
+	});
+
+	console.log("Capturing storage state…");
+	const statePath = path.join("/tmp", `${client}-${engine}.json`);
+	await context.storageState({ path: statePath });
+
+	await context.close();
+
+	const buffer = await fs.readFile(statePath);
+	console.log("Uploading to", blobUrlPath);
+	await put(key, buffer, { access: "public", token: sessionsToken });
+
+	console.log("✅ Session uploaded successfully.");
 }
 
-// ---------------------------------------------------------------------------
-// Step 1: Launch headed browser & wait for operator login --------------------
-const browserType =
-	engine === "firefox" ? firefox : engine === "webkit" ? webkit : chromium;
-
-console.log(`Launching ${engine} for ${client}.`);
-const userDataDir = `/tmp/${client}-${engine}-cache`;
-const context = await browserType.launchPersistentContext(userDataDir, {
-	headless: false,
+main().catch((err) => {
+	console.error(err);
+	process.exit(1);
 });
-const page = await context.newPage();
-
-const loginUrl: Record<Client, string> = {
-	gmail: "https://mail.google.com/",
-	outlook: "https://outlook.live.com/mail/",
-	yahoo: "https://mail.yahoo.com/",
-	aol: "https://mail.aol.com/",
-	icloud: "https://www.icloud.com/mail",
-};
-
-await page.goto(loginUrl[client]);
-
-console.log("\nPlease complete login in the opened browser window.");
-console.log("Once your inbox fully loads, press <Enter> here to continue.");
-
-await new Promise<void>((resolve) => {
-	process.stdin.once("data", () => resolve());
-});
-
-console.log("Capturing storage state…");
-const statePath = path.join("/tmp", `${client}-${engine}.json`);
-await context.storageState({ path: statePath });
-
-await context.close();
-
-const buffer = await fs.readFile(statePath);
-console.log("Uploading to", blobUrlPath);
-await put(key, buffer, { access: "public", token: sessionsToken });
-
-console.log("✅ Session uploaded successfully.");
-
-process.exit(0);

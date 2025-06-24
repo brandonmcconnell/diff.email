@@ -30,7 +30,11 @@ export const runsRouter = router({
 			// Deduplicate against existing screenshots for the *same version*.
 			// Fetch existing client/engine pairs already captured for this version.
 			const existingRows = await db
-				.select({ client: screenshot.client, engine: screenshot.engine })
+				.select({
+					client: screenshot.client,
+					engine: screenshot.engine,
+					darkMode: screenshot.darkMode,
+				})
 				.from(screenshot)
 				.innerJoin(run, eq(screenshot.runId, run.id))
 				.where(eq(run.versionId, versionId));
@@ -38,12 +42,17 @@ export const runsRouter = router({
 			const existingSet = new Set<string>();
 			for (const r of existingRows) {
 				if (r.client && r.engine) {
-					existingSet.add(`${r.client as string}|${r.engine as string}`);
+					const mode = r.darkMode ? "dark" : "light";
+					existingSet.add(
+						`${r.client as string}|${r.engine as string}|${mode}`,
+					);
 				}
 			}
 
 			const uniqueClients = clients.filter(
-				(c) => !existingSet.has(`${c.client}|${c.engine}`),
+				(c) =>
+					!existingSet.has(`${c.client}|${c.engine}|light`) ||
+					!existingSet.has(`${c.client}|${c.engine}|dark`),
 			);
 
 			if (uniqueClients.length === 0) {

@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 // // cloneSessions.ts – copy each dev session-storage JSON to preview & prod
 // Usage: pnpm --filter worker clone-sessions
 // Requires env var SESSIONS_STATE_READ_WRITE_TOKEN (RW token for the bucket).
@@ -22,12 +20,14 @@ program
 
 program.parse(process.argv);
 
-const opts = program.opts<{
+interface CloneSessionsOpts {
 	source: string;
 	targets: string;
 	force?: boolean;
 	debug?: boolean;
-}>();
+}
+
+const opts = program.opts() as Readonly<CloneSessionsOpts>;
 
 const bucket = process.env.SESSIONS_BUCKET ?? "diff-email-sessions";
 const token = process.env.SESSIONS_STATE_READ_WRITE_TOKEN;

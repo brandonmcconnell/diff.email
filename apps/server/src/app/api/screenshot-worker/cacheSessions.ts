@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 // cacheSessions.ts – run locally to create/refresh session storage state files
 
 import { promises as fs } from "node:fs";
@@ -40,12 +38,14 @@ cli
 
 cli.parse(process.argv);
 
-const opts = cli.opts<{
+interface CacheSessionsOpts {
 	client: Client;
 	engine: Engine;
 	force?: boolean;
 	debug?: boolean;
-}>();
+}
+
+const opts = cli.opts() as Readonly<CacheSessionsOpts>;
 
 const client = opts.client as Client;
 const engine = opts.engine as Engine;

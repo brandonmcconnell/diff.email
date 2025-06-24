@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import { spawnSync } from "node:child_process";
 import { Command } from "commander";
 
@@ -11,7 +9,13 @@ program
 
 program.parse(process.argv);
 
-const opts = program.opts<{ force?: boolean; debug?: boolean }>();
+interface CacheAllSessionsOpts {
+	force?: boolean;
+	debug?: boolean;
+}
+
+// Commander\'s .opts() isn\'t generic in the current @types, so we cast instead
+const opts = program.opts() as Readonly<CacheAllSessionsOpts>;
 
 const extra: string[] = [];
 if (opts.force) extra.push("--force");

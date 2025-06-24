@@ -1,5 +1,17 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
+import {
+	Check,
+	ChevronsUpDown,
+	FolderPlus,
+	Home,
+	MailPlus,
+	Settings2,
+	Slash,
+} from "lucide-react";
+import Link from "next/link";
+import type * as React from "react";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -16,20 +28,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
-import { useQuery } from "@tanstack/react-query";
-import {
-	Check,
-	ChevronsUpDown,
-	FolderPlus,
-	Home,
-	MailPlus,
-	Plus,
-	Settings2,
-	Slash,
-} from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import type * as React from "react";
 
 export type DashboardHeader = { name: string; type: "dashboard" };
 export type ProjectHeader = { id: string; name: string; type: "project" };
@@ -50,6 +48,14 @@ interface Props {
 	afterTitle?: React.ReactNode;
 	children?: React.ReactNode;
 	className?: string;
+}
+
+function SlashSep() {
+	return (
+		<BreadcrumbSeparator>
+			<Slash className="h-4 w-4 text-muted-foreground" />
+		</BreadcrumbSeparator>
+	);
 }
 
 export function PageHeader({
@@ -74,14 +80,6 @@ export function PageHeader({
 		}),
 		enabled: data.type === "email",
 	});
-
-	function SlashSep() {
-		return (
-			<BreadcrumbSeparator>
-				<Slash className="h-4 w-4 text-muted-foreground" />
-			</BreadcrumbSeparator>
-		);
-	}
 
 	// Build breadcrumbs
 	const crumbs: React.ReactNode[] = [

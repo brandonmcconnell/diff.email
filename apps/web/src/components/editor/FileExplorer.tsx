@@ -1,11 +1,22 @@
 "use client";
 
+import {
+	CopyMinus,
+	CopyPlus,
+	FilePlus2,
+	FolderPlus,
+	MoreVertical,
+	PanelLeftClose,
+	Search as SearchIcon,
+	SearchX,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 // Rebuilt FileExplorer using the installed TreeView extension
 import {
+	buildFileTree,
 	type FileNode,
 	type TreeDataItem,
 	TreeView,
-	buildFileTree,
 } from "@/components/tree-view";
 import {
 	ContextMenu,
@@ -28,17 +39,6 @@ import {
 } from "@/components/ui/tooltip";
 import { confirm, prompt } from "@/lib/dialogs";
 import { cn } from "@/lib/utils";
-import {
-	CopyMinus,
-	CopyPlus,
-	FilePlus2,
-	FolderPlus,
-	MoreVertical,
-	PanelLeftClose,
-	Search as SearchIcon,
-	SearchX,
-} from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "../ui/button";
 
 interface Props {
@@ -424,7 +424,7 @@ export function FileExplorer({
 	);
 
 	// ---------------- utility helpers ------------------------------
-	function addChild(
+	function _addChild(
 		tree: FileNode[],
 		parentId: string,
 		child: FileNode,
@@ -437,7 +437,7 @@ export function FileExplorer({
 			if (node.children) {
 				return {
 					...node,
-					children: addChild(node.children as FileNode[], parentId, child),
+					children: _addChild(node.children as FileNode[], parentId, child),
 				};
 			}
 			return node;
@@ -549,18 +549,18 @@ export function FileExplorer({
 		});
 	}
 
-	function findNode(nodes: FileNode[], id: string): FileNode | null {
+	function _findNode(nodes: FileNode[], id: string): FileNode | null {
 		for (const node of nodes) {
 			if (node.id === id) return node;
 			if (node.children) {
-				const found = findNode(node.children as FileNode[], id);
+				const found = _findNode(node.children as FileNode[], id);
 				if (found) return found;
 			}
 		}
 		return null;
 	}
 
-	function updateNode(
+	function _updateNode(
 		nodes: FileNode[],
 		id: string,
 		partial: Partial<FileNode>,
@@ -570,7 +570,7 @@ export function FileExplorer({
 			if (n.children) {
 				return {
 					...n,
-					children: updateNode(n.children as FileNode[], id, partial),
+					children: _updateNode(n.children as FileNode[], id, partial),
 				};
 			}
 			return n;

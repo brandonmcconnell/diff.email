@@ -1,5 +1,5 @@
-import { cn } from "@/lib/utils";
 import { Atom, CodeXml } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Badge } from "./ui/badge";
 
 export function LanguageBadge({

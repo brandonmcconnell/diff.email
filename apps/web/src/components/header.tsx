@@ -1,13 +1,12 @@
 "use client";
 
-import { Logo } from "@/components/pro-blocks/logo";
-import { authClient } from "@/lib/auth-client";
-import { cn } from "@/lib/utils";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ModeToggle } from "./mode-toggle";
+import { Logo } from "@/components/pro-blocks/logo";
+import { authClient } from "@/lib/auth-client";
+import { cn } from "@/lib/utils";
 import { Logomark } from "./pro-blocks/logomark";
 import { Button } from "./ui/button";
 import UserMenu from "./user-menu";
@@ -16,19 +15,20 @@ interface HeaderProps {
 	className?: string;
 }
 
-export default function Header({ className }: HeaderProps) {
-	const pathname = usePathname();
-	const isHome = pathname.startsWith("/home");
-	const [isMenuOpen, setIsMenuOpen] = useState(false);
+interface NavMenuItemsProps {
+	className?: string;
+	isPending: boolean;
+	hasSession: boolean;
+}
 
-	// Get current auth session (client-side)
-	const { data: session, isPending } = authClient.useSession();
-
-	const toggleMenu = () => setIsMenuOpen((prev) => !prev);
-
+const NavMenuItems = ({
+	className,
+	isPending,
+	hasSession,
+}: NavMenuItemsProps) => {
 	const MENU_ITEMS = isPending
 		? []
-		: session
+		: hasSession
 			? [{ label: "Dashboard", href: "/dashboard" }]
 			: ([
 					{ label: "Features", href: "/home#features" },
@@ -37,11 +37,7 @@ export default function Header({ className }: HeaderProps) {
 					{ label: "FAQ", href: "/home#faq" },
 				] as const);
 
-	interface NavMenuItemsProps {
-		className?: string;
-	}
-
-	const NavMenuItems = ({ className }: NavMenuItemsProps) => (
+	return (
 		<div className={`flex flex-col gap-1 md:flex-row ${className ?? ""}`}>
 			{MENU_ITEMS.map(({ label, href }) => (
 				<Button
@@ -55,6 +51,17 @@ export default function Header({ className }: HeaderProps) {
 			))}
 		</div>
 	);
+};
+
+export default function Header({ className }: HeaderProps) {
+	const pathname = usePathname();
+	const isHome = pathname.startsWith("/home");
+	const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+	// Get current auth session (client-side)
+	const { data: session, isPending } = authClient.useSession();
+
+	const toggleMenu = () => setIsMenuOpen((prev) => !prev);
 
 	return (
 		<nav
@@ -81,7 +88,7 @@ export default function Header({ className }: HeaderProps) {
 						onClick={toggleMenu}
 						aria-label={isMenuOpen ? "Close menu" : "Open menu"}
 					>
-						<>{isMenuOpen ? <X /> : <Menu />} Menu</>
+						{isMenuOpen ? <X /> : <Menu />} Menu
 					</Button>
 				</div>
 
@@ -98,7 +105,7 @@ export default function Header({ className }: HeaderProps) {
 						isMenuOpen ? null : "max-md:hidden!",
 					)}
 				>
-					<NavMenuItems />
+					<NavMenuItems isPending={isPending} hasSession={Boolean(session)} />
 					{isPending ? (
 						<span className="w-24 max-md:hidden" />
 					) : session ? (

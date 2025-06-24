@@ -1,5 +1,7 @@
 "use client";
 
+import { HeartHandshake } from "lucide-react";
+import { useId } from "react";
 import BetaBanner from "@/components/beta-plan-banner";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,9 +14,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { HeartHandshake } from "lucide-react";
 
 export default function BillingSettingsPage() {
+	const addressId = useId();
+	const clientNameId = useId();
+	const emailAddressId = useId();
+	const countryId = useId();
+	const nameOnCardId = useId();
+	const cardNumberId = useId();
+	const expiryId = useId();
+	const cvvId = useId();
+
 	return (
 		<div className="container mx-auto flex flex-col gap-6 p-4 md:gap-8 md:p-6">
 			{/* Banner */}
@@ -37,24 +47,24 @@ export default function BillingSettingsPage() {
 					<form className="space-y-4">
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 							<div className="space-y-2">
-								<Label htmlFor="nameOnCard">Name on card</Label>
-								<Input id="nameOnCard" disabled placeholder="John Doe" />
+								<Label htmlFor={nameOnCardId}>Name on card</Label>
+								<Input id={nameOnCardId} disabled placeholder="John Doe" />
 							</div>
 							<div className="space-y-2">
-								<Label htmlFor="cardNumber">Card number</Label>
+								<Label htmlFor={cardNumberId}>Card number</Label>
 								<Input
-									id="cardNumber"
+									id={cardNumberId}
 									disabled
 									placeholder="•••• •••• •••• ••••"
 								/>
 							</div>
 							<div className="space-y-2">
-								<Label htmlFor="expiry">Expiry</Label>
-								<Input id="expiry" disabled placeholder="MM / YYYY" />
+								<Label htmlFor={expiryId}>Expiry</Label>
+								<Input id={expiryId} disabled placeholder="MM / YYYY" />
 							</div>
 							<div className="space-y-2">
-								<Label htmlFor="cvv">CVV</Label>
-								<Input id="cvv" disabled placeholder="•••" />
+								<Label htmlFor={cvvId}>CVV</Label>
+								<Input id={cvvId} disabled placeholder="•••" />
 							</div>
 						</div>
 					</form>
@@ -76,24 +86,24 @@ export default function BillingSettingsPage() {
 					<form className="space-y-4">
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 							<div className="space-y-2">
-								<Label htmlFor="clientName">Client name</Label>
-								<Input id="clientName" disabled placeholder="John Doe" />
+								<Label htmlFor={clientNameId}>Client name</Label>
+								<Input id={clientNameId} disabled placeholder="John Doe" />
 							</div>
 							<div className="space-y-2">
-								<Label htmlFor="emailAddress">Email address</Label>
+								<Label htmlFor={emailAddressId}>Email address</Label>
 								<Input
-									id="emailAddress"
+									id={emailAddressId}
 									disabled
 									placeholder="john@example.com"
 								/>
 							</div>
 							<div className="space-y-2">
-								<Label htmlFor="country">Country</Label>
-								<Input id="country" disabled placeholder="United States" />
+								<Label htmlFor={countryId}>Country</Label>
+								<Input id={countryId} disabled placeholder="United States" />
 							</div>
 							<div className="space-y-2">
-								<Label htmlFor="address">Street address</Label>
-								<Input id="address" disabled placeholder="1234 Main St" />
+								<Label htmlFor={addressId}>Street address</Label>
+								<Input id={addressId} disabled placeholder="1234 Main St" />
 							</div>
 						</div>
 					</form>

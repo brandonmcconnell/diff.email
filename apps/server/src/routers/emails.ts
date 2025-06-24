@@ -4,8 +4,7 @@ import {
 	defaultHtmlTemplate,
 	defaultJsxTemplate,
 } from "@diff-email/shared";
-import { eq } from "drizzle-orm";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { CreateEmailResponse } from "resend";
 import { z } from "zod/v4";
 import { db } from "../db";
@@ -18,7 +17,7 @@ import { protectedProcedure, router } from "../lib/trpc";
 export const emailsRouter = router({
 	list: protectedProcedure
 		.input(z.object({ projectId: z.string().uuid() }))
-		.query(async ({ ctx, input }) => {
+		.query(async ({ input }) => {
 			const rows = await db
 				.select({
 					id: email.id,
@@ -59,7 +58,7 @@ export const emailsRouter = router({
 				files: z.record(z.string(), z.string()).optional(),
 			}),
 		)
-		.mutation(async ({ ctx, input }) => {
+		.mutation(async ({ input }) => {
 			const {
 				projectId,
 				name,
@@ -105,7 +104,7 @@ export const emailsRouter = router({
 				subject: z.string().min(1).default("Test email from diff.email"),
 			}),
 		)
-		.mutation(async ({ ctx, input }) => {
+		.mutation(async ({ input }) => {
 			const { versionId, to, subject } = input;
 
 			// Fetch HTML for the version
@@ -166,7 +165,7 @@ export const emailsRouter = router({
 				dark: z.boolean().default(false),
 			}),
 		)
-		.mutation(async ({ ctx, input }) => {
+		.mutation(async ({ input }) => {
 			const { emailId, versionId, to, subject, clients, dark } = input;
 
 			// Fetch HTML for the version
@@ -280,7 +279,7 @@ export const emailsRouter = router({
 				language: z.enum(["html", "jsx"]).optional(),
 			}),
 		)
-		.mutation(async ({ ctx, input }) => {
+		.mutation(async ({ input }) => {
 			const { id, name, description, language } = input;
 			const [existing] = await db
 				.select({ id: email.id })
@@ -311,7 +310,7 @@ export const emailsRouter = router({
 				copyAllVersions: z.boolean().default(false),
 			}),
 		)
-		.mutation(async ({ ctx, input }) => {
+		.mutation(async ({ input }) => {
 			const { sourceEmailId, projectId, name, description, copyAllVersions } =
 				input;
 			// Fetch source email to obtain language
@@ -388,7 +387,7 @@ export const emailsRouter = router({
 		}),
 	delete: protectedProcedure
 		.input(z.object({ id: z.string().uuid() }))
-		.mutation(async ({ ctx, input }) => {
+		.mutation(async ({ input }) => {
 			const { id } = input;
 			const [existing] = await db
 				.select({ id: email.id })

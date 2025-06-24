@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -11,6 +12,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export default function SecuritySettingsPage() {
+	const currentPasswordId = useId();
+	const newPasswordId = useId();
+	const confirmPasswordId = useId();
+
 	return (
 		<div className="container mx-auto flex flex-col gap-6 p-4 md:gap-8 md:p-6">
 			<Card>
@@ -22,27 +27,27 @@ export default function SecuritySettingsPage() {
 				</CardHeader>
 				<CardContent className="max-w-lg space-y-4">
 					<div className="space-y-2">
-						<Label htmlFor="current-password">Current password</Label>
+						<Label htmlFor={currentPasswordId}>Current password</Label>
 						<Input
-							id="current-password"
+							id={currentPasswordId}
 							type="password"
 							defaultValue=""
 							placeholder="••••••••"
 						/>
 					</div>
 					<div className="space-y-2">
-						<Label htmlFor="new-password">New password</Label>
+						<Label htmlFor={newPasswordId}>New password</Label>
 						<Input
-							id="new-password"
+							id={newPasswordId}
 							type="password"
 							defaultValue=""
 							placeholder="••••••••"
 						/>
 					</div>
 					<div className="space-y-2">
-						<Label htmlFor="confirm-password">Confirm new password</Label>
+						<Label htmlFor={confirmPasswordId}>Confirm new password</Label>
 						<Input
-							id="confirm-password"
+							id={confirmPasswordId}
 							type="password"
 							defaultValue=""
 							placeholder="••••••••"

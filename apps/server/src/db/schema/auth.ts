@@ -1,5 +1,5 @@
-import type { auth } from "@/lib/auth";
 import { boolean, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import type { auth } from "@/lib/auth";
 
 type User = typeof auth.$Infer.Session.user;
 

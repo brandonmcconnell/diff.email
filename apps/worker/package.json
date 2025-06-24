@@ -15,20 +15,20 @@
 		"postinstall": "if [ \"$VERCEL\" = \"1\" ]; then echo 'skip browser download on Vercel'; else PLAYWRIGHT_BROWSERS_PATH=0 playwright install chromium firefox webkit; fi"
 	},
 	"dependencies": {
-		"@vercel/blob": "^1.1.0",
-		"bullmq": "^5.53.2",
-		"drizzle-orm": "^0.38.4",
-		"ioredis": "^5.3.2",
-		"otplib": "^12.0.1",
-		"playwright": "^1.53.0",
-		"dotenv": "^16.5.0",
-		"commander": "^11.0.0",
 		"@diff-email/logger": "workspace:*",
-		"@diff-email/shared": "workspace:*"
+		"@diff-email/shared": "workspace:*",
+		"@vercel/blob": "^1.1.1",
+		"bullmq": "^5.56.0",
+		"commander": "^14.0.0",
+		"dotenv": "^16.5.0",
+		"drizzle-orm": "^0.44.2",
+		"ioredis": "^5.6.1",
+		"otplib": "^12.0.1",
+		"playwright": "^1.53.1"
 	},
 	"devDependencies": {
-		"@types/node": "^20",
-		"tsx": "^4.7.0",
-		"typescript": "^5.4.0"
+		"@types/node": "^24.0.3",
+		"tsx": "^4.20.3",
+		"typescript": "^5.8.3"
 	}
 }

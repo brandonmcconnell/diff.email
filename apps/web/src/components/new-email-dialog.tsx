@@ -1,3 +1,5 @@
+import { Atom, CodeXml } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -11,8 +13,6 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { Atom, CodeXml } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
 
 // New stable placeholder list (module scope)
 const PLACEHOLDERS = [
@@ -49,6 +49,8 @@ interface Props {
 }
 
 export function NewEmailDialog({ open, onOpenChange, onCreate }: Props) {
+	const newEmailTitleId = useId();
+	const newEmailDescriptionId = useId();
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
 	const [lang, setLang] = useState<"html" | "jsx">("html");
@@ -106,11 +108,11 @@ export function NewEmailDialog({ open, onOpenChange, onCreate }: Props) {
 				</DialogHeader>
 				<div className="flex flex-col gap-4 py-2">
 					<div className="flex flex-col gap-2">
-						<Label htmlFor="new-email-title" className="font-medium text-sm">
+						<Label htmlFor={newEmailTitleId} className="font-medium text-sm">
 							Title
 						</Label>
 						<Input
-							id="new-email-title"
+							id={newEmailTitleId}
 							placeholder={placeholder}
 							value={title}
 							onChange={(e) => setTitle(e.target.value)}
@@ -119,13 +121,13 @@ export function NewEmailDialog({ open, onOpenChange, onCreate }: Props) {
 
 					<div className="flex flex-col gap-2">
 						<Label
-							htmlFor="new-email-description"
+							htmlFor={newEmailDescriptionId}
 							className="font-medium text-sm"
 						>
 							Description
 						</Label>
 						<Textarea
-							id="new-email-description"
+							id={newEmailDescriptionId}
 							placeholder="Optional description"
 							value={description}
 							onChange={(e) => setDescription(e.target.value)}

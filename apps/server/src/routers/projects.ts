@@ -51,8 +51,7 @@ export const projectsRouter = router({
 				description: z.string().optional(),
 			}),
 		)
-		.mutation(async ({ ctx, input }) => {
-			const userId = ctx.session.user.id;
+		.mutation(async ({ input }) => {
 			const { id, name, description } = input;
 			// Ensure project belongs to user
 			const [existing] = await db
@@ -70,8 +69,7 @@ export const projectsRouter = router({
 		}),
 	delete: protectedProcedure
 		.input(z.object({ id: z.string().uuid() }))
-		.mutation(async ({ ctx, input }) => {
-			const userId = ctx.session.user.id;
+		.mutation(async ({ input }) => {
 			const { id } = input;
 			// Ensure project exists
 			const [existing] = await db

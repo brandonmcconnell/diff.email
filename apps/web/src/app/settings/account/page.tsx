@@ -1,5 +1,10 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { ExternalLink, Loader2 } from "lucide-react";
+import Image from "next/image";
+import { useEffect, useId, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,17 +17,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
-import { authClient } from "@/lib/auth-client";
 import { getGravatarUrl } from "@/lib/gravatar";
 import { confirmDeletion } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, Loader2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
 
 export default function AccountSettingsPage() {
 	const { session } = useRequireAuth();
+	const firstNameId = useId();
+	const lastNameId = useId();
+	const emailId = useId();
 
 	const avatarUrl = useMemo(() => {
 		const email = session?.user.email ?? "placeholder@example.com";
@@ -43,7 +46,7 @@ export default function AccountSettingsPage() {
 		(session?.user as { lastName?: string })?.lastName ?? "";
 	const existingEmail = session?.user.email ?? "";
 
-	const queryClient = useQueryClient();
+	const _queryClient = useQueryClient();
 	const [saving, setSaving] = useState(false);
 
 	const updateProfile = useMutation({
@@ -143,9 +146,12 @@ export default function AccountSettingsPage() {
 				</CardHeader>
 				<CardContent className="flex items-center gap-4">
 					<Avatar className="size-14 border border-border md:size-16">
-						<img
+						<Image
 							src={avatarUrl}
 							alt={session?.user.name ?? "avatar"}
+							width={80}
+							height={80}
+							unoptimized
 							className="h-full w-full rounded"
 						/>
 					</Avatar>
@@ -183,9 +189,9 @@ export default function AccountSettingsPage() {
 				<CardContent className="space-y-4">
 					<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 						<div className="space-y-2">
-							<Label htmlFor="firstName">First name</Label>
+							<Label htmlFor={firstNameId}>First name</Label>
 							<Input
-								id="firstName"
+								id={firstNameId}
 								value={firstName}
 								onChange={(e) => setFirstName(e.target.value)}
 								placeholder={existingFirstName}
@@ -193,9 +199,9 @@ export default function AccountSettingsPage() {
 							/>
 						</div>
 						<div className="space-y-2">
-							<Label htmlFor="lastName">Last name</Label>
+							<Label htmlFor={lastNameId}>Last name</Label>
 							<Input
-								id="lastName"
+								id={lastNameId}
 								value={lastName}
 								onChange={(e) => setLastName(e.target.value)}
 								placeholder={existingLastName}
@@ -203,9 +209,9 @@ export default function AccountSettingsPage() {
 							/>
 						</div>
 						<div className="space-y-2 md:col-span-2">
-							<Label htmlFor="email">Email address</Label>
+							<Label htmlFor={emailId}>Email address</Label>
 							<Input
-								id="email"
+								id={emailId}
 								type="email"
 								value={email}
 								onChange={(e) => setEmail(e.target.value)}

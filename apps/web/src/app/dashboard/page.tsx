@@ -1,6 +1,16 @@
 "use client";
-import { DataList, ListSkeleton } from "@/components/list";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+	Folder,
+	FolderPlus,
+	LayoutGrid,
+	List as ListIcon,
+	Search,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useLayoutEffect, useState } from "react";
 import type { BasicItem } from "@/components/list";
+import { DataList, ListSkeleton } from "@/components/list";
 import { ManageProjectDialog } from "@/components/manage-project-dialog";
 import { PageHeader } from "@/components/page-header";
 import { Input } from "@/components/ui/input";
@@ -11,16 +21,6 @@ import { prompt } from "@/lib/dialogs";
 import { confirmDeletion } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
 import { usePersistentState } from "@/utils/usePersistentState";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-	Folder,
-	FolderPlus,
-	LayoutGrid,
-	List as ListIcon,
-	Search,
-} from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useEffect, useLayoutEffect, useState } from "react";
 
 // Explicit project item type to avoid `any` casts
 interface ProjectListItem extends BasicItem {

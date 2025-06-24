@@ -1,5 +1,4 @@
 import { spawnSync } from "node:child_process";
-import type { Client, Engine } from "@diff-email/shared";
 import { Command } from "commander";
 
 const program = new Command();

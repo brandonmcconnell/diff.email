@@ -1,3 +1,4 @@
+import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -9,7 +10,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useEffect, useState } from "react";
 
 interface ManageEmailDialogProps {
 	open: boolean;
@@ -26,6 +26,8 @@ export function ManageEmailDialog({
 	initialDescription,
 	onSave,
 }: ManageEmailDialogProps) {
+	const manageEmailNameId = useId();
+	const manageEmailDescriptionId = useId();
 	const [name, setName] = useState("");
 	const [description, setDescription] = useState("");
 
@@ -50,11 +52,11 @@ export function ManageEmailDialog({
 				</DialogHeader>
 				<div className="flex flex-col gap-4 py-2">
 					<div className="flex flex-col gap-2">
-						<Label htmlFor="manage-email-name" className="font-medium text-sm">
+						<Label htmlFor={manageEmailNameId} className="font-medium text-sm">
 							Name
 						</Label>
 						<Input
-							id="manage-email-name"
+							id={manageEmailNameId}
 							value={name}
 							onChange={(e) => setName(e.target.value)}
 						/>
@@ -62,13 +64,13 @@ export function ManageEmailDialog({
 
 					<div className="flex flex-col gap-2">
 						<Label
-							htmlFor="manage-email-description"
+							htmlFor={manageEmailDescriptionId}
 							className="font-medium text-sm"
 						>
 							Description
 						</Label>
 						<Textarea
-							id="manage-email-description"
+							id={manageEmailDescriptionId}
 							value={description}
 							placeholder="Optional description"
 							onChange={(e) => setDescription(e.target.value)}

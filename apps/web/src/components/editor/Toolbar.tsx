@@ -1,11 +1,4 @@
 "use client";
-import { Input } from "@/components/ui/input";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
 import type { Client, Engine } from "@diff-email/shared";
 import {
 	FolderCheck,
@@ -20,8 +13,15 @@ import {
 	Sun,
 	Terminal,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import type { ConsoleMethod } from "./PreviewPane";
 
 type Props = {
@@ -36,7 +36,6 @@ type Props = {
 	dark: boolean;
 	setDark: (d: boolean) => void;
 	onSave: () => void;
-	onRun: () => void;
 	consoleVisible: boolean;
 	setConsoleVisible: (v: boolean) => void;
 	consoleLogs: Array<{
@@ -66,7 +65,6 @@ export function Toolbar(props: Props) {
 		dark,
 		setDark,
 		onSave,
-		onRun,
 		consoleVisible,
 		setConsoleVisible,
 		consoleLogs,
@@ -79,6 +77,9 @@ export function Toolbar(props: Props) {
 		files,
 		view = "preview",
 	} = props;
+
+	const entryPathId = useId();
+	const exportNameId = useId();
 
 	let [errorCount, warnCount, infoCount, debugCount, otherCount]: number[] =
 		Array(5).fill(0);
@@ -305,13 +306,13 @@ export function Toolbar(props: Props) {
 							<div className="flex flex-col gap-2">
 								<div className="flex flex-col gap-1">
 									<label
-										htmlFor="entry-path"
+										htmlFor={entryPathId}
 										className="font-medium text-foreground/80 text-xs"
 									>
 										Entry File Path
 									</label>
 									<Input
-										id="entry-path"
+										id={entryPathId}
 										type="text"
 										placeholder="index.tsx"
 										value={entryPath ?? ""}
@@ -326,13 +327,13 @@ export function Toolbar(props: Props) {
 								</div>
 								<div className="flex flex-col gap-1">
 									<label
-										htmlFor="export-name"
+										htmlFor={exportNameId}
 										className="font-medium text-foreground/80 text-xs"
 									>
 										Export Name
 									</label>
 									<Input
-										id="export-name"
+										id={exportNameId}
 										type="text"
 										placeholder="default"
 										value={exportName ?? ""}

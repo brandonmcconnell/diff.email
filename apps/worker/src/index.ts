@@ -6,17 +6,16 @@ process.env.PLAYWRIGHT_BROWSERS_PATH = "0";
 
 import { promises as fs } from "node:fs";
 import logger from "@diff-email/logger";
-import { put } from "@vercel/blob";
-import { type Job, Worker } from "bullmq";
-import { eq } from "drizzle-orm";
-import { type Page, chromium, firefox, webkit } from "playwright";
-import type { ElementHandle } from "playwright";
-
 import type { Client, ScreenshotJobData } from "@diff-email/shared";
 // --- Shared imports from the server package ------------------------------
 import { db } from "@server/db";
 import { run, screenshot } from "@server/db/schema/core";
 import { redis, screenshotsQueue } from "@server/lib/queue";
+import { put } from "@vercel/blob";
+import { type Job, Worker } from "bullmq";
+import { eq } from "drizzle-orm";
+import type { ElementHandle } from "playwright";
+import { chromium, firefox, type Page, webkit } from "playwright";
 import { selectors } from "./selectors";
 
 // -------------------------------------------------------------------------
@@ -144,7 +143,7 @@ async function waitForEmail(
 			// Wait for the message body to render
 			await page.waitForSelector(messageBody, { timeout: 10_000 });
 			return; // success
-		} catch (e) {
+		} catch (_e) {
 			// Email not yet found – wait and retry
 			await page.waitForTimeout(5_000);
 		}
@@ -157,8 +156,7 @@ async function waitForEmail(
 
 //--------------------------------------------------------------------------
 async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
-	const { runId, html, client, engine, dark, subjectToken, messageId } =
-		job.data;
+	const { runId, client, engine, dark, subjectToken } = job.data;
 
 	const log = logger.child({ jobId: job.id, runId, client, engine });
 	log.info("Job received");

@@ -1,5 +1,11 @@
 "use client";
 
+import {
+	EllipsisVertical,
+	ExternalLink,
+	HeartHandshake,
+	Plus,
+} from "lucide-react";
 import BetaBanner from "@/components/beta-plan-banner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,8 +31,6 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { ExternalLink, HeartHandshake, Plus } from "lucide-react";
-import { EllipsisVertical } from "lucide-react";
 
 export default function PlanSettingsPage() {
 	return (

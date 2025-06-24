@@ -1,10 +1,10 @@
 "use client";
-import { Button } from "@/components/ui/button";
-import { prompt } from "@/lib/dialogs";
-import { trpc } from "@/utils/trpc";
 import { useMutation } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { prompt } from "@/lib/dialogs";
+import { trpc } from "@/utils/trpc";
 
 type Props = {
 	versionId: string;

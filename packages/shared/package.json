@@ -11,12 +11,14 @@
 			"types": "./dist/index.d.ts"
 		}
 	},
-	"files": ["dist"],
+	"files": [
+		"dist"
+	],
 	"scripts": {
 		"build": "tsc -p tsconfig.json",
 		"prepare": "pnpm run build"
 	},
 	"devDependencies": {
-		"typescript": "^5.4.0"
+		"typescript": "^5.8.3"
 	}
 }

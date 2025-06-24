@@ -1,6 +1,6 @@
-import { confirm, prompt } from "@/lib/dialogs";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { confirm, prompt } from "@/lib/dialogs";
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));

@@ -4,11 +4,10 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import "dotenv/config"; // load env vars from .env in this package
 import process from "node:process";
+import type { Client, Engine } from "@diff-email/shared";
 import { put } from "@vercel/blob";
 import { Command } from "commander";
 import { chromium, firefox, webkit } from "playwright";
-
-import type { Client, Engine } from "@diff-email/shared";
 
 // ---------------------------------------------------------------------------
 // Env vars & constants --------------------------------------------------------

@@ -1,5 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
-import { sql } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { z } from "zod/v4";
 import { db } from "../db";
 import { run, screenshot, version } from "../db/schema/core";
@@ -124,7 +123,7 @@ export const runsRouter = router({
 
 	get: protectedProcedure
 		.input(z.object({ runId: z.string().uuid() }))
-		.query(async ({ ctx, input }) => {
+		.query(async ({ input }) => {
 			// fetch run and its screenshots
 			const [runRow] = await db
 				.select()
@@ -139,7 +138,7 @@ export const runsRouter = router({
 
 	list: protectedProcedure
 		.input(z.object({ emailId: z.string().uuid() }))
-		.query(async ({ ctx, input }) => {
+		.query(async ({ input }) => {
 			const rows = await db
 				.select()
 				.from(run)

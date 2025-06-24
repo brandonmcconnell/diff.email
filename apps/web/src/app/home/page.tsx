@@ -1,5 +1,20 @@
 "use client";
 
+import {
+	ArrowLeftRight,
+	Check,
+	Combine,
+	Database,
+	Info,
+	ListTodo,
+	PenLine,
+	Rotate3D,
+	Workflow,
+} from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import * as React from "react";
+import { useId } from "react";
 import { Logomark } from "@/components/pro-blocks/logomark";
 import {
 	Accordion,
@@ -20,24 +35,6 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-	ArrowLeftRight,
-	ArrowRight,
-	Check,
-	Combine,
-	Database,
-	Info,
-	ListTodo,
-	Menu,
-	PenLine,
-	Rotate3D,
-	Workflow,
-	X,
-} from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-import * as React from "react";
-import { useState } from "react";
 
 // Pricing data
 const pricingData = {
@@ -140,17 +137,20 @@ export default function Home() {
 }
 
 function HeroSection7() {
+	const topId = useId();
+	const heroHeadingId = useId();
+
 	return (
 		<section
 			className="pattern-background-lp-1-example section-padding-y bg-background"
-			id="top"
-			aria-labelledby="hero-heading"
+			id={topId}
+			aria-labelledby={heroHeadingId}
 		>
 			<div className="container mx-auto flex flex-col items-center gap-12 px-6 lg:gap-16">
 				<div className="flex gap-12 lg:gap-16">
 					<div className="flex flex-col gap-4 md:gap-6 lg:flex-row lg:gap-8">
 						<h1
-							id="hero-heading"
+							id={heroHeadingId}
 							className="heading-xl flex-1 text-balance font-medium text-foreground antialiased"
 						>
 							Test your emails before you send them.
@@ -190,14 +190,23 @@ function HeroSection7() {
 }
 
 function FeatureSection9() {
+	const featuresId = useId();
+	const featuresHeadingId = useId();
+
 	return (
-		<section id="features" className="bg-muted/40 py-16 md:py-24">
+		<section
+			id={featuresId}
+			className="bg-muted/40 py-16 md:py-24"
+			aria-labelledby={featuresHeadingId}
+		>
 			<div className="container mx-auto flex flex-col gap-12 px-6 md:gap-16">
 				<div className="mx-auto flex max-w-xl flex-col gap-4 text-center md:gap-5">
 					<p className="font-semibold text-muted-foreground text-sm md:text-base">
 						Features
 					</p>
-					<h2 className="heading-lg text-foreground">Why diff.email?</h2>
+					<h2 id={featuresHeadingId} className="heading-lg text-foreground">
+						Why diff.email?
+					</h2>
 					<p className="text-base text-muted-foreground">
 						Transform the way your team works with these powerful features:
 					</p>
@@ -262,15 +271,22 @@ function FeatureSection9() {
 }
 
 function FeatureSection3() {
+	const stepsId = useId();
+	const stepsHeadingId = useId();
+
 	return (
-		<section className="border-border border-b bg-background py-16 md:py-24">
+		<section
+			id={stepsId}
+			className="border-border border-b bg-background py-16 md:py-24"
+			aria-labelledby={stepsHeadingId}
+		>
 			<div className="container mx-auto flex flex-col items-center gap-12 px-6 md:gap-16 lg:flex-row">
 				<div className="flex flex-1 flex-col gap-8">
 					<div className="flex flex-col gap-4 md:gap-5">
 						<p className="font-semibold text-muted-foreground text-sm md:text-base">
 							Steps
 						</p>
-						<h2 className="heading-lg text-foreground">
+						<h2 id={stepsHeadingId} className="heading-lg text-foreground">
 							Getting started is easy!
 						</h2>
 						<p className="text-base text-muted-foreground">
@@ -332,12 +348,15 @@ function FeatureSection3() {
 	);
 }
 
-function TestimonialsSection5() {
+function _TestimonialsSection5() {
+	const testimonialsId = useId();
+	const testimonialsHeadingId = useId();
+
 	return (
 		<section
-			id="testimonials"
+			id={testimonialsId}
 			className="bg-background py-16 md:py-24"
-			aria-labelledby="testimonial-title"
+			aria-labelledby={testimonialsHeadingId}
 		>
 			<div className="container mx-auto px-6">
 				<div className="flex flex-col gap-12">
@@ -345,7 +364,7 @@ function TestimonialsSection5() {
 						<p className="font-semibold text-muted-foreground text-sm leading-[20px] md:text-base md:leading-6">
 							Testimonials
 						</p>
-						<h2 id="testimonial-title" className="heading-lg">
+						<h2 id={testimonialsHeadingId} className="heading-lg">
 							Trusted by the best teams
 						</h2>
 					</div>
@@ -417,14 +436,16 @@ function TestimonialsSection5() {
 	);
 }
 
-function PricingSection4() {
+function _PricingSection4() {
+	const pricingId = useId();
+	const pricingHeadingId = useId();
 	const [billingPeriod, setBillingPeriod] = React.useState("monthly");
 
 	return (
 		<section
-			id="pricing"
+			id={pricingId}
 			className="pattern-background-lp-1-example bg-muted/40 py-16 md:py-24"
-			aria-labelledby="pricing-section-title-4"
+			aria-labelledby={pricingHeadingId}
 		>
 			<div className="container mx-auto px-6">
 				<div className="flex flex-col items-center gap-8">
@@ -433,7 +454,7 @@ function PricingSection4() {
 						<p className="font-semibold text-base text-muted-foreground">
 							Pricing
 						</p>
-						<h2 id="pricing-section-title-4" className="heading-lg">
+						<h2 id={pricingHeadingId} className="heading-lg">
 							Simple, transparent pricing
 						</h2>
 						<p className="text-base text-muted-foreground">
@@ -571,11 +592,14 @@ function PricingSection4() {
 }
 
 function FaqSection1() {
+	const faqId = useId();
+	const faqHeadingId = useId();
+
 	return (
 		<section
-			id="faq"
+			id={faqId}
 			className="bg-background py-16 md:py-24"
-			aria-labelledby="faq-heading"
+			aria-labelledby={faqHeadingId}
 		>
 			<div className="mx-auto flex max-w-2xl flex-col gap-12 px-6">
 				{/* Section Header */}
@@ -584,7 +608,7 @@ function FaqSection1() {
 						FAQ
 					</p>
 					<h1
-						id="faq-heading"
+						id={faqHeadingId}
 						className="font-bold text-3xl text-foreground md:text-4xl"
 					>
 						Got questions? We've got answers.
@@ -674,10 +698,7 @@ function FaqSection1() {
 
 function Footer2() {
 	return (
-		<footer
-			className="border-border border-t bg-muted/40 py-16 lg:py-24"
-			aria-label="Site footer"
-		>
+		<footer className="border-border border-t bg-muted/40 py-16 lg:py-24">
 			<div className="container mx-auto flex flex-col gap-12 px-6 lg:gap-16">
 				<div className="flex flex-col gap-12">
 					{/* Top Section */}

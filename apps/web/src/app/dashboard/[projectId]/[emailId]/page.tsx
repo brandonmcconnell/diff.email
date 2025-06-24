@@ -1,7 +1,13 @@
 "use client";
+import type { Client, Engine } from "@diff-email/shared";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { CircleFadingArrowUp, X } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { EditorPane } from "@/components/editor/EditorPane";
-import { PreviewPane } from "@/components/editor/PreviewPane";
 import type { ConsoleMethod } from "@/components/editor/PreviewPane";
+import { PreviewPane } from "@/components/editor/PreviewPane";
 import { Toolbar } from "@/components/editor/Toolbar";
 import { LanguageBadge } from "@/components/language-badge";
 import { PageHeader } from "@/components/page-header";
@@ -22,12 +28,6 @@ import { prompt } from "@/lib/dialogs";
 import { confirmDeletion } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
 import { usePersistentState } from "@/utils/usePersistentState";
-import type { Client, Engine } from "@diff-email/shared";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CircleFadingArrowUp, X } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
 
 export default function EmailEditorPage() {
 	const { isPending } = useRequireAuth();
@@ -40,12 +40,11 @@ export default function EmailEditorPage() {
 
 	const queryClient = useQueryClient();
 
-	const emailsQuery = projectId
-		? useQuery({
-				...trpc.emails.list.queryOptions({ projectId }),
-				enabled: !!projectId,
-			})
-		: null;
+	const projectIdInput = projectId ?? "00000000-0000-0000-0000-000000000000";
+	const emailsQuery = useQuery({
+		...trpc.emails.list.queryOptions({ projectId: projectIdInput }),
+		enabled: !!projectId,
+	});
 	const emailData = emailsQuery?.data?.find(
 		(e: { id: string }) => e.id === emailId,
 	);
@@ -204,10 +203,6 @@ export default function EmailEditorPage() {
 				},
 			);
 		}
-	}
-
-	function handleRun() {
-		// TODO run screenshots via trpc.runs.create
 	}
 
 	function handleViewVersion(
@@ -390,7 +385,7 @@ export default function EmailEditorPage() {
 
 								try {
 									// Save and get the new version ID returned from the server
-									const newVersionId = await versionsSave.mutateAsync(payload);
+									const _newVersionId = await versionsSave.mutateAsync(payload);
 
 									// Optimistically bump version count in emails list cache
 									const emailsListKey = trpc.emails.list.queryKey({
@@ -524,7 +519,6 @@ export default function EmailEditorPage() {
 										exportName={exportName}
 										setExportName={setExportName}
 										files={files}
-										onRun={handleRun}
 										view="preview"
 									/>
 									<PreviewPane
@@ -639,7 +633,6 @@ export default function EmailEditorPage() {
 							exportName={exportName}
 							setExportName={setExportName}
 							files={files}
-							onRun={handleRun}
 							view={view}
 						/>
 					</div>

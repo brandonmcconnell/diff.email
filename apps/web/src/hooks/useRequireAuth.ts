@@ -1,9 +1,9 @@
 "use client";
 
-import { authClient } from "@/lib/auth-client";
 import Cookies from "js-cookie";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo } from "react";
+import { authClient } from "@/lib/auth-client";
 
 /**
  * Enforces that the user is authenticated before accessing a page.

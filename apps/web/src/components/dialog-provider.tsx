@@ -1,5 +1,7 @@
 "use client";
 
+import { useCallback, useEffect, useRef, useState } from "react";
+import { z } from "zod/v4";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -22,10 +24,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { registerDialogHandlers } from "@/lib/dialogs";
 import type { ConfirmOptions, PromptOptions } from "@/lib/dialogs";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { z } from "zod/v4";
+import { registerDialogHandlers } from "@/lib/dialogs";
 
 // ------------------------------------------------------------------------------------
 // Internal types
@@ -338,6 +338,9 @@ function BasicPromptDialog({
 	);
 }
 
+// ------------ FormPromptDialog -----------------------------
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Form,
@@ -348,9 +351,6 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-// ------------ FormPromptDialog -----------------------------
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
 
 type FormValues = Record<string, unknown>;
 

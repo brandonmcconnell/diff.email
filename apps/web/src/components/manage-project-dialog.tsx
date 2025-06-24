@@ -1,3 +1,4 @@
+import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -9,7 +10,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useEffect, useState } from "react";
 
 interface ManageProjectDialogProps {
 	open: boolean;
@@ -26,6 +26,8 @@ export function ManageProjectDialog({
 	initialDescription,
 	onSave,
 }: ManageProjectDialogProps) {
+	const manageProjectNameId = useId();
+	const manageProjectDescriptionId = useId();
 	const [name, setName] = useState("");
 	const [description, setDescription] = useState("");
 
@@ -51,13 +53,13 @@ export function ManageProjectDialog({
 				<div className="flex flex-col gap-4 py-2">
 					<div className="flex flex-col gap-2">
 						<Label
-							htmlFor="manage-project-name"
+							htmlFor={manageProjectNameId}
 							className="font-medium text-sm"
 						>
 							Name
 						</Label>
 						<Input
-							id="manage-project-name"
+							id={manageProjectNameId}
 							value={name}
 							onChange={(e) => setName(e.target.value)}
 						/>
@@ -65,13 +67,13 @@ export function ManageProjectDialog({
 
 					<div className="flex flex-col gap-2">
 						<Label
-							htmlFor="manage-project-description"
+							htmlFor={manageProjectDescriptionId}
 							className="font-medium text-sm"
 						>
 							Description
 						</Label>
 						<Textarea
-							id="manage-project-description"
+							id={manageProjectDescriptionId}
 							value={description}
 							placeholder="Optional description"
 							onChange={(e) => setDescription(e.target.value)}

@@ -1,16 +1,15 @@
+import Cookies from "js-cookie";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
 import { getGravatarUrl } from "@/lib/gravatar";
-import Cookies from "js-cookie";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 
@@ -44,14 +43,15 @@ export default function UserMenu() {
 					variant="outline"
 					className="flex items-center gap-2.5 py-0 pr-2.5 pl-0.5"
 				>
-					<img
+					<Image
 						src={avatarUrl}
 						alt={session.user.name ?? "avatar"}
+						width={30}
+						height={30}
+						unoptimized
 						className="size-7.5 rounded-sm border border-border object-cover"
-						onError={(e) => {
-							e.currentTarget.onerror = null;
-							e.currentTarget.src = "/avatar-placeholder.svg";
-							e.currentTarget.classList.remove("border");
+						onError={() => {
+							// Fallback handled by next/image loader; placeholder remains if fails
 						}}
 					/>
 					<span>{session.user.name}</span>

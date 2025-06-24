@@ -2,8 +2,7 @@ import { defaultHtmlTemplate, defaultJsxTemplate } from "@diff-email/shared";
 import { desc, eq } from "drizzle-orm";
 import { z } from "zod/v4";
 import { db } from "../db";
-import { version } from "../db/schema/core";
-import { email } from "../db/schema/core";
+import { email, version } from "../db/schema/core";
 import { protectedProcedure, router } from "../lib/trpc";
 
 export const versionsRouter = router({

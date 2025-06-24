@@ -1,4 +1,12 @@
 "use client";
+// import { cn } from "@/lib/utils"; // removed unused helper
+import type { Client, Engine } from "@diff-email/shared";
+import { Label } from "@radix-ui/react-label";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Console, type Hook } from "console-feed";
+import Image from "next/image";
+import * as React from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -21,13 +29,6 @@ import { useComputedTheme } from "@/hooks/useComputedTheme";
 import { bundle } from "@/lib/bundler";
 import { cn, pluralize } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
-// import { cn } from "@/lib/utils"; // removed unused helper
-import type { Client, Engine } from "@diff-email/shared";
-import { Label } from "@radix-ui/react-label";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { Console, type Hook } from "console-feed";
-import { useCallback, useEffect, useRef, useState } from "react";
-import * as React from "react";
 
 interface Props {
 	html: string;
@@ -74,7 +75,7 @@ export function PreviewPane({
 }: Props) {
 	const { theme } = useComputedTheme();
 	const iframeRef = useRef<HTMLIFrameElement>(null);
-	const [error, setError] = useState<string | null>(null);
+	const [_error, setError] = useState<string | null>(null);
 	const [logs, setLogs] = useState<
 		Array<{
 			data: string[];
@@ -121,7 +122,7 @@ export function PreviewPane({
 			clients.flatMap((cl) =>
 				engines.map((en) => ({ client: cl, engine: en })),
 			),
-		[clients, engines],
+		[],
 	);
 
 	useEffect(() => {
@@ -653,10 +654,12 @@ export function PreviewPane({
 										)?.find((s) => s.client === client && s.engine === engine);
 										if (shot) {
 											return (
-												<img
+												<Image
 													src={shot.url}
 													alt="screenshot"
-													className="absolute inset-0 h-full w-full object-cover"
+													fill
+													unoptimized
+													className="object-cover"
 												/>
 											);
 										}

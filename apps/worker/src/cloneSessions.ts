@@ -4,10 +4,9 @@
 
 import "dotenv/config";
 import process from "node:process";
+import type { Client, Engine } from "@diff-email/shared";
 import { put } from "@vercel/blob";
 import { Command } from "commander";
-
-import type { Client, Engine } from "@diff-email/shared";
 
 // ----------------------------------------------------------------------------
 // Config & helpers -----------------------------------------------------------
@@ -102,7 +101,7 @@ async function cloneCombo(combo: string): Promise<void> {
 export async function cloneSessions(
 	options: Partial<typeof opts> = {},
 ): Promise<void> {
-	const merged = { ...opts, ...options };
+	const _merged = { ...opts, ...options };
 	for (const combo of combos) {
 		try {
 			await cloneCombo(combo);

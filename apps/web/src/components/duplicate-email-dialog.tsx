@@ -1,3 +1,4 @@
+import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -11,7 +12,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
 
 interface DuplicateEmailDialogProps {
 	open: boolean;
@@ -30,6 +30,8 @@ export function DuplicateEmailDialog({
 	originalName,
 	onDuplicate,
 }: DuplicateEmailDialogProps) {
+	const dupeEmailNameId = useId();
+	const dupeEmailDescriptionId = useId();
 	const [name, setName] = useState("");
 	const [description, setDescription] = useState("");
 	const [copyAll, setCopyAll] = useState(false);
@@ -60,11 +62,11 @@ export function DuplicateEmailDialog({
 				</DialogHeader>
 				<div className="flex flex-col gap-4 py-2">
 					<div className="flex flex-col gap-2">
-						<Label htmlFor="dup-email-name" className="font-medium text-sm">
+						<Label htmlFor={dupeEmailNameId} className="font-medium text-sm">
 							Name
 						</Label>
 						<Input
-							id="dup-email-name"
+							id={dupeEmailNameId}
 							value={name}
 							onChange={(e) => setName(e.target.value)}
 						/>
@@ -72,13 +74,13 @@ export function DuplicateEmailDialog({
 
 					<div className="flex flex-col gap-2">
 						<Label
-							htmlFor="dup-email-description"
+							htmlFor={dupeEmailDescriptionId}
 							className="font-medium text-sm"
 						>
 							Description
 						</Label>
 						<Textarea
-							id="dup-email-description"
+							id={dupeEmailDescriptionId}
 							value={description}
 							placeholder="Optional description"
 							onChange={(e) => setDescription(e.target.value)}

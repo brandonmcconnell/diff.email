@@ -1,13 +1,9 @@
-import {
-	ContextMenu,
-	ContextMenuContent,
-	ContextMenuTrigger,
-} from "@/components/ui/context-menu";
-import { cn } from "@/lib/utils";
 import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import { cva } from "class-variance-authority";
 import { ChevronRight } from "lucide-react";
 import React from "react";
+import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
+import { cn } from "@/lib/utils";
 
 const treeVariants = cva(
 	"group before:-z-10 relative before:absolute before:left-0 before:h-[2rem] before:w-full before:rounded-lg before:bg-accent/70 before:opacity-0 hover:before:opacity-100",
@@ -140,11 +136,12 @@ const TreeView = React.forwardRef<HTMLDivElement, TreeProps>(
 					{...props}
 				/>
 				{/* Root drop zone – enlarged height for easier drop to root */}
-				<div
-					className="h-[96px] w-full"
+				<button
+					type="button"
+					className="h-[96px] w-full appearance-none"
 					onDragOver={(e) => e.preventDefault()}
 					onDrop={() => {
-						handleDrop({ id: "", name: "parent_div" });
+						handleDrop({ id: "", name: "parent_button" });
 					}}
 				/>
 			</div>
@@ -185,7 +182,12 @@ const TreeItem = React.forwardRef<HTMLDivElement, TreeItemProps>(
 			data = [data];
 		}
 		return (
-			<div ref={ref} role="tree" className={className} {...props}>
+			<div
+				ref={ref}
+				role="tree"
+				className={cn("appearance-none", className)}
+				{...props}
+			>
 				<ul className="ml-0 list-none pl-0">
 					{data.map((item) => (
 						<li key={item.id}>
@@ -337,8 +339,8 @@ const TreeNode = ({
 };
 
 const TreeLeaf = React.forwardRef<
-	HTMLDivElement,
-	React.HTMLAttributes<HTMLDivElement> & {
+	HTMLButtonElement,
+	React.HTMLAttributes<HTMLButtonElement> & {
 		item: FileNode;
 		selectedItemId?: string;
 		handleSelectChange: (item: FileNode | undefined) => void;
@@ -397,10 +399,11 @@ const TreeLeaf = React.forwardRef<
 		};
 
 		const row = (
-			<div
+			<button
+				type="button"
 				ref={ref}
 				className={cn(
-					"ml-5 flex cursor-pointer items-center py-2 text-left before:right-1",
+					"ml-5 flex cursor-pointer appearance-none items-center py-2 text-left before:right-1",
 					treeVariants(),
 					className,
 					selectedItemId === item.id && selectedTreeVariants(),
@@ -433,7 +436,7 @@ const TreeLeaf = React.forwardRef<
 				<TreeActions isSelected={selectedItemId === item.id && !item.disabled}>
 					{item.actions}
 				</TreeActions>
-			</div>
+			</button>
 		);
 
 		return item.contextMenu ? (
@@ -504,7 +507,7 @@ const TreeIcon = ({
 	} else if (item.icon) {
 		Icon = item.icon;
 	}
-	return Icon ? <Icon className="mr-2 h-4 w-4 shrink-0" /> : <></>;
+	return Icon && <Icon className="mr-2 h-4 w-4 shrink-0" />;
 };
 
 const TreeActions = ({

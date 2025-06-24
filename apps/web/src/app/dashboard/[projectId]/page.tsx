@@ -1,4 +1,14 @@
 "use client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+	LayoutGrid,
+	List as ListIcon,
+	Mail,
+	MailPlus,
+	Search,
+} from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useLayoutEffect, useState } from "react";
 import { DuplicateEmailDialog } from "@/components/duplicate-email-dialog";
 import { LanguageBadge } from "@/components/language-badge";
 import { DataList, ListSkeleton } from "@/components/list";
@@ -10,20 +20,9 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
-import { prompt } from "@/lib/dialogs";
 import { confirmDeletion } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
 import { usePersistentState } from "@/utils/usePersistentState";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-	LayoutGrid,
-	List as ListIcon,
-	Mail,
-	MailPlus,
-	Search,
-} from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
-import { useEffect, useLayoutEffect, useState } from "react";
 
 export default function ProjectPage() {
 	const router = useRouter();
@@ -33,12 +32,11 @@ export default function ProjectPage() {
 
 	const queryClient = useQueryClient();
 
-	const emailsQuery = projectId
-		? useQuery({
-				...trpc.emails.list.queryOptions({ projectId }),
-				enabled: !!session,
-			})
-		: null;
+	const projectIdInput = projectId ?? "00000000-0000-0000-0000-000000000000";
+	const emailsQuery = useQuery({
+		...trpc.emails.list.queryOptions({ projectId: projectIdInput }),
+		enabled: !!session && !!projectId,
+	});
 
 	const createEmail = useMutation(
 		trpc.emails.create.mutationOptions({

@@ -1,7 +1,10 @@
 {
 	"name": "diff-email",
 	"private": true,
-	"workspaces": ["apps/*", "packages/*"],
+	"workspaces": [
+		"apps/*",
+		"packages/*"
+	],
 	"packageManager": "pnpm@8.15.1",
 	"scripts": {
 		"check": "biome check --write .",
@@ -18,12 +21,12 @@
 		"db:migrate": "pnpm --filter server db:migrate"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "1.9.4",
+		"@biomejs/biome": "2.0.5",
 		"husky": "^9.1.7",
-		"lint-staged": "^15.5.0",
-		"playwright": "^1.53.0",
-		"tsx": "^4.19.4",
-		"typescript": "^5.4.0"
+		"lint-staged": "^16.1.2",
+		"playwright": "^1.53.1",
+		"tsx": "^4.20.3",
+		"typescript": "^5.8.3"
 	},
 	"lint-staged": {
 		"*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}": [

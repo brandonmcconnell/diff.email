@@ -1,13 +1,12 @@
 "use client";
+import { PanelLeftOpen } from "lucide-react";
+import type * as Monaco from "monaco-editor";
+import dynamic from "next/dynamic";
+import React, { useEffect, useState } from "react";
 import type { FileNode } from "@/components/tree-view";
 import { useComputedTheme } from "@/hooks/useComputedTheme";
 import { loadRemoteTypes } from "@/lib/loadRemoteTypes";
 import { cn } from "@/lib/utils";
-import { PanelLeftOpen } from "lucide-react";
-import type * as Monaco from "monaco-editor";
-import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
-import React from "react";
 import { FileExplorer } from "./FileExplorer";
 
 interface Props {
@@ -266,8 +265,8 @@ export function EditorPane({
 	useEffect(() => {
 		if (!activeFile) return;
 		const IMPORT_RE =
-			/(?:import|export)\s+(?:[^'";]+?from\s+)?["']([^\.\/'"`][^'"`]+)["']/g;
-		const DYNAMIC_RE = /import\(\s*["']([^\.\/'"`][^'"`]+)["']\s*\)/g;
+			/(?:import|export)\s+(?:[^'";]+?from\s+)?["']([^./'"`][^'"`]+)["']/g;
+		const DYNAMIC_RE = /import\(\s*["']([^./'"`][^'"`]+)["']\s*\)/g;
 		const seen = new Set<string>();
 
 		const collectSpecifiers = (content: string): void => {

@@ -262,7 +262,7 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 	}
 }
 
-export const worker = new Worker<ScreenshotJobData>(
+const worker = new Worker<ScreenshotJobData>(
 	screenshotsQueue.name,
 	processJob,
 	{

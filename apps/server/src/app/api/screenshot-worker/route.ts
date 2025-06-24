@@ -7,15 +7,15 @@ process.env.PLAYWRIGHT_BROWSERS_PATH = "0";
 import { promises as fs } from "node:fs";
 import logger from "@diff-email/logger";
 import type { Client, ScreenshotJobData } from "@diff-email/shared";
-// --- Shared imports from the server package ------------------------------
-import { db } from "@server/db";
-import { run, screenshot } from "@server/db/schema/core";
-import { redis, screenshotsQueue } from "@server/lib/queue";
 import { put } from "@vercel/blob";
 import { type Job, Worker } from "bullmq";
 import { eq } from "drizzle-orm";
 import type { ElementHandle } from "playwright";
 import { chromium, firefox, type Page, webkit } from "playwright";
+// --- Shared imports from the server package ------------------------------
+import { db } from "../../../db";
+import { run, screenshot } from "../../../db/schema/core";
+import { redis, screenshotsQueue } from "../../../lib/queue";
 import { selectors } from "./selectors";
 
 // -------------------------------------------------------------------------
@@ -328,9 +328,13 @@ worker.on("failed", (job: Job<ScreenshotJobData> | undefined, err: unknown) => {
 //-------------------------------------------------------------------------
 // Vercel background function entry – returns a quick 200 while the
 // BullMQ Worker keeps the Node event loop alive for up to 15 min.
-export const config = { runtime: "nodejs18.x", maxDuration: 900 } as const;
+export const config = {
+	runtime: "nodejs18.x",
+	maxDuration: 800,
+	memory: 3009,
+} as const;
 
-export default async function handler(): Promise<Response> {
+export async function POST(): Promise<Response> {
 	logger.info("Worker ping received");
 	return new Response("Screenshot worker active", { status: 200 });
 }

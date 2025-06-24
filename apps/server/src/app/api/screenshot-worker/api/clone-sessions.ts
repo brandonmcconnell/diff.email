@@ -1,4 +1,4 @@
-import { cloneSessions } from "../src/cloneSessions";
+import { cloneSessions } from "../cloneSessions";
 
 export const config = { maxDuration: 800 } as const;
 

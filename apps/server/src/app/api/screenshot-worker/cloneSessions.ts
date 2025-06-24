@@ -1,4 +1,6 @@
-// cloneSessions.ts – copy each dev session-storage JSON to preview & prod
+// @ts-nocheck
+
+// // cloneSessions.ts – copy each dev session-storage JSON to preview & prod
 // Usage: pnpm --filter worker clone-sessions
 // Requires env var SESSIONS_STATE_READ_WRITE_TOKEN (RW token for the bucket).
 

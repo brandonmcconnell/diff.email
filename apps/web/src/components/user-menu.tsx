@@ -7,6 +7,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import type { auth } from "@/lib/auth";
 import { authClient } from "@/lib/auth-client";
 import { getGravatarUrl, placeholderUrl } from "@/lib/gravatar";
 import { cn } from "@/lib/utils";
@@ -14,9 +15,12 @@ import { ImageWithFallback } from "./image-with-fallback";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 
+type User = typeof auth.$Infer.Session.user;
+
 export default function UserMenu() {
 	const router = useRouter();
 	const { data: session, isPending } = authClient.useSession();
+	console.log("session", session);
 
 	if (isPending) {
 		return <Skeleton className="h-9 w-24" />;
@@ -49,7 +53,7 @@ export default function UserMenu() {
 						className="size-7.5 rounded-sm border border-border object-cover"
 						fallbackClassName="border-none"
 					/>
-					<span>{session.user.name}</span>
+					<span>Hi, {(session.user as User).firstName} 👋</span>
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end" className="w-48">

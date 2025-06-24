@@ -505,8 +505,18 @@ export function PreviewPane({
 			}) as ConsoleMessage,
 	);
 
+	// Fetch existing screenshots for this version (latest per combo)
+	const { data: versionShots } = useQuery({
+		...trpc.versions.screenshots.queryOptions({ versionId }),
+		enabled: !!versionId,
+	});
+
 	// Screenshot generation dialog state
 	const [runId, setRunId] = useState<string | null>(null);
+	// Reset runId whenever the selected version changes so we stop polling the old run
+	useEffect(() => {
+		setRunId(null);
+	}, [versionId]);
 	const { data: runData } = useQuery({
 		...trpc.runs.get.queryOptions({ runId: runId as string }),
 		enabled: !!runId,
@@ -523,17 +533,16 @@ export function PreviewPane({
 	);
 
 	// Set of combos already completed in the current run (for disabling UI & pre-selecting)
-	const completedCombos = React.useMemo(
-		() =>
-			new Set(
-				(
-					runData?.screenshots as
-						| { client: Client; engine: Engine }[]
-						| undefined
-				)?.map((s) => `${s.client}|${s.engine}`) ?? [],
-			),
-		[runData],
-	);
+	const completedCombos = React.useMemo(() => {
+		const set = new Set<string>();
+		(versionShots as { client: Client; engine: Engine }[] | undefined)?.forEach(
+			(s) => set.add(`${s.client}|${s.engine}`),
+		);
+		(
+			runData?.screenshots as { client: Client; engine: Engine }[] | undefined
+		)?.forEach((s) => set.add(`${s.client}|${s.engine}`));
+		return set;
+	}, [versionShots, runData]);
 
 	// Remove combos from processing set as soon as they become completed
 	useEffect(() => {
@@ -618,6 +627,20 @@ export function PreviewPane({
 	type Shot = { client: Client; engine: Engine; url: string };
 
 	if (mode === "screenshot") {
+		// Derive which combos have a screenshot (or are in-flight)
+		const displayCombos = combos.filter(
+			(c) =>
+				completedCombos.has(`${c.client}|${c.engine}`) ||
+				processingCombos.has(`${c.client}|${c.engine}`),
+		);
+
+		const hasMissingShots = combos.some(
+			(c) => !completedCombos.has(`${c.client}|${c.engine}`),
+		);
+
+		const hasAnyShots = displayCombos.length > 0;
+		const notStarted = !hasAnyShots;
+
 		// Static list of 5×3 = 15 client/engine combos (placeholder phase)
 		const clientLabels: Record<Client, string> = {
 			gmail: "Gmail",
@@ -632,215 +655,226 @@ export function PreviewPane({
 			webkit: "Safari",
 		};
 
-		// Determine if any screenshots are still missing or in-flight
-		const hasMissingShots = combos.some(
-			({ client, engine }) => !completedCombos.has(`${client}|${engine}`),
-		);
-		const notStarted = !screenshotUrl; // crude initial detection prior to any run
-
 		return (
 			<div className="relative h-full w-full overflow-auto p-4">
 				<div className={notStarted ? "opacity-100" : undefined}>
-					<div className="grid auto-rows-[200px] grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
-						{combos.map(({ client, engine }) => {
-							return (
-								<div
-									key={`${client}|${engine}`}
-									className="relative overflow-hidden rounded-lg border bg-card shadow-sm"
-								>
-									{(() => {
-										const shot = (
-											runData?.screenshots as Shot[] | undefined
-										)?.find((s) => s.client === client && s.engine === engine);
-										if (shot) {
-											return (
-												<Image
-													src={shot.url}
-													alt="screenshot"
-													fill
-													unoptimized
-													className="object-cover"
-												/>
-											);
-										}
-										return (
-											<div className="absolute inset-0 bg-gradient-to-br from-muted/50 to-muted" />
-										);
-									})()}
-									<div className="absolute inset-x-0.75 bottom-0.75 rounded-md bg-linear-to-r from-background to-background/50 px-2.5 py-1.5 font-medium text-foreground text-xs backdrop-blur-sm">
-										<span className="font-semibold">
-											{clientLabels[client]}
-										</span>
-										<span className="mx-1 select-none opacity-50">•</span>
-										<span>{engineLabels[engine]}</span>
-									</div>
-								</div>
-							);
-						})}
-					</div>
-				</div>
-
-				{/* Show the generate button/dialog only when there are screenshots still missing */}
-				{hasMissingShots && (
-					<div className="pointer-events-none sticky bottom-0 flex items-end justify-center p-6">
-						<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-							<DialogTrigger asChild>
-								<Button
-									className="pointer-events-auto rounded-full shadow-black/25 shadow-xl dark:shadow-black"
-									size="lg"
-								>
-									Generate screenshots
-								</Button>
-							</DialogTrigger>
-							<DialogContent className="sm:max-w-lg">
-								<DialogHeader>
-									<DialogTitle>Generate screenshots</DialogTitle>
-									<DialogDescription>
-										Select the clients and engines you want to use for the
-										screenshots.
-									</DialogDescription>
-								</DialogHeader>
-
-								<div className="space-y-4 py-2">
-									{engines.map((eng) => {
-										const state = engineState(eng);
-										const groupChecked =
-											state === "all"
-												? true
-												: state === "none"
-													? false
-													: "indeterminate";
-										return (
-											<div key={eng} className="space-y-2">
-												<Label className="inline-flex cursor-pointer items-center gap-2">
-													<Checkbox
-														checked={groupChecked}
-														onCheckedChange={(val) =>
-															toggleEngineGroup(eng, !!val)
-														}
+					{hasAnyShots && (
+						<div className="grid auto-rows-[200px] grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
+							{displayCombos.map(({ client, engine }) => {
+								return (
+									<div
+										key={`${client}|${engine}`}
+										className="relative overflow-hidden rounded-lg border bg-card shadow-sm"
+									>
+										{(() => {
+											const shot =
+												(runData?.screenshots as Shot[] | undefined)?.find(
+													(s) => s.client === client && s.engine === engine,
+												) ??
+												(versionShots as Shot[] | undefined)?.find(
+													(s) => s.client === client && s.engine === engine,
+												);
+											if (shot) {
+												return (
+													<Image
+														src={shot.url}
+														alt="screenshot"
+														fill
+														unoptimized
+														className="object-cover"
 													/>
-													<span className="font-medium text-sm">
-														{engineLabels[eng]}
-													</span>
-												</Label>
-												<ToggleGroup
-													type="multiple"
-													className={cn(
-														"grid w-full grid-cols-3 grid-rows-2 gap-2",
-														"*:rounded-md! md:flex",
-													)}
-													value={clients
-														.filter((cl) => selectedCombos.has(`${cl}|${eng}`))
-														.map((cl) => `${cl}|${eng}`)}
-													onValueChange={(vals) =>
-														setEngineValues(eng, vals as string[])
-													}
-												>
-													{clients.map((cl) => {
-														const comboKey = `${cl}|${eng}`;
-														const isSelected = selectedCombos.has(comboKey);
-														const isCompleted = completedCombos.has(comboKey);
-														const isProcessing = processingCombos.has(comboKey);
-														return (
-															<ToggleGroupItem
-																key={comboKey}
-																value={comboKey}
-																disabled={isCompleted || isProcessing}
-																className={cn(
-																	"border border-transparent!",
-																	isCompleted || isProcessing || isSelected
-																		? "bg-emerald-500/25! text-emerald-800! dark:text-emerald-400!"
-																		: "not-hover:border-foreground/15! bg-transparent text-foreground",
-																	isCompleted && "opacity-35",
-																)}
-															>
-																{clientLabels[cl]}
-															</ToggleGroupItem>
-														);
-													})}
-												</ToggleGroup>
-											</div>
-										);
-									})}
-
-									<div className="pt-4">
-										<p className="mb-1 text-sm">
-											This run will use <strong>{pendingCount}</strong>{" "}
-											{pluralize(pendingCount, "screenshot")}.
-										</p>
-										<Progress
-											value={
-												((quotaRemaining - pendingCount) / quotaRemaining) * 100
+												);
 											}
-										/>
-										<p
-											className={cn(
-												"mt-1.5 font-medium text-muted-foreground text-xs",
-												pendingCount > quotaRemaining && "text-destructive",
-											)}
-										>
-											{hasUnlimitedPlan ? (
-												<span>
-													You are on the beta{" "}
-													<span className="font-bold">unlimited plan</span>.
-													Enjoy!
-												</span>
-											) : (
-												<>
-													<span className="font-bold">
-														{quotaRemaining - pendingCount}
-													</span>{" "}
-													of <span className="font-bold">{quotaRemaining}</span>{" "}
-													remaining this month
-												</>
-											)}
-										</p>
+											return (
+												<div className="absolute inset-0 bg-gradient-to-br from-muted/50 to-muted" />
+											);
+										})()}
+										<div className="absolute inset-x-0.75 bottom-0.75 rounded-md bg-linear-to-r from-background to-background/50 px-2.5 py-1.5 font-medium text-foreground text-xs backdrop-blur-sm">
+											<span className="font-semibold">
+												{clientLabels[client]}
+											</span>
+											<span className="mx-1 select-none opacity-50">•</span>
+											<span>{engineLabels[engine]}</span>
+										</div>
 									</div>
-								</div>
+								);
+							})}
+						</div>
+					)}
 
-								<DialogFooter className="pt-2">
+					{/* Show the generate button/dialog only when there are screenshots still missing */}
+					{hasMissingShots && (
+						<div
+							className={cn(
+								"pointer-events-none sticky bottom-0 flex items-end justify-center p-6",
+								notStarted &&
+									"-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2 items-center",
+							)}
+						>
+							<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+								<DialogTrigger asChild>
 									<Button
-										disabled={
-											pendingCount === 0 || pendingCount > quotaRemaining
-										}
-										onClick={async () => {
-											// Mark new combos as processing (merge with any already in-flight)
-											setProcessingCombos((prev) => {
-												const next = new Set(prev);
-												for (const k of selectedCombos) {
-													next.add(k);
+										className="pointer-events-auto rounded-full shadow-black/25 shadow-xl dark:shadow-black"
+										size="lg"
+									>
+										Generate screenshots
+									</Button>
+								</DialogTrigger>
+								<DialogContent className="sm:max-w-lg">
+									<DialogHeader>
+										<DialogTitle>Generate screenshots</DialogTitle>
+										<DialogDescription>
+											Select the clients and engines you want to use for the
+											screenshots.
+										</DialogDescription>
+									</DialogHeader>
+
+									<div className="space-y-4 py-2">
+										{engines.map((eng) => {
+											const state = engineState(eng);
+											const groupChecked =
+												state === "all"
+													? true
+													: state === "none"
+														? false
+														: "indeterminate";
+											return (
+												<div key={eng} className="space-y-2">
+													<Label className="inline-flex cursor-pointer items-center gap-2">
+														<Checkbox
+															checked={groupChecked}
+															onCheckedChange={(val) =>
+																toggleEngineGroup(eng, !!val)
+															}
+														/>
+														<span className="font-medium text-sm">
+															{engineLabels[eng]}
+														</span>
+													</Label>
+													<ToggleGroup
+														type="multiple"
+														className={cn(
+															"grid w-full grid-cols-3 grid-rows-2 gap-2",
+															"*:rounded-md! md:flex",
+														)}
+														value={clients
+															.filter((cl) =>
+																selectedCombos.has(`${cl}|${eng}`),
+															)
+															.map((cl) => `${cl}|${eng}`)}
+														onValueChange={(vals) =>
+															setEngineValues(eng, vals as string[])
+														}
+													>
+														{clients.map((cl) => {
+															const comboKey = `${cl}|${eng}`;
+															const isSelected = selectedCombos.has(comboKey);
+															const isCompleted = completedCombos.has(comboKey);
+															const isProcessing =
+																processingCombos.has(comboKey);
+															return (
+																<ToggleGroupItem
+																	key={comboKey}
+																	value={comboKey}
+																	disabled={isCompleted || isProcessing}
+																	className={cn(
+																		"border border-transparent!",
+																		isCompleted || isProcessing || isSelected
+																			? "bg-emerald-500/25! text-emerald-800! dark:text-emerald-400!"
+																			: "not-hover:border-foreground/15! bg-transparent text-foreground",
+																		isCompleted && "opacity-35",
+																	)}
+																>
+																	{clientLabels[cl]}
+																</ToggleGroupItem>
+															);
+														})}
+													</ToggleGroup>
+												</div>
+											);
+										})}
+
+										<div className="pt-4">
+											<p className="mb-1 text-sm">
+												This run will use <strong>{pendingCount}</strong>{" "}
+												{pluralize(pendingCount, "screenshot")}.
+											</p>
+											<Progress
+												value={
+													((quotaRemaining - pendingCount) / quotaRemaining) *
+													100
 												}
-												return next;
-											});
-											const result = await sendTestAndRun.mutateAsync({
-												emailId,
-												versionId,
-												clients: [...selectedCombos].map((k) => {
-													const [client, engine] = k.split("|") as [
-														Client,
-														Engine,
-													];
-													return { client, engine };
-												}),
-												dark,
-											});
-											setRunId(result.runId);
-											setDialogOpen(false);
-										}}
-									>
-										Run now
-									</Button>
-									<Button
-										variant="secondary"
-										onClick={() => setDialogOpen(false)}
-									>
-										Cancel
-									</Button>
-								</DialogFooter>
-							</DialogContent>
-						</Dialog>
-					</div>
-				)}
+											/>
+											<p
+												className={cn(
+													"mt-1.5 font-medium text-muted-foreground text-xs",
+													pendingCount > quotaRemaining && "text-destructive",
+												)}
+											>
+												{hasUnlimitedPlan ? (
+													<span>
+														You are on the beta{" "}
+														<span className="font-bold">unlimited plan</span>.
+														Enjoy!
+													</span>
+												) : (
+													<>
+														<span className="font-bold">
+															{quotaRemaining - pendingCount}
+														</span>{" "}
+														of{" "}
+														<span className="font-bold">{quotaRemaining}</span>{" "}
+														remaining this month
+													</>
+												)}
+											</p>
+										</div>
+									</div>
+
+									<DialogFooter className="pt-2">
+										<Button
+											disabled={
+												pendingCount === 0 || pendingCount > quotaRemaining
+											}
+											onClick={async () => {
+												// Mark new combos as processing (merge with any already in-flight)
+												setProcessingCombos((prev) => {
+													const next = new Set(prev);
+													for (const k of selectedCombos) {
+														next.add(k);
+													}
+													return next;
+												});
+												const result = await sendTestAndRun.mutateAsync({
+													emailId,
+													versionId,
+													clients: [...selectedCombos].map((k) => {
+														const [client, engine] = k.split("|") as [
+															Client,
+															Engine,
+														];
+														return { client, engine };
+													}),
+													dark,
+												});
+												setRunId(result.runId);
+												setDialogOpen(false);
+											}}
+										>
+											Run now
+										</Button>
+										<Button
+											variant="secondary"
+											onClick={() => setDialogOpen(false)}
+										>
+											Cancel
+										</Button>
+									</DialogFooter>
+								</DialogContent>
+							</Dialog>
+						</div>
+					)}
+				</div>
 			</div>
 		);
 	}

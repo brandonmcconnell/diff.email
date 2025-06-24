@@ -1,8 +1,12 @@
 {
-	"routes": [
-		{
-			"src": "/api/clone-sessions",
-			"dest": "api/clone-sessions.ts"
+	"functions": {
+		"src/index.ts": {
+			"runtime": "nodejs18.x",
+			"maxDuration": 900
 		}
+	},
+	"routes": [
+		{ "src": "/api/clone-sessions", "dest": "api/clone-sessions.ts" },
+		{ "src": "/(.*)", "dest": "src/index.ts" }
 	]
 }

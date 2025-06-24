@@ -4,11 +4,11 @@
 	"version": "0.1.0",
 	"packageManager": "pnpm@8.15.1",
 	"type": "module",
-	"main": "dist/index.js",
+	"main": "dist/worker/src/index.js",
 	"scripts": {
 		"dev": "tsx watch src/index.ts",
-		"build": "tsc -p tsconfig.json",
-		"start": "node dist/index.js",
+		"build": "tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
+		"start": "node dist/worker/src/index.js",
 		"cache-sessions": "tsx src/cacheSessions.ts",
 		"clone-sessions": "tsx src/cloneSessions.ts",
 		"cache-all-sessions": "tsx src/cacheAllSessions.ts",
@@ -29,6 +29,7 @@
 	"devDependencies": {
 		"@types/node": "^24.0.3",
 		"tsx": "^4.20.3",
-		"typescript": "^5.8.3"
+		"typescript": "^5.8.3",
+		"tsc-alias": "^1.8.16"
 	}
 }

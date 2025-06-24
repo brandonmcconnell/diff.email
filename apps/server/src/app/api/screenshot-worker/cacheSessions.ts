@@ -141,7 +141,11 @@ async function main(): Promise<void> {
 
 	const buffer = await fs.readFile(statePath);
 	console.log("Uploading to", blobUrlPath);
-	await put(key, buffer, { access: "public", token: sessionsToken });
+	await put(key, buffer, {
+		access: "public",
+		token: sessionsToken,
+		allowOverwrite: true,
+	});
 
 	console.log("✅ Session uploaded successfully.");
 }

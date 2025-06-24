@@ -139,6 +139,28 @@ export default function EmailEditorPage() {
 		}),
 	);
 
+	// Automatically backfill missing HTML for older JSX versions
+	useEffect(() => {
+		if (language !== "jsx") return;
+		// Only consider when latest query has loaded
+		if (!latestQuery.data) return;
+		// If the latest version (or the readOnly one) lacks HTML but we now have compiled HTML -> save it
+		const needsBackfill =
+			(latestQuery.data.html == null || latestQuery.data.html === "") &&
+			compiledHtmlRef.current.length > 0;
+		if (!needsBackfill) return;
+
+		// Avoid duplicate saves in this session
+		if (latestQuery.data.html === compiledHtmlRef.current) return;
+
+		// Fire-and-forget save (creates a new version with html only)
+		versionsSave.mutate({
+			emailId,
+			html: compiledHtmlRef.current,
+		});
+		// No further action; caches will refresh via onSuccess handler above
+	}, [language, latestQuery.data, emailId, versionsSave]);
+
 	// State for read-only viewing of historical versions
 	const [readOnlyVersion, setReadOnlyVersion] =
 		useState<ReadOnlyVersion | null>(null);

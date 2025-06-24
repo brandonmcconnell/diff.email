@@ -2,6 +2,7 @@ import { desc, eq, sql } from "drizzle-orm";
 import { z } from "zod/v4";
 import { db } from "../db";
 import { run, screenshot, version } from "../db/schema/core";
+import { compileEmailToHtml } from "../lib/mailCompiler";
 import { screenshotsQueue } from "../lib/queue";
 import { protectedProcedure, router } from "../lib/trpc";
 
@@ -67,8 +68,29 @@ export const runsRouter = router({
 			if (!versionRow) {
 				throw new Error("Version not found");
 			}
-			if (!versionRow.html) {
-				throw new Error("Version HTML is empty");
+			let htmlContent = versionRow.html;
+			if (!htmlContent) {
+				// Attempt server-side compilation fallback if files are present
+				if (versionRow.files && Object.keys(versionRow.files).length) {
+					try {
+						htmlContent = await compileEmailToHtml(
+							versionRow.files as Record<string, string>,
+							(versionRow.entryPath as string) ?? "index.tsx",
+							(versionRow.exportName as string) ?? "default",
+						);
+						// Persist the newly compiled HTML for future runs
+						await db
+							.update(version)
+							.set({ html: htmlContent })
+							.where(eq(version.id, versionId));
+					} catch (err) {
+						throw new Error(
+							`Failed to compile JSX version to HTML: ${(err as Error).message}`,
+						);
+					}
+				} else {
+					throw new Error("Version HTML is empty");
+				}
 			}
 			const expectedShots = uniqueClients.length * 2;
 			const monthlyQuota = 100; // TODO: move to env/config/db, will be user/plan/org/team-specific
@@ -107,7 +129,7 @@ export const runsRouter = router({
 						"screenshot",
 						{
 							runId: row.id,
-							html: versionRow.html ?? "",
+							html: htmlContent,
 							client: c.client,
 							engine: c.engine,
 							dark: false,

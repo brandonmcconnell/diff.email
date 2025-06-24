@@ -76,8 +76,8 @@ export default function Header({ className }: HeaderProps) {
 						href={session ? "/dashboard" : isHome ? "#top" : "/home"}
 						aria-label="diff.email"
 					>
-						<Logo width={128} className="max-sm:hidden" />
-						<Logomark width={32} className="sm:hidden" />
+						{!session && <Logo width={128} className="max-sm:hidden" />}
+						<Logomark width={32} className={cn(!session && "sm:hidden")} />
 					</Link>
 					<Button
 						variant="outline"
@@ -95,7 +95,8 @@ export default function Header({ className }: HeaderProps) {
 				<div
 					className={cn(
 						// Universal styles
-						"flex w-full justify-end gap-5",
+						"flex w-full gap-5",
+						session ? "justify-between" : "justify-end",
 						// Mobile menu styles
 						"max-md:fixed max-md:top-16 max-md:left-0 max-md:flex-col max-md:gap-1",
 						"max-md:bg-background max-md:px-[inherit] max-md:pt-2.5 max-md:pb-3.5",

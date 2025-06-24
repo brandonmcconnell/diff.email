@@ -49,6 +49,8 @@ interface Props {
 			method: ConsoleMethod;
 		}>,
 	) => void;
+	/** Callback fired whenever the preview successfully renders and produces the final HTML markup. */
+	onRenderedHtml?: (html: string) => void;
 	emailId: string;
 	versionId: string;
 }
@@ -70,6 +72,7 @@ export function PreviewPane({
 	screenshotUrl,
 	showConsole = false,
 	onLogsChange,
+	onRenderedHtml,
 	emailId,
 	versionId,
 }: Props) {
@@ -83,13 +86,21 @@ export function PreviewPane({
 		}>
 	>([]);
 
+	// Keep a stable ref to the rendered-html callback so effects don't need it in deps
+	const onRenderedHtmlRef = useRef<typeof onRenderedHtml | undefined>(
+		undefined,
+	);
+	useEffect(() => {
+		onRenderedHtmlRef.current = onRenderedHtml;
+	}, [onRenderedHtml]);
+
 	// Keep a stable ref to the callback so effects don't need it in deps
 	const onLogsChangeRef = useRef<typeof onLogsChange | undefined>(undefined);
 	useEffect(() => {
 		onLogsChangeRef.current = onLogsChange;
 	}, [onLogsChange]);
 
-	// Listen for console events
+	// Listen for console events + rendered html from iframe
 	useEffect(() => {
 		function handleMessage(e: MessageEvent) {
 			if (!e.data) return;
@@ -98,6 +109,10 @@ export function PreviewPane({
 					...prev,
 					{ method: e.data.method as ConsoleMethod, data: e.data.args },
 				]);
+			} else if (e.data.type === "rendered_html") {
+				if (typeof e.data.html === "string") {
+					onRenderedHtmlRef.current?.(e.data.html);
+				}
 			} else if (e.data.type === "console_clear") {
 				setLogs([]);
 			}
@@ -134,6 +149,8 @@ export function PreviewPane({
 		// If no module files or the entry is .html treat as raw HTML
 		if (!files || !effectiveEntry || effectiveEntry.endsWith(".html")) {
 			iframeRef.current.srcdoc = html;
+			// Notify parent immediately with the raw HTML
+			onRenderedHtmlRef.current?.(html);
 			return;
 		}
 
@@ -413,6 +430,9 @@ export function PreviewPane({
 								document.open();
 								document.write(fullHTML);
 								document.close();
+
+								// Inform parent window of the freshly rendered HTML so it can be saved later
+								window.parent.postMessage({ type: 'rendered_html', html: fullHTML }, '*');
 							} catch (err) {
 								console.error('Preview error:', err);
 								

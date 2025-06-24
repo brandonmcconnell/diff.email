@@ -99,6 +99,8 @@ export default function EmailEditorPage() {
 
 	const [html, setHtml] = useState<string>("");
 	const htmlRef = useRef<string>("");
+	// Track the compiled/rendered HTML emitted by PreviewPane
+	const compiledHtmlRef = useRef<string>("");
 	const [files, setFiles] = useState<Record<string, string> | undefined>();
 	const filesRef = useRef<Record<string, string> | undefined>(undefined);
 	const [entry, setEntry] = useState<string | undefined>();
@@ -190,8 +192,15 @@ export default function EmailEditorPage() {
 			);
 		} else if (filesRef.current && Object.keys(filesRef.current).length) {
 			const currentFiles = filesRef.current;
+			const currentCompiledHtml = compiledHtmlRef.current;
 			versionsSave.mutate(
-				{ emailId, files: currentFiles, entryPath: entry, exportName },
+				{
+					emailId,
+					files: currentFiles,
+					entryPath: entry,
+					exportName,
+					html: currentCompiledHtml,
+				},
 				{
 					onSuccess: () => {
 						toast.success("Version saved");
@@ -533,6 +542,9 @@ export default function EmailEditorPage() {
 										onLogsChange={(
 											logs: Array<{ data: string[]; method: ConsoleMethod }>,
 										) => setConsoleLogs(logs)}
+										onRenderedHtml={(h) => {
+											compiledHtmlRef.current = h;
+										}}
 										exportName={exportName}
 										emailId={emailId}
 										versionId={currentVersionId}
@@ -599,6 +611,9 @@ export default function EmailEditorPage() {
 									onLogsChange={(
 										logs: Array<{ data: string[]; method: ConsoleMethod }>,
 									) => setConsoleLogs(logs)}
+									onRenderedHtml={(h) => {
+										compiledHtmlRef.current = h;
+									}}
 									exportName={exportName}
 									emailId={emailId}
 									versionId={currentVersionId}

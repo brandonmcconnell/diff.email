@@ -86,20 +86,20 @@ async function blobExists(): Promise<boolean> {
 	return false;
 }
 
-if (!force && (await blobExists())) {
-	console.log(
-		"🔄 session already exists, skip (use --force to refresh) ->",
-		key,
-	);
-	process.exit(0);
-}
+async function main(): Promise<void> {
+	if (!force && (await blobExists())) {
+		console.log(
+			"🔄 session already exists, skip (use --force to refresh) ->",
+			key,
+		);
+		process.exit(0);
+	}
 
-// ---------------------------------------------------------------------------
-// Step 1: Launch headed browser & wait for operator login --------------------
-const browserType =
-	engine === "firefox" ? firefox : engine === "webkit" ? webkit : chromium;
+	// ---------------------------------------------------------------------------
+	// Step 1: Launch headed browser & wait for operator login --------------------
+	const browserType =
+		engine === "firefox" ? firefox : engine === "webkit" ? webkit : chromium;
 
-(async () => {
 	console.log(`Launching ${engine} for ${client}.`);
 	const userDataDir = `/tmp/${client}-${engine}-cache`;
 	const context = await browserType.launchPersistentContext(userDataDir, {
@@ -137,4 +137,9 @@ const browserType =
 	console.log("✅ Session uploaded successfully.");
 
 	process.exit(0);
-})();
+}
+
+main().catch((err) => {
+	console.error(err);
+	process.exit(1);
+});

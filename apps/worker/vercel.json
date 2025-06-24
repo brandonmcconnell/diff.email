@@ -2,7 +2,8 @@
 	"functions": {
 		"src/index.ts": {
 			"runtime": "nodejs18.x",
-			"maxDuration": 900
+			"maxDuration": 300,
+			"memory": 3009
 		}
 	},
 	"routes": [

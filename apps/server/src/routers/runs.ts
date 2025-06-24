@@ -126,6 +126,12 @@ export const runsRouter = router({
 					),
 				),
 			);
+
+			// Trigger the Vercel background worker so it can drain the queue.
+			// Non-blocking – we don't await; any failure is swallowed.
+			if (process.env.WORKER_URL) {
+				void fetch(process.env.WORKER_URL).catch(() => undefined);
+			}
 			return row;
 		}),
 

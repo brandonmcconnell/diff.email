@@ -61,7 +61,7 @@ export const runsRouter = router({
 			if (!versionRow.html) {
 				throw new Error("Version HTML is empty");
 			}
-			const expectedShots = uniqueClients.length;
+			const expectedShots = uniqueClients.length * 2;
 			const monthlyQuota = 100; // TODO: move to env/config/db, will be user/plan/org/team-specific
 			const startOfMonth = new Date();
 			startOfMonth.setUTCDate(1);
@@ -98,11 +98,10 @@ export const runsRouter = router({
 						"screenshot",
 						{
 							runId: row.id,
-							// (not nil) TS re-invalidates the type guard since we're in a callback
 							html: versionRow.html ?? "",
 							client: c.client,
 							engine: c.engine,
-							dark,
+							dark: false,
 							subjectToken,
 							messageId,
 						},

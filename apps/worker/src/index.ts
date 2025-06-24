@@ -156,7 +156,7 @@ async function waitForEmail(
 
 //--------------------------------------------------------------------------
 async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
-	const { runId, client, engine, dark, subjectToken } = job.data;
+	const { runId, client, engine, subjectToken } = job.data;
 
 	const log = logger.child({ jobId: job.id, runId, client, engine });
 	log.info("Job received");
@@ -202,52 +202,60 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 		);
 		const page = await context.newPage();
 
-		// Dark mode emulation
-		await page.emulateMedia({ colorScheme: dark ? "dark" : "light" });
-
 		if (!subjectToken) {
 			throw new Error("Job is missing subjectToken; cannot locate email");
 		}
 
-		const buffer: Buffer = await Promise.race([
-			(async () => {
-				log.info({ subjectToken }, "Waiting for email to appear");
-				await waitForEmail(page, client, subjectToken);
-
-				const bodyHandle = await page.waitForSelector(
-					selectors[client].messageBody,
-					{
-						timeout: 10_000,
-					},
-				);
-				if (!bodyHandle) {
-					throw new Error("Message body element not found after opening email");
-				}
-				const png = await bodyHandle.screenshot({ type: "png" });
-				log.info({ bytes: png.length }, "Screenshot captured");
-				return png;
-			})(),
-			delayReject(90_000, "Timed out waiting for email + capture > 90s"),
+		// Wait for the email to appear and open it once (light mode)
+		await Promise.race([
+			waitForEmail(page, client, subjectToken ?? ""),
+			delayReject(90_000, "Timed out waiting for email > 90s"),
 		]);
 
+		// Helper to capture, upload, and insert one screenshot for given color scheme
+		async function captureAndSave(isDark: boolean): Promise<void> {
+			await page.emulateMedia({ colorScheme: isDark ? "dark" : "light" });
+
+			log.info({ isDark }, "Capturing screenshot");
+
+			const bodyHandle = await page.waitForSelector(
+				selectors[client].messageBody,
+				{ timeout: 10_000 },
+			);
+			if (!bodyHandle) throw new Error("Message body element not found");
+
+			// Give remote images / fonts a chance to load fully
+			try {
+				await page.waitForLoadState("networkidle", { timeout: 5_000 });
+			} catch (_) {
+				/* ignore – we'll still capture after timeout */
+			}
+			await page.waitForTimeout(3_000); // additional settle buffer
+
+			const buffer = await bodyHandle.screenshot({ type: "png" });
+
+			const filename = `screenshots/${job.id}-${isDark ? "dark" : "light"}.png`;
+			const { url } = await put(filename, buffer, {
+				access: "public",
+				token: blobToken,
+			});
+
+			await db.insert(screenshot).values({
+				runId,
+				client,
+				engine,
+				darkMode: isDark,
+				url,
+			});
+
+			log.info({ isDark, url }, "Screenshot saved");
+		}
+
+		// Capture light then dark
+		await captureAndSave(false);
+		await captureAndSave(true);
+
 		await context.close();
-
-		// Upload screenshot
-		const { url } = await put(`screenshots/${job.id}.png`, buffer, {
-			access: "public",
-			token: blobToken,
-		});
-		log.info({ url }, "Uploaded screenshot");
-
-		// Insert DB row
-		await db.insert(screenshot).values({
-			runId,
-			client,
-			engine,
-			darkMode: dark,
-			url,
-		});
-		log.info("DB row inserted");
 	} catch (err) {
 		log.error({ err }, "Processing failed");
 		throw err; // let BullMQ mark job as failed

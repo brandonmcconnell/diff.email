@@ -331,5 +331,6 @@ worker.on("failed", (job: Job<ScreenshotJobData> | undefined, err: unknown) => {
 export const config = { runtime: "nodejs18.x", maxDuration: 900 } as const;
 
 export default async function handler(): Promise<Response> {
+	logger.info("Worker ping received");
 	return new Response("Screenshot worker active", { status: 200 });
 }

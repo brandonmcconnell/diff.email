@@ -20,43 +20,31 @@ export const metadata: Metadata = {
 	icons: {
 		icon: [
 			{
-				url: "/images/favicons/favicon.svg",
+				url: "/favicon.svg",
 				type: "image/svg+xml",
 				sizes: "any",
 			},
 			{
-				url: "/images/favicons/apple-touch-icon-96x96.png",
+				url: "/favicon.png",
 				type: "image/png",
 				sizes: "96x96",
 			},
 		],
+		shortcut: "/favicon.ico",
 		apple: [
 			{
-				url: "/images/favicons/apple-touch-icon-180x180.png",
+				url: "/apple-touch-icon.png",
 				type: "image/png",
 				sizes: "180x180",
-			},
-			{
-				url: "/images/favicons/apple-touch-icon-192x192.png",
-				type: "image/png",
-				sizes: "192x192",
-			},
-			{
-				url: "/images/favicons/apple-touch-icon-256x256.png",
-				type: "image/png",
-				sizes: "256x256",
-			},
-			{
-				url: "/images/favicons/apple-touch-icon-512x512.png",
-				type: "image/png",
-				sizes: "512x512",
 			},
 		],
 	},
 	appleWebApp: {
 		capable: true,
+		title: "diff.email",
 		statusBarStyle: "black-translucent",
 	},
+	manifest: "/site.webmanifest",
 };
 
 export default function RootLayout({

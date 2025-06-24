@@ -56,8 +56,6 @@ export function FileExplorer({
 	setFiles,
 	onCollapse,
 }: Props) {
-	console.log("files", files);
-
 	// Expand / collapse controls -----------------------------------
 	const [expandAll, setExpandAll] = useState(false);
 	const [treeKey, setTreeKey] = useState(0);

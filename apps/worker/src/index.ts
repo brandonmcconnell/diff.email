@@ -324,3 +324,12 @@ worker.on("failed", (job: Job<ScreenshotJobData> | undefined, err: unknown) => {
 			.where(eq(run.id, job.data.runId));
 	}
 });
+
+//-------------------------------------------------------------------------
+// Vercel background function entry – returns a quick 200 while the
+// BullMQ Worker keeps the Node event loop alive for up to 15 min.
+export const config = { runtime: "nodejs18.x", maxDuration: 900 } as const;
+
+export default async function handler(): Promise<Response> {
+	return new Response("Screenshot worker active", { status: 200 });
+}

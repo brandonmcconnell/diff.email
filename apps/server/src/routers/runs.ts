@@ -1,3 +1,4 @@
+import logger from "@diff-email/logger";
 import { desc, eq, sql } from "drizzle-orm";
 import { z } from "zod/v4";
 import { db } from "../db";
@@ -127,10 +128,25 @@ export const runsRouter = router({
 				),
 			);
 
-			// Trigger the Vercel background worker so it can drain the queue.
-			// Non-blocking – we don't await; any failure is swallowed.
+			// Trigger the Vercel background worker so it can drain the queue as soon as
+			// a user clicks "Save & Run". The cron will keep it warm, but this shaves
+			// off the minutes-level delay for the very first job.
+			//
+			// We POST (not GET) to match the route handler and avoid caches, and we set
+			// `keepalive` so the request can complete even if the function has
+			// returned its response.
 			if (process.env.WORKER_URL) {
-				void fetch(process.env.WORKER_URL).catch(() => undefined);
+				void fetch(process.env.WORKER_URL, {
+					method: "POST",
+					keepalive: true,
+				}).catch((error: Error) => {
+					logger.error(
+						error,
+						`Error triggering worker: ${error?.message ?? "Unknown error"}`,
+					);
+				});
+			} else {
+				logger.error("WORKER_URL is not set, skipping worker trigger");
 			}
 			return row;
 		}),

@@ -328,11 +328,7 @@ worker.on("failed", (job: Job<ScreenshotJobData> | undefined, err: unknown) => {
 //-------------------------------------------------------------------------
 // Vercel background function entry – returns a quick 200 while the
 // BullMQ Worker keeps the Node event loop alive for up to 15 min.
-export const config = {
-	runtime: "nodejs18.x",
-	maxDuration: 800,
-	memory: 3009,
-} as const;
+export const maxDuration = 800;
 
 export async function POST(): Promise<Response> {
 	logger.info("Worker ping received");

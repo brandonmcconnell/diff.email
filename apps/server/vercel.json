@@ -1,0 +1,7 @@
+{
+	"functions": {
+		"api/screenshot-worker/route.ts": {
+			"memory": 3009
+		}
+	}
+}

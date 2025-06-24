@@ -51,6 +51,8 @@ interface Props {
 	) => void;
 	emailId: string;
 	versionId: string;
+	/** Callback to receive the fully compiled HTML whenever it updates (JSX mode only) */
+	onCompiledHtml?: (html: string) => void;
 }
 
 export type ConsoleMethod = Parameters<Parameters<typeof Hook>[1]>[0]["method"];
@@ -72,6 +74,7 @@ export function PreviewPane({
 	onLogsChange,
 	emailId,
 	versionId,
+	onCompiledHtml,
 }: Props) {
 	const { theme } = useComputedTheme();
 	const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -98,13 +101,19 @@ export function PreviewPane({
 					...prev,
 					{ method: e.data.method as ConsoleMethod, data: e.data.args },
 				]);
+			} else if (
+				e.data.type === "compiled_html" &&
+				typeof e.data.html === "string"
+			) {
+				// Forward compiled HTML to parent callback if provided
+				onCompiledHtml?.(e.data.html);
 			} else if (e.data.type === "console_clear") {
 				setLogs([]);
 			}
 		}
 		window.addEventListener("message", handleMessage);
 		return () => window.removeEventListener("message", handleMessage);
-	}, []);
+	}, [onCompiledHtml]);
 
 	// Notify parent on logs change
 	useEffect(() => {
@@ -413,6 +422,9 @@ export function PreviewPane({
 								document.open();
 								document.write(fullHTML);
 								document.close();
+
+								// Notify parent frame with the compiled HTML so it can be saved later
+								window.parent.postMessage({ type: 'compiled_html', html: fullHTML }, '*');
 							} catch (err) {
 								console.error('Preview error:', err);
 								
@@ -453,7 +465,7 @@ export function PreviewPane({
 				}
 			}
 		})();
-	}, [html, files, effectiveEntry, mode, exportName]);
+	}, [html, files, effectiveEntry, mode, exportName, onCompiledHtml]);
 
 	/**
 	 * Apply light / dark classes to the preview document only.

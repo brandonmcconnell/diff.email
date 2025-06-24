@@ -115,6 +115,14 @@ export default function EmailEditorPage() {
 	const [lastSavedEntry, setLastSavedEntry] = useState<string | undefined>();
 	const [lastSavedExport, setLastSavedExport] = useState<string>("default");
 
+	// Ref holding the latest compiled HTML when editing JSX emails
+	const compiledHtmlRef = useRef<string>("");
+
+	// Callback to receive compiled HTML from the PreviewPane
+	const handleCompiledHtml = (compiled: string): void => {
+		compiledHtmlRef.current = compiled;
+	};
+
 	const latestQuery = useQuery({
 		...trpc.versions.getLatest.queryOptions({ emailId }),
 		enabled: !!emailId,
@@ -191,7 +199,13 @@ export default function EmailEditorPage() {
 		} else if (filesRef.current && Object.keys(filesRef.current).length) {
 			const currentFiles = filesRef.current;
 			versionsSave.mutate(
-				{ emailId, files: currentFiles, entryPath: entry, exportName },
+				{
+					emailId,
+					files: currentFiles,
+					entryPath: entry,
+					exportName,
+					html: compiledHtmlRef.current || undefined,
+				},
 				{
 					onSuccess: () => {
 						toast.success("Version saved");
@@ -536,6 +550,7 @@ export default function EmailEditorPage() {
 										exportName={exportName}
 										emailId={emailId}
 										versionId={currentVersionId}
+										onCompiledHtml={handleCompiledHtml}
 									/>
 								</div>
 							</ResizablePanel>
@@ -602,6 +617,7 @@ export default function EmailEditorPage() {
 									exportName={exportName}
 									emailId={emailId}
 									versionId={currentVersionId}
+									onCompiledHtml={handleCompiledHtml}
 								/>
 							</TabsContent>
 

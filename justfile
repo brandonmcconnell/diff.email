@@ -12,13 +12,27 @@ set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
 default:
 	@just -l
 
-# Run the Next.js API server (apps/server) in dev mode (Turbopack)
-dev:
-	pnpm --filter server dev
+# Run dev server for a package: `just dev server` or `just dev web`
+dev target:
+	if [[ "{{target}}" == "server" ]]; then
+		pnpm --filter server dev
+	elif [[ "{{target}}" == "web" ]]; then
+		pnpm --filter web dev
+	else
+		echo "Unknown target '{{target}}'. Use 'server' or 'web'." >&2
+		exit 1
+	fi
 
-# Build the production bundle for apps/server
-build:
-	pnpm --filter server build
+# Build a package: `just build server` or `just build web`
+build target:
+	if [[ "{{target}}" == "server" ]]; then
+		pnpm --filter server build
+	elif [[ "{{target}}" == "web" ]]; then
+		pnpm --filter web build
+	else
+		echo "Unknown target '{{target}}'. Use 'server' or 'web'." >&2
+		exit 1
+	fi
 
 # ------------------------------
 # Database helpers (Drizzle)
@@ -34,9 +48,11 @@ db-migrate:
 # Screenshot-worker utilities (apps/worker)
 # ------------------------------
 
-# Launch the background worker locally (watches the BullMQ queue)
+# Launch the screenshot worker listener locally (watches the BullMQ queue)
 worker-dev:
-	pnpm --filter worker dev
+	# Runs the same code path Vercel executes for the background function
+	# Requires env vars (Redis, Blob tokens, etc.) to be set in the shell
+	pnpm --filter server run worker:dev
 
 # Cache storageState for a single client / engine combo
 # Example: `just cache-sessions gmail chromium -- --force`

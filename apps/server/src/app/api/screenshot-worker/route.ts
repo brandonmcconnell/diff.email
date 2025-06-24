@@ -262,68 +262,88 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 	}
 }
 
-const worker = new Worker<ScreenshotJobData>(
-	screenshotsQueue.name,
-	processJob,
-	{
-		connection: redis,
-		concurrency: 3,
-	},
-);
+//-------------------------------------------------------------------------
+// Ensure we create at most ONE BullMQ Worker per Vercel container.
+// In dev (Next.js hot-reload) or when the route file is re-evaluated we
+// might run this module multiple times, so we cache the instance on
+// `globalThis`.
+//
+// Using a symbol avoids accidental collisions with other globals.
+const WORKER_KEY = Symbol.for("diff-email.screenshot-worker");
 
-logger.info(
-	{ concurrency: 3 },
-	"Screenshot worker started and waiting for jobs",
-);
+type GlobalWithWorker = typeof globalThis & {
+	[WORKER_KEY]?: Worker<ScreenshotJobData>;
+};
 
-logger.info({
-	env: process.env.VERCEL_ENV ?? "dev",
-	redis: `${process.env.UPSTASH_REDIS_TLS_URL?.slice(0, 32)}…`,
-	blobBucket: process.env.SESSIONS_BUCKET ?? "diff-email-sessions",
-	blobToken: `${(
-		process.env.SCREENSHOTS_READ_WRITE_TOKEN ||
-			process.env.SCREENSHOTS_PREVIEW_READ_WRITE_TOKEN
-	)?.slice(0, 10)}…`,
-});
+const g = globalThis as GlobalWithWorker;
 
-worker.on("active", (job: Job<ScreenshotJobData>) => {
-	logger.info(
-		{ jobId: job.id, client: job.data.client, engine: job.data.engine },
-		"Job active",
-	);
-});
+const worker: Worker<ScreenshotJobData> =
+	g[WORKER_KEY] ??
+	((): Worker<ScreenshotJobData> => {
+		const w = new Worker<ScreenshotJobData>(screenshotsQueue.name, processJob, {
+			connection: redis,
+			concurrency: 3,
+		});
 
-worker.on("completed", async (job: Job<ScreenshotJobData>) => {
-	// Count how many screenshots we have saved so far for this run
-	const [runRow] = await db
-		.select({ expectedShots: run.expectedShots })
-		.from(run)
-		.where(eq(run.id, job.data.runId));
+		// Attach listeners only on the first creation.
+		logger.info(
+			{ concurrency: 3 },
+			"Screenshot worker started and waiting for jobs",
+		);
 
-	const expected = runRow?.expectedShots ?? 15;
+		logger.info({
+			env: process.env.VERCEL_ENV ?? "dev",
+			redis: `${process.env.UPSTASH_REDIS_TLS_URL?.slice(0, 32)}…`,
+			blobBucket: process.env.SESSIONS_BUCKET ?? "diff-email-sessions",
+			blobToken: `${(
+				process.env.SCREENSHOTS_READ_WRITE_TOKEN ||
+					process.env.SCREENSHOTS_PREVIEW_READ_WRITE_TOKEN
+			)?.slice(0, 10)}…`,
+		});
 
-	const rows = await db
-		.select({ id: screenshot.id })
-		.from(screenshot)
-		.where(eq(screenshot.runId, job.data.runId));
+		w.on("active", (job: Job<ScreenshotJobData>) => {
+			logger.info(
+				{ jobId: job.id, client: job.data.client, engine: job.data.engine },
+				"Job active",
+			);
+		});
 
-	if (rows.length >= expected) {
-		await db
-			.update(run)
-			.set({ status: "done" })
-			.where(eq(run.id, job.data.runId));
-	}
-});
+		w.on("completed", async (job: Job<ScreenshotJobData>) => {
+			// Count how many screenshots we have saved so far for this run
+			const [runRow] = await db
+				.select({ expectedShots: run.expectedShots })
+				.from(run)
+				.where(eq(run.id, job.data.runId));
 
-worker.on("failed", (job: Job<ScreenshotJobData> | undefined, err: unknown) => {
-	logger.error({ jobId: job?.id, err }, "Job failed");
-	if (job && job.attemptsMade >= (job.opts.attempts ?? 1)) {
-		void db
-			.update(run)
-			.set({ status: "error" })
-			.where(eq(run.id, job.data.runId));
-	}
-});
+			const expected = runRow?.expectedShots ?? 15;
+
+			const rows = await db
+				.select({ id: screenshot.id })
+				.from(screenshot)
+				.where(eq(screenshot.runId, job.data.runId));
+
+			if (rows.length >= expected) {
+				await db
+					.update(run)
+					.set({ status: "done" })
+					.where(eq(run.id, job.data.runId));
+			}
+		});
+
+		w.on("failed", (job: Job<ScreenshotJobData> | undefined, err: unknown) => {
+			logger.error({ jobId: job?.id, err }, "Job failed");
+			if (job && job.attemptsMade >= (job.opts.attempts ?? 1)) {
+				void db
+					.update(run)
+					.set({ status: "error" })
+					.where(eq(run.id, job.data.runId));
+			}
+		});
+
+		g[WORKER_KEY] = w; // cache on globalThis
+
+		return w;
+	})();
 
 //-------------------------------------------------------------------------
 // Vercel background function entry – returns a quick 200 while the

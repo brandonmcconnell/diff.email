@@ -4,5 +4,11 @@
 		"api/**/*": {
 			"memory": 3009
 		}
-	}
+	},
+	"crons": [
+		{
+			"path": "/api/screenshot-worker",
+			"schedule": "*/5 * * * *"
+		}
+	]
 }

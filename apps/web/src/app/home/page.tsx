@@ -126,7 +126,7 @@ export default function Home() {
 			<main>
 				<HeroSection7 />
 				<FeatureSection9 />
-				<FeatureSection3 />
+				{/* <FeatureSection3 /> */}
 				{/* <TestimonialsSection5 /> */}
 				{/* <PricingSection4 /> */}
 				<FaqSection1 />
@@ -175,15 +175,26 @@ function HeroSection7() {
 						</div>
 					</div>
 				</div>
-				<AspectRatio ratio={16 / 9}>
+				<div>
 					<Image
-						src="https://ui.shadcn.com/placeholder.svg"
-						alt="Hero section visual"
-						fill
+						src="/diff-email-hero-light.png"
+						alt=""
+						width={1039}
+						height={735}
 						priority
-						className="rounded-xl object-cover"
+						className="mx-auto rounded-xl border border-neutral-200 object-cover shadow-xl dark:hidden"
+						quality={100}
 					/>
-				</AspectRatio>
+					<Image
+						src="/diff-email-hero-dark.png"
+						alt=""
+						width={1039}
+						height={735}
+						priority
+						className="mx-auto not-dark:hidden rounded-xl border border-neutral-800 object-cover shadow-black shadow-xl"
+						quality={100}
+					/>
+				</div>
 			</div>
 		</section>
 	);

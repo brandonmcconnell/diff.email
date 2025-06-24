@@ -1,6 +1,7 @@
 {
+	"$schema": "https://openapi.vercel.sh/vercel.json",
 	"functions": {
-		"api/screenshot-worker/route.ts": {
+		"api/**/*": {
 			"memory": 3009
 		}
 	}

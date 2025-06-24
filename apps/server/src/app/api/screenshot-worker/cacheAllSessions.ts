@@ -24,9 +24,28 @@ if (opts.debug) extra.push("--debug");
 const clients = ["gmail", "outlook", "yahoo", "aol", "icloud"] as const;
 const engines = ["chromium", "firefox", "webkit"] as const;
 
+// Small helper to determine if a session JSON is still valid by invoking the
+// verifier script for the given combo. Returns true if needs refresh.
+function comboStale(client: string, engine: string): boolean {
+	const cmd = `pnpm exec tsx src/app/api/screenshot-worker/verifySessions.ts --client ${client} --engine ${engine}`;
+	const res = spawnSync(cmd, { stdio: "ignore", shell: true });
+	return res.status !== 0; // non-zero ⇒ stale or missing
+}
+
 for (const client of clients) {
 	for (const engine of engines) {
-		console.log("\n▶ caching", client, engine);
+		if (!opts.force) {
+			process.stdout.write(`🔍 checking ${client}/${engine} … `);
+			if (!comboStale(client, engine)) {
+				console.log("✅ valid");
+				continue; // skip to next combo
+			}
+			console.log("❌ expired – recapturing");
+		} else {
+			console.log(`\n⚠️  --force supplied → recapturing ${client}/${engine}`);
+		}
+
+		console.log("▶ launching headed browser for", client, engine);
 		const cmd =
 			`pnpm exec tsx src/app/api/screenshot-worker/cacheSessions.ts --client ${client} --engine ${engine} ${extra.join(" ")}`.trim();
 		const res = spawnSync(cmd, { stdio: "inherit", shell: true });
@@ -34,6 +53,8 @@ for (const client of clients) {
 			console.error("❌ combo failed", client, engine);
 			process.exit(res.status ?? 1);
 		}
+
+		console.log(`✅ ${client}/${engine} refreshed successfully`);
 	}
 }
 

@@ -53,4 +53,12 @@ cache-all-sessions *flags:
 # Clone the dev sessions to preview & prod prefixes
 # Example: `just clone-sessions -- --force`
 clone-sessions *flags:
-	pnpm --filter server exec tsx src/app/api/screenshot-worker/cloneSessions.ts {{flags}} 
+	pnpm --filter server exec tsx src/app/api/screenshot-worker/cloneSessions.ts {{flags}}
+
+# Verify that each stored session JSON still logs in headlessly.
+# Usage examples:
+#   just verify-sessions              # check all combos
+#   just verify-sessions --client gmail --engine chromium
+# Any additional args are forwarded to the TS script.
+verify-sessions *FLAGS:
+	pnpm --filter server exec tsx src/app/api/screenshot-worker/verifySessions.ts {{FLAGS}} 

@@ -1,10 +1,12 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import Cookies from "js-cookie";
 import { ExternalLink, Loader2 } from "lucide-react";
-import Image from "next/image";
-import { useEffect, useId, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useId, useState } from "react";
 import { toast } from "sonner";
+import { ImageWithFallback } from "@/components/image-with-fallback";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,7 +19,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
-import { getGravatarUrl } from "@/lib/gravatar";
+import { authClient } from "@/lib/auth-client";
+import { getGravatarUrl, placeholderUrl } from "@/lib/gravatar";
 import { confirmDeletion } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
 
@@ -27,14 +30,7 @@ export default function AccountSettingsPage() {
 	const lastNameId = useId();
 	const emailId = useId();
 
-	const avatarUrl = useMemo(() => {
-		const email = session?.user.email ?? "placeholder@example.com";
-		return getGravatarUrl(email, 80);
-	}, [session?.user.email]);
-
-	useEffect(() => {
-		console.log(session);
-	}, [session]);
+	const avatarUrl = getGravatarUrl(session?.user.email ?? "", 128);
 
 	const [firstName, setFirstName] = useState("");
 	const [lastName, setLastName] = useState("");
@@ -48,6 +44,7 @@ export default function AccountSettingsPage() {
 
 	const _queryClient = useQueryClient();
 	const [saving, setSaving] = useState(false);
+	const router = useRouter();
 
 	const updateProfile = useMutation({
 		...trpc.profile.update.mutationOptions(),
@@ -111,6 +108,15 @@ export default function AccountSettingsPage() {
 				await toast.promise(
 					async () => {
 						await deleteAccount.mutateAsync();
+						// invalidate local session & redirect immediately
+						await authClient.signOut({
+							fetchOptions: {
+								onSuccess: () => {
+									Cookies.remove("diffemail_logged_in", { path: "/" });
+									router.replace("/login");
+								},
+							},
+						});
 					},
 					{
 						loading: "Deleting account…",
@@ -146,7 +152,8 @@ export default function AccountSettingsPage() {
 				</CardHeader>
 				<CardContent className="flex items-center gap-4">
 					<Avatar className="size-14 border border-border md:size-16">
-						<Image
+						<ImageWithFallback
+							fallbackSrc={placeholderUrl}
 							src={avatarUrl}
 							alt={session?.user.name ?? "avatar"}
 							width={80}

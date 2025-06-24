@@ -1,5 +1,4 @@
 import Cookies from "js-cookie";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -9,7 +8,9 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
-import { getGravatarUrl } from "@/lib/gravatar";
+import { getGravatarUrl, placeholderUrl } from "@/lib/gravatar";
+import { cn } from "@/lib/utils";
+import { ImageWithFallback } from "./image-with-fallback";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 
@@ -29,12 +30,7 @@ export default function UserMenu() {
 		);
 	}
 
-	// Build absolute URL for placeholder (required by Gravatar)
-	const placeholderUrl =
-		typeof window !== "undefined"
-			? `${window.location.origin}/avatar-placeholder.svg`
-			: "/avatar-placeholder.svg"; // SSR fallback (will be rewritten on client)
-	const avatarUrl = getGravatarUrl(session.user.email, 128, placeholderUrl);
+	const avatarUrl = getGravatarUrl(session.user.email, 128);
 
 	return (
 		<DropdownMenu>
@@ -43,16 +39,15 @@ export default function UserMenu() {
 					variant="outline"
 					className="flex items-center gap-2.5 py-0 pr-2.5 pl-0.5"
 				>
-					<Image
+					<ImageWithFallback
+						fallbackSrc={placeholderUrl}
 						src={avatarUrl}
 						alt={session.user.name ?? "avatar"}
 						width={30}
 						height={30}
 						unoptimized
 						className="size-7.5 rounded-sm border border-border object-cover"
-						onError={() => {
-							// Fallback handled by next/image loader; placeholder remains if fails
-						}}
+						fallbackClassName="border-none"
 					/>
 					<span>{session.user.name}</span>
 				</Button>

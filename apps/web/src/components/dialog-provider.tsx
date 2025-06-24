@@ -128,7 +128,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
 								onClick={() => handleResolve(true)}
 								className={
 									opts.variant === "destructive"
-										? "bg-destructive text-destructive-foreground hover:bg-destructive/90 focus:ring-destructive"
+										? "bg-destructive! text-white! hover:bg-destructive/90! focus:ring-destructive/25!"
 										: undefined
 								}
 							>

@@ -3,7 +3,7 @@ import type { Client, Engine } from "@diff-email/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CircleFadingArrowUp, X } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { EditorPane } from "@/components/editor/EditorPane";
 import type { ConsoleMethod } from "@/components/editor/PreviewPane";
@@ -119,9 +119,9 @@ export default function EmailEditorPage() {
 	const compiledHtmlRef = useRef<string>("");
 
 	// Callback to receive compiled HTML from the PreviewPane
-	const handleCompiledHtml = (compiled: string): void => {
+	const handleCompiledHtml = useCallback((compiled: string): void => {
 		compiledHtmlRef.current = compiled;
-	};
+	}, []);
 
 	const latestQuery = useQuery({
 		...trpc.versions.getLatest.queryOptions({ emailId }),

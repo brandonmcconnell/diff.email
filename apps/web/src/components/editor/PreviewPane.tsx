@@ -465,7 +465,7 @@ export function PreviewPane({
 				}
 			}
 		})();
-	}, [html, files, effectiveEntry, mode, exportName, onCompiledHtml]);
+	}, [html, files, effectiveEntry, mode, exportName]);
 
 	/**
 	 * Apply light / dark classes to the preview document only.

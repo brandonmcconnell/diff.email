@@ -17,6 +17,46 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
 	title: "diff-email",
 	description: "diff-email",
+	icons: {
+		icon: [
+			{
+				url: "/images/favicons/favicon.svg",
+				type: "image/svg+xml",
+				sizes: "any",
+			},
+			{
+				url: "/images/favicons/apple-touch-icon-96x96.png",
+				type: "image/png",
+				sizes: "96x96",
+			},
+		],
+		apple: [
+			{
+				url: "/images/favicons/apple-touch-icon-180x180.png",
+				type: "image/png",
+				sizes: "180x180",
+			},
+			{
+				url: "/images/favicons/apple-touch-icon-192x192.png",
+				type: "image/png",
+				sizes: "192x192",
+			},
+			{
+				url: "/images/favicons/apple-touch-icon-256x256.png",
+				type: "image/png",
+				sizes: "256x256",
+			},
+			{
+				url: "/images/favicons/apple-touch-icon-512x512.png",
+				type: "image/png",
+				sizes: "512x512",
+			},
+		],
+	},
+	appleWebApp: {
+		capable: true,
+		statusBarStyle: "black-translucent",
+	},
 };
 
 export default function RootLayout({

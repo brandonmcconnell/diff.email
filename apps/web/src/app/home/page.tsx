@@ -177,7 +177,7 @@ function HeroSection7() {
 				</div>
 				<div>
 					<Image
-						src="/diff-email-hero-light.png"
+						src="/images/diff-email-hero-light.png"
 						alt=""
 						width={1039}
 						height={735}
@@ -186,7 +186,7 @@ function HeroSection7() {
 						quality={100}
 					/>
 					<Image
-						src="/diff-email-hero-dark.png"
+						src="/images/diff-email-hero-dark.png"
 						alt=""
 						width={1039}
 						height={735}

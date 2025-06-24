@@ -3,8 +3,8 @@ import md5 from "crypto-js/md5";
 // Build absolute URL for placeholder (required by Gravatar)
 export const placeholderUrl =
 	typeof window !== "undefined"
-		? `${window.location.origin}/avatar-placeholder.svg`
-		: "/avatar-placeholder.svg"; // SSR fallback (will be rewritten on client)
+		? `${window.location.origin}/images/avatar-placeholder.svg`
+		: "/images/avatar-placeholder.svg"; // SSR fallback (will be rewritten on client)
 
 export function getGravatarUrl(
 	email: string,

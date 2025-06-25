@@ -350,7 +350,8 @@ const worker: Worker<ScreenshotJobData> =
 // BullMQ Worker keeps the Node event loop alive for up to 15 min.
 export const maxDuration = 800;
 
-export async function POST(): Promise<Response> {
-	logger.info("Worker ping received");
+// Vercel Cron jobs issue GET requests; accept them too.
+export async function GET(): Promise<Response> {
+	logger.info("Worker ping received (GET)");
 	return new Response("Screenshot worker active", { status: 200 });
 }

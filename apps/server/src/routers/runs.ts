@@ -132,12 +132,11 @@ export const runsRouter = router({
 			// a user clicks "Save & Run". The cron will keep it warm, but this shaves
 			// off the minutes-level delay for the very first job.
 			//
-			// We POST (not GET) to match the route handler and avoid caches, and we set
-			// `keepalive` so the request can complete even if the function has
-			// returned its response.
+			// We use GET to match the cron handler, and set `keepalive` so the request can
+			// complete even if the function has returned its response.
 			if (process.env.WORKER_URL) {
 				void fetch(process.env.WORKER_URL, {
-					method: "POST",
+					method: "GET",
 					keepalive: true,
 				}).catch((error: Error) => {
 					logger.error(

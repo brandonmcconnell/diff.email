@@ -55,6 +55,11 @@ async function getStorageStatePath(
 	const key = `${envPrefix}/sessions/${client}-${engine}.json`;
 	const url = `https://blob.vercel-storage.com/${sessionsBucket}/${key}`;
 
+	logger.debug(
+		{ client, engine, key, url },
+		"Attempting to fetch storage state",
+	);
+
 	try {
 		const res = await fetch(url, {
 			headers: {
@@ -65,9 +70,14 @@ async function getStorageStatePath(
 			const buffer = Buffer.from(await res.arrayBuffer());
 			const filePath = `/tmp/${client}-${engine}.json`;
 			await fs.writeFile(filePath, buffer as NodeJS.ArrayBufferView);
+			logger.debug({ filePath }, "Storage state downloaded to temporary path");
 			return filePath;
 		}
-	} catch (_) {
+	} catch (err) {
+		logger.debug(
+			{ err },
+			"Error fetching storage state (will proceed without it)",
+		);
 		/* swallow */
 	}
 	return undefined;
@@ -101,6 +111,9 @@ async function waitForEmail(
 	timeoutMs = 90_000,
 ): Promise<void> {
 	const start = Date.now();
+	const log = logger.child({ client, subjectToken, fn: "waitForEmail" });
+	log.debug({ timeoutMs }, "Begin waiting for email");
+	let attempts = 0;
 	const { searchInput, searchResult, messageBody } = selectors[client];
 
 	const baseUrls: Record<Client, string> = {
@@ -114,6 +127,8 @@ async function waitForEmail(
 	await page.goto(baseUrls[client], { waitUntil: "domcontentloaded" });
 
 	while (Date.now() - start < timeoutMs) {
+		attempts++;
+		log.debug({ attempts, elapsedMs: Date.now() - start }, "Search attempt");
 		// Focus and search
 		await page.waitForSelector(searchInput, { timeout: 10_000 });
 		if (client === "icloud") {
@@ -143,8 +158,10 @@ async function waitForEmail(
 
 			// Wait for the message body to render
 			await page.waitForSelector(messageBody, { timeout: 10_000 });
+			log.debug({ attempts }, "Email opened successfully");
 			return; // success
 		} catch (_e) {
+			log.debug({ attempts }, "Email not found, will retry in 5s");
 			// Email not yet found – wait and retry
 			await page.waitForTimeout(5_000);
 		}
@@ -161,9 +178,11 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 
 	const log = logger.child({ jobId: job.id, runId, client, engine });
 	log.info("Job received");
+	log.debug({ jobData: job.data }, "Raw job data");
 
 	// Mark the run as running if it is still pending
 	await db.update(run).set({ status: "running" }).where(eq(run.id, runId));
+	log.debug("Run status set to 'running'");
 
 	// Verify the run row exists, retrying a few times to account for possible replica lag
 	let runRowExists: { id: string } | undefined;
@@ -183,11 +202,13 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 		log.error("Run row not found after retries; aborting job");
 		throw new Error("Run row missing in database (after retries)");
 	}
+	log.debug("Verified run row exists in database");
 
 	try {
 		// Choose browser type
 		const browserType =
 			engine === "firefox" ? firefox : engine === "webkit" ? webkit : chromium;
+		log.debug({ chosen: browserType.name ?? engine }, "Selected browser type");
 
 		// Attempt to load persistent context with storage state
 		const storageStatePath = await getStorageStatePath(client, engine);
@@ -207,6 +228,8 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 			},
 		);
 		const page = await context.newPage();
+		log.debug("Browser context launched");
+		log.debug("New page opened in context");
 
 		if (!subjectToken) {
 			throw new Error("Job is missing subjectToken; cannot locate email");
@@ -217,9 +240,11 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 			waitForEmail(page, client, subjectToken ?? ""),
 			delayReject(90_000, "Timed out waiting for email > 90s"),
 		]);
+		log.info("Email located and opened; starting screenshots");
 
 		// Helper to capture, upload, and insert one screenshot for given color scheme
 		async function captureAndSave(isDark: boolean): Promise<void> {
+			log.debug({ isDark }, "Preparing to capture screenshot");
 			await page.emulateMedia({ colorScheme: isDark ? "dark" : "light" });
 
 			log.info({ isDark }, "Capturing screenshot");
@@ -255,6 +280,10 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 			});
 
 			log.info({ isDark, url }, "Screenshot saved");
+			log.debug(
+				{ isDark, filename, url },
+				"Screenshot uploaded to blob storage",
+			);
 		}
 
 		// Capture light then dark
@@ -262,6 +291,7 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 		await captureAndSave(true);
 
 		await context.close();
+		log.info("Browser context closed; job processing complete");
 	} catch (err) {
 		log.error({ err }, "Processing failed");
 		throw err; // let BullMQ mark job as failed

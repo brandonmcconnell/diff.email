@@ -232,6 +232,7 @@ sequenceDiagram
 
 ## 🛣️ Roadmap
 
+- [ ] Use [browserbase](https://github.com/browserbase) AI-powered worker as fallback for failures
 - [ ] Outlook/Yahoo/AOL deep-link helpers (Gmail finished)
 - [ ] Automatic dark-mode screenshot runs
 - [ ] Run history & diff viewer UI

@@ -232,8 +232,9 @@ sequenceDiagram
 
 ## 🛣️ Roadmap
 
-- [ ] Use [browserbase](https://github.com/browserbase) AI-powered worker as fallback for failures
-- [ ] Outlook/Yahoo/AOL deep-link helpers (Gmail finished)
+- [ ] Use [Stagehand](https://github.com/browserbase/stagehand) AI-powered worker as fallback on failures
+- [ ] Implement usage-based billing via [Polar](https://github.com/polarsource/polar) ([SDK](https://github.com/polarsource/polar-js))
+- [ ] Deep-linking to emails where possible (Gmail ✅, Outlook ❓, Yahoo ❓, AOL ❓)
 - [ ] Automatic dark-mode screenshot runs
 - [ ] Run history & diff viewer UI
 - [ ] Vercel Cron job to refresh mailbox cookies weekly

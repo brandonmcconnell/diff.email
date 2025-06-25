@@ -197,6 +197,11 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 			`/tmp/${client}-${engine}`,
 			{
 				headless: true,
+				...(browserType === chromium
+					? {
+							args: ["--no-sandbox", "--disable-setuid-sandbox"],
+						}
+					: {}),
 				...(storageStatePath ? { storageState: storageStatePath } : {}),
 			},
 		);

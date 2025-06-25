@@ -10,7 +10,10 @@
 		"db:studio": "drizzle-kit studio",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
-		"worker:dev": "tsx src/app/api/screenshot-worker/route.ts"
+		"worker:dev": "tsx src/app/api/screenshot-worker/route.ts",
+		"worker:build": "next build --no-lint && echo 'worker build only'",
+		"playwright:install": "PLAYWRIGHT_BROWSERS_PATH=0 playwright install chromium firefox webkit",
+		"postinstall": "if [ \"$VERCEL\" = \"1\" ]; then echo 'Installing Playwright browsers in build step'; PLAYWRIGHT_BROWSERS_PATH=0 playwright install chromium firefox webkit; else npm run playwright:install; fi"
 	},
 	"dependencies": {
 		"@diff-email/logger": "workspace:*",

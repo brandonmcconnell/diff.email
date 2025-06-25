@@ -5,5 +5,12 @@
 			"path": "/api/screenshot-worker",
 			"schedule": "*/1 * * * *"
 		}
-	]
+	],
+	"installCommand": "corepack enable && pnpm install --frozen-lockfile && PLAYWRIGHT_BROWSERS_PATH=0 pnpm exec playwright install chromium firefox webkit && pnpm exec playwright install-deps",
+	"buildCommand": "pnpm exec next build",
+	"cachePaths": ["node_modules/.cache/ms-playwright"],
+	"env": {
+		"PLAYWRIGHT_BROWSERS_PATH": "0",
+		"CI": "1"
+	}
 }

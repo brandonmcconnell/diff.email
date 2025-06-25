@@ -87,12 +87,12 @@ function HeroSection7() {
 }
 
 function FeatureSection9() {
-	const featuresId = useId();
 	const featuresHeadingId = useId();
 
 	return (
+		// biome-ignore lint/nursery/useUniqueElementIds: this uses a string id linked to from the main navigation
 		<section
-			id={featuresId}
+			id="features"
 			className="bg-muted/40 py-16 md:py-24"
 			aria-labelledby={featuresHeadingId}
 		>
@@ -168,12 +168,12 @@ function FeatureSection9() {
 }
 
 function FaqSection1() {
-	const faqId = useId();
 	const faqHeadingId = useId();
 
 	return (
+		// biome-ignore lint/nursery/useUniqueElementIds: this uses a string id linked to from the main navigation
 		<section
-			id={faqId}
+			id="faq"
 			className="bg-background py-16 md:py-24"
 			aria-labelledby={faqHeadingId}
 		>

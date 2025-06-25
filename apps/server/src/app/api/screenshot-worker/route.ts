@@ -282,12 +282,27 @@ type GlobalWithWorker = typeof globalThis & {
 
 const g = globalThis as GlobalWithWorker;
 
+// -------------------------------------------------------------------------
+// Capture *any* unhandled errors so that they are logged and do not silently
+// crash the Vercel background function without context. This also prevents
+// the process from exiting early – BullMQ will simply mark the job as
+// stalled and retry.
+process.on("unhandledRejection", (reason) => {
+	logger.error({ reason }, "Unhandled promise rejection (global)");
+});
+
+process.on("uncaughtException", (err) => {
+	logger.error({ err }, "Uncaught exception (global)");
+});
+
 const worker: Worker<ScreenshotJobData> =
 	g[WORKER_KEY] ??
-	((): Worker<ScreenshotJobData> => {
+	(() => {
 		const w = new Worker<ScreenshotJobData>(screenshotsQueue.name, processJob, {
 			connection: redis,
 			concurrency: 3,
+			stalledInterval: 10_000, // mark job stalled after 10 s of no heartbeat
+			maxStalledCount: 1,
 		});
 
 		// Attach listeners only on the first creation.
@@ -343,6 +358,11 @@ const worker: Worker<ScreenshotJobData> =
 					.set({ status: "error" })
 					.where(eq(run.id, job.data.runId));
 			}
+		});
+
+		// Capture internal BullMQ / Redis errors
+		w.on("error", (err: unknown) => {
+			logger.error({ err }, "BullMQ worker error event");
 		});
 
 		g[WORKER_KEY] = w; // cache on globalThis

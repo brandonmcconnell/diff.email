@@ -79,11 +79,23 @@ async function checkCombo(client: Client, engine: Engine): Promise<boolean> {
 			aol: "https://mail.aol.com/",
 			icloud: "https://www.icloud.com/mail",
 		};
-		await page.goto(baseUrls[client], { waitUntil: "domcontentloaded" });
-		await page.waitForSelector(selectors[client].searchInput, {
-			timeout: 8_000,
-		});
-		return true;
+		await page.goto(baseUrls[client], { waitUntil: "load" });
+
+		// After navigation, give any automatic redirects a moment to settle.
+		await page.waitForTimeout(3000);
+
+		const finalUrl = page.url();
+
+		// Map of mailbox hostnames
+		const hostMap: Record<Client, string> = {
+			gmail: "mail.google.com",
+			outlook: "outlook.live.com",
+			yahoo: "mail.yahoo.com",
+			aol: "mail.aol.com",
+			icloud: "icloud.com",
+		};
+
+		return finalUrl.includes(hostMap[client]);
 	} catch {
 		return false;
 	} finally {

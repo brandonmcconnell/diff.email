@@ -148,6 +148,8 @@ async function main(): Promise<void> {
 	});
 
 	console.log("✅ Session uploaded successfully.");
+
+	process.exit(0);
 }
 
 main().catch((err) => {

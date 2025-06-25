@@ -406,5 +406,6 @@ export const maxDuration = 800;
 // Vercel Cron jobs issue GET requests; accept them too.
 export async function GET(): Promise<Response> {
 	logger.info("Worker ping received (GET)");
+	await new Promise((resolve) => setTimeout(resolve, 50000));
 	return new Response("Screenshot worker active", { status: 200 });
 }

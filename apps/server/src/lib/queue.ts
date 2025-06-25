@@ -11,6 +11,13 @@ if (!redisUrl) {
 export const redis = new IORedis(redisUrl, {
 	// Upstash TLS urls already include rediss://
 	maxRetriesPerRequest: null,
+	connectTimeout: 20000,
+	retryStrategy: (times: number) => {
+		if (times > 3) {
+			return null;
+		}
+		return Math.min(times * 100, 3000);
+	},
 });
 
 export const screenshotsQueue = new Queue<ScreenshotJobData>("screenshots", {

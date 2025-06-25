@@ -7,6 +7,12 @@
 
 ---
 
+<details><summary><b>🎦 Click here to see a video demo of the diff.email app</b></summary><br />
+
+https://github.com/user-attachments/assets/cc98e26a-f6a7-4280-9b11-d1eed7663382
+
+</details>
+
 ## Table of Contents
 
 - [Table of Contents](#table-of-contents)

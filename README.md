@@ -1,17 +1,16 @@
 <!-- Logo Placeholder -->
-<p align="center">
-  <h1 align="center"><img src="apps/web/public/images/logo.svg" alt="diff.email logo" width="300px" /></h1>
-
-  **diff.email** is an end-to-end playground for HTML email developers. Author in HTML or JSX in a rich editor experience (customized Monaco editor), preview (iframe injection via esbuild-wasm) and generate pixel-perfect screenshots (using Playwright) across real web-based email clients and browser engines.
-</p>
-
----
-
-<details><summary><b>🎦 Click here to see a video demo of the diff.email app</b></summary><br />
+<div align="center">
+  <img src="apps/web/public/images/logo.svg" alt="diff.email logo" width="300px" /><br /><br />
+  <details><summary><b>🎦 Click here to see a video demo of the diff.email app</b></summary><br />
 
 https://github.com/user-attachments/assets/cc98e26a-f6a7-4280-9b11-d1eed7663382
 
 </details>
+</div>
+
+---
+
+**diff.email** is an end-to-end playground for HTML email developers. Author in HTML or JSX in a rich editor experience (customized Monaco editor), preview (iframe injection via esbuild-wasm) and generate pixel-perfect screenshots (using Playwright) across real web-based email clients and browser engines.
 
 ## Table of Contents
 

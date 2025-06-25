@@ -10,7 +10,6 @@ import {
 import type { auth } from "@/lib/auth";
 import { authClient } from "@/lib/auth-client";
 import { getGravatarUrl, placeholderUrl } from "@/lib/gravatar";
-import { cn } from "@/lib/utils";
 import { ImageWithFallback } from "./image-with-fallback";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";

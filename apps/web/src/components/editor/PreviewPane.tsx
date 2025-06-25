@@ -41,7 +41,6 @@ interface Props {
 	client: Client;
 	mode: "live" | "screenshot";
 	dark: boolean;
-	screenshotUrl?: string;
 	showConsole?: boolean;
 	onLogsChange?: (
 		logs: Array<{
@@ -69,7 +68,6 @@ export function PreviewPane({
 	exportName = "default",
 	mode,
 	dark,
-	screenshotUrl,
 	showConsole = false,
 	onLogsChange,
 	emailId,
@@ -528,6 +526,7 @@ export function PreviewPane({
 	// Reset runId whenever the selected version changes so we stop polling the old run
 	useEffect(() => {
 		setRunId(null);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [versionId]);
 	const { data: runData } = useQuery({
 		...trpc.runs.get.queryOptions({ runId: runId as string }),

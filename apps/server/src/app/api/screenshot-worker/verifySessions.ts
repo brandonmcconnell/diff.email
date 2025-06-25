@@ -4,7 +4,6 @@ import process from "node:process";
 import type { Client, Engine } from "@diff-email/shared";
 import { Command } from "commander";
 import { type BrowserContext, chromium, firefox, webkit } from "playwright";
-import { selectors } from "./selectors";
 
 // ---------------------------------------------------------------------------
 // Helpers shared with cache/worker scripts -----------------------------------

@@ -19,14 +19,12 @@ export const runsRouter = router({
 						engine: z.enum(["chromium", "firefox", "webkit"]),
 					}),
 				),
-				dark: z.boolean(),
 				subjectToken: z.string().optional(),
 				messageId: z.string().optional(),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
-			const { emailId, versionId, clients, dark, subjectToken, messageId } =
-				input;
+			const { emailId, versionId, clients, subjectToken, messageId } = input;
 
 			// Deduplicate against existing screenshots for the *same version*.
 			// Fetch existing client/engine pairs already captured for this version.

@@ -3,6 +3,7 @@ import "dotenv/config";
 // TODO: This is a temporary fix to ensure Playwright looks for browsers inside node_modules/.local-browsers when deployed.
 // Ensure Playwright looks for browsers inside node_modules/.local-browsers when deployed.
 process.env.PLAYWRIGHT_BROWSERS_PATH = "0";
+process.env.PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = "1";
 
 import { promises as fs } from "node:fs";
 import logger from "@diff-email/logger";

@@ -849,28 +849,38 @@ export function PreviewPane({
 												pendingCount === 0 || pendingCount > quotaRemaining
 											}
 											onClick={async () => {
-												// Mark new combos as processing (merge with any already in-flight)
-												setProcessingCombos((prev) => {
-													const next = new Set(prev);
-													for (const k of selectedCombos) {
-														next.add(k);
-													}
-													return next;
-												});
-												const result = await sendTestAndRun.mutateAsync({
-													emailId,
-													versionId,
-													clients: [...selectedCombos].map((k) => {
-														const [client, engine] = k.split("|") as [
-															Client,
-															Engine,
-														];
-														return { client, engine };
-													}),
-													dark,
-												});
-												setRunId(result.runId);
-												setDialogOpen(false);
+												try {
+													// Immediately show placeholders for the selected combos.
+													setProcessingCombos((prev) => {
+														const next = new Set(prev);
+														for (const k of selectedCombos) next.add(k);
+														return next;
+													});
+
+													const result = await sendTestAndRun.mutateAsync({
+														emailId,
+														versionId,
+														clients: [...selectedCombos].map((k) => {
+															const [client, engine] = k.split("|") as [
+																Client,
+																Engine,
+															];
+															return { client, engine };
+														}),
+														dark,
+													});
+													setRunId(result.runId);
+												} catch (err) {
+													console.error("sendTestAndRun failed", err);
+													// Roll back processing state so the UI remains accurate
+													setProcessingCombos((prev) => {
+														const next = new Set(prev);
+														for (const k of selectedCombos) next.delete(k);
+														return next;
+													});
+												} finally {
+													setDialogOpen(false);
+												}
 											}}
 										>
 											Run now

@@ -27,6 +27,7 @@
 		"pg": "^8.16.2",
 		"playwright": "^1.53.1",
 		"resend": "^4.6.0",
+		"commander": "^11.1.0",
 		"zod": "^3.25.67"
 	},
 	"devDependencies": {

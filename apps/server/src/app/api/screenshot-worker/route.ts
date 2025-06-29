@@ -17,6 +17,7 @@ import { db } from "../../../db";
 import { run, screenshot } from "../../../db/schema/core";
 import { connectBrowser } from "../../../lib/browserbase";
 import { redis, screenshotsQueue } from "../../../lib/queue";
+import { openEmailWithStagehand } from "../../../lib/stagehandFallback";
 import { selectors } from "./selectors";
 
 // -------------------------------------------------------------------------
@@ -271,8 +272,46 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 		await cleanup();
 		log.info("Browserbase session closed; job processing complete");
 	} catch (err) {
-		log.error({ err }, "Processing failed");
-		throw err; // let BullMQ mark job as failed
+		log.warn(
+			{ err },
+			"Deterministic selectors failed – falling back to Stagehand",
+		);
+
+		try {
+			const { page, cleanup } = await connectBrowser(client, engine);
+
+			await openEmailWithStagehand(page, client, subjectToken ?? "");
+
+			// reuse existing capture logic
+			async function captureAndSaveWithStagehand(
+				isDark: boolean,
+			): Promise<void> {
+				await page.emulateMedia({ colorScheme: isDark ? "dark" : "light" });
+
+				const bodyHandle = await page.waitForSelector(
+					selectors[client].messageBody,
+					{ timeout: 10_000 },
+				);
+				const buffer = await bodyHandle.screenshot({ type: "png" });
+				const filename = `screenshots/${job.id}-stagehand-${isDark ? "dark" : "light"}.png`;
+				const { url } = await put(filename, buffer, {
+					access: "public",
+					token: blobToken,
+				});
+				await db
+					.insert(screenshot)
+					.values({ runId, client, engine, darkMode: isDark, url });
+			}
+
+			await captureAndSaveWithStagehand(false);
+			await captureAndSaveWithStagehand(true);
+
+			await cleanup();
+			return; // success, do not rethrow
+		} catch (fallbackErr) {
+			log.error({ err: fallbackErr }, "Stagehand fallback also failed");
+			throw fallbackErr; // mark job failed
+		}
 	}
 }
 

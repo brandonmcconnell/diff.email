@@ -1,3 +1,11 @@
 {
-	"entries": []
+	"entries": [
+		{
+			"idx": 0,
+			"version": "7",
+			"when": 1751158123378,
+			"tag": "0000_odd_stranger",
+			"breakpoints": true
+		}
+	]
 }

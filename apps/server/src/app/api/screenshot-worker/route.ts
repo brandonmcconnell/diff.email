@@ -11,11 +11,11 @@ import type { Client, ScreenshotJobData } from "@diff-email/shared";
 import { put } from "@vercel/blob";
 import { type Job, Worker } from "bullmq";
 import { eq } from "drizzle-orm";
-import type { ElementHandle } from "playwright";
-import { chromium, firefox, type Page, webkit } from "playwright";
+import type { ElementHandle, Page } from "playwright-core";
 // --- Shared imports from the server package ------------------------------
 import { db } from "../../../db";
 import { run, screenshot } from "../../../db/schema/core";
+import { connectBrowser } from "../../../lib/browserbase";
 import { redis, screenshotsQueue } from "../../../lib/queue";
 import { selectors } from "./selectors";
 
@@ -205,31 +205,9 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 	log.debug("Verified run row exists in database");
 
 	try {
-		// Choose browser type
-		const browserType =
-			engine === "firefox" ? firefox : engine === "webkit" ? webkit : chromium;
-		log.debug({ chosen: browserType.name ?? engine }, "Selected browser type");
-
-		// Attempt to load persistent context with storage state
-		const storageStatePath = await getStorageStatePath(client, engine);
-		if (storageStatePath)
-			log.info({ storageStatePath }, "Loaded storage state");
-
-		const context = await browserType.launchPersistentContext(
-			`/tmp/${client}-${engine}`,
-			{
-				headless: true,
-				...(browserType === chromium
-					? {
-							args: ["--no-sandbox", "--disable-setuid-sandbox"],
-						}
-					: {}),
-				...(storageStatePath ? { storageState: storageStatePath } : {}),
-			},
-		);
-		const page = await context.newPage();
-		log.debug("Browser context launched");
-		log.debug("New page opened in context");
+		// Connect to a remote Browserbase session, reusing persisted context.
+		const { page, cleanup } = await connectBrowser(client, engine);
+		log.debug("Connected to Browserbase session");
 
 		if (!subjectToken) {
 			throw new Error("Job is missing subjectToken; cannot locate email");
@@ -290,8 +268,8 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 		await captureAndSave(false);
 		await captureAndSave(true);
 
-		await context.close();
-		log.info("Browser context closed; job processing complete");
+		await cleanup();
+		log.info("Browserbase session closed; job processing complete");
 	} catch (err) {
 		log.error({ err }, "Processing failed");
 		throw err; // let BullMQ mark job as failed

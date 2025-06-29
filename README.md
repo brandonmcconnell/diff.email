@@ -178,8 +178,13 @@ pnpm dev:web      # RSC front-end on :3001
 | `BETTER_AUTH_SECRET`         | both   | Auth session encryption |
 | `NEXT_PUBLIC_SERVER_URL`     | web    | Origin URL for API calls |
 | `PLAYWRIGHT_BROWSERS_PATH`*  | server | (optional) custom browser cache |
+| `BROWSERBASE_API_KEY`          | server | API key for Browserbase cloud browsers |
+| `BROWSERBASE_PROJECT_ID`       | server | Project ID from Browserbase dashboard |
+| `STAGEHAND_API_KEY`*           | server | (Optional) Stagehand Cloud key when using Stagehand API |
 
 *If unset, Playwright falls back to its default cache (~/.cache/ms-playwright).
+
+*Stagehand fallback works locally without the cloud API key; provide one only if you want to off-load LLM calls to Stagehand Cloud.*
 
 ---
 

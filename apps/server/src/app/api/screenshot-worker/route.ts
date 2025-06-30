@@ -104,6 +104,8 @@ function delayReject(ms: number, msg: string): Promise<never> {
 	);
 }
 
+export const defaultWaitForEmailTimeoutMs = 90_000;
+
 //--------------------------------------------------------------------------
 // Helper: wait for an email to arrive in the mailbox and open it.
 async function waitForEmail(
@@ -111,7 +113,7 @@ async function waitForEmail(
 	client: Client,
 	subjectToken: string,
 	engine: Engine,
-	timeoutMs = 90_000,
+	timeoutMs = defaultWaitForEmailTimeoutMs,
 ): Promise<void> {
 	const start = Date.now();
 	const log = logger.child({ client, subjectToken, fn: "waitForEmail" });
@@ -226,8 +228,11 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 		log.info(`[${client}:${engine}] [step] locating-email`);
 		// Wait for the email to appear and open it once (light mode)
 		await Promise.race([
-			waitForEmail(page, client, subjectToken ?? "", engine, 90_000),
-			delayReject(90_000, "Timed out waiting for email > 90s"),
+			waitForEmail(page, client, subjectToken ?? "", engine),
+			delayReject(
+				defaultWaitForEmailTimeoutMs,
+				"Timed out waiting for email > 90s",
+			),
 		]);
 		log.info(`[${client}:${engine}] [step] email-opened (playwright)`);
 

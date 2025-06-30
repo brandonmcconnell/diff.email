@@ -95,12 +95,11 @@ export default function Header({ className }: HeaderProps) {
 				<div
 					className={cn(
 						// Universal styles
-						"flex w-full justify-end gap-5",
+						"flex w-full justify-between gap-5",
 						// Mobile menu styles
 						"max-md:fixed max-md:top-16 max-md:left-0 max-md:flex-col max-md:gap-1",
 						"max-md:bg-background max-md:px-[inherit] max-md:pt-2.5 max-md:pb-3.5",
-						"max-md:border-border max-md:border-b",
-						"max-md:-z-1 max-md:shadow-lg",
+						"max-md:-z-1 max-md:border-border max-md:border-b max-md:shadow-lg",
 						// Hide mobile menu if not open
 						isMenuOpen ? null : "max-md:hidden!",
 					)}

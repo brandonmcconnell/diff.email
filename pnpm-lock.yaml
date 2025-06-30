@@ -81,9 +81,6 @@ importers:
       pg:
         specifier: ^8.16.2
         version: 8.16.2
-      playwright:
-        specifier: ^1.53.1
-        version: 1.53.1
       playwright-core:
         specifier: ^1.53.1
         version: 1.53.1
@@ -109,6 +106,9 @@ importers:
       drizzle-kit:
         specifier: ^0.31.2
         version: 0.31.2
+      playwright:
+        specifier: ^1.53.1
+        version: 1.53.1
       typescript:
         specifier: ^5.8.3
         version: 5.8.3

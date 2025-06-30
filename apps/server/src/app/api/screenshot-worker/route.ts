@@ -16,6 +16,7 @@ import type { ElementHandle, Page } from "playwright-core";
 import { db } from "../../../db";
 import { run, screenshot } from "../../../db/schema/core";
 import { connectBrowser } from "../../../lib/browserbase";
+import { ensureLoggedIn } from "../../../lib/login";
 import { redis, screenshotsQueue } from "../../../lib/queue";
 import { openEmailWithStagehand } from "../../../lib/stagehandFallback";
 import { selectors } from "./selectors";
@@ -208,6 +209,7 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 	try {
 		// Connect to a remote Browserbase session, reusing persisted context.
 		const { page, cleanup } = await connectBrowser(client, engine);
+		await ensureLoggedIn(page, client);
 		log.debug("Connected to Browserbase session");
 
 		if (!subjectToken) {

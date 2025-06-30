@@ -7,8 +7,8 @@ import { useState } from "react";
 import { Logo } from "@/components/pro-blocks/logo";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
-import { ModeToggle } from "./mode-toggle";
 import { Logomark } from "./pro-blocks/logomark";
+import { ThemeToggle } from "./theme-toggle";
 import { Button } from "./ui/button";
 import UserMenu from "./user-menu";
 
@@ -81,7 +81,7 @@ export default function Header({ className }: HeaderProps) {
 						<Logomark width={32} className="sm:hidden" />
 					</Link>
 					<div className="flex items-center gap-1 md:hidden">
-						<ModeToggle className="md:hidden" />
+						<ThemeToggle className="md:hidden" />
 						<Button
 							variant="outline"
 							className={cn(
@@ -113,7 +113,7 @@ export default function Header({ className }: HeaderProps) {
 						<span className="w-24 max-md:hidden" />
 					) : (
 						<div className="contents items-center gap-1 md:flex">
-							<ModeToggle className="max-md:hidden" />
+							<ThemeToggle className="max-md:hidden" />
 							{session ? (
 								<UserMenu />
 							) : (

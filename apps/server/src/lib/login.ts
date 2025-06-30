@@ -47,8 +47,10 @@ export async function ensureLoggedIn(
 ): Promise<void> {
 	const log = logger.child({ fn: "ensureLoggedIn", client });
 	const searchSel = selectors[client].searchInput;
-	if (await page.$(searchSel)) {
-		log.debug("Already logged in");
+	const visible = await page.isVisible(searchSel).catch(() => false);
+	log.debug({ url: page.url(), searchSel, visible }, "login-check visibility");
+	if (visible) {
+		log.debug("Already logged in (search input visible)");
 		return;
 	}
 

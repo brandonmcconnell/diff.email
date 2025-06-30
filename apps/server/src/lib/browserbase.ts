@@ -78,12 +78,17 @@ export async function connectBrowser(
 	const session = await bb.sessions.create({
 		projectId: process.env.BROWSERBASE_PROJECT_ID!,
 		browserSettings: {
+			recordSession: true,
 			context: {
 				id: existing.id,
 				persist: true,
 			},
 		},
 	});
+
+	// Emit inspector URL for live debugging
+	const inspector = `https://browserbase.com/sessions/${session.id}`;
+	console.log(`[browserbase] session ${client}-${engine}: ${inspector}`);
 
 	// 3. Connect via CDP using Playwright-core
 	const browserType = getBrowserType(engine);

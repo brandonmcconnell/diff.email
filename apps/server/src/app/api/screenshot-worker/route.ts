@@ -348,15 +348,15 @@ process.on("uncaughtException", (err) => {
 if (g[WORKER_KEY] == null) {
 	const w = new Worker<ScreenshotJobData>(screenshotsQueue.name, processJob, {
 		connection: redis,
-		concurrency: 3,
-		stalledInterval: 60_000, // mark job stalled after 10 s of no heartbeat
+		concurrency: 15,
+		stalledInterval: 60_000,
 		maxStalledCount: 1,
-		lockDuration: 60_000,
+		lockDuration: 300_000,
 	});
 
 	// Attach listeners only on the first creation.
 	logger.info(
-		{ concurrency: 3 },
+		{ concurrency: 15 },
 		"Screenshot worker started and waiting for jobs",
 	);
 

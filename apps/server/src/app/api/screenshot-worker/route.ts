@@ -5,7 +5,6 @@ import "dotenv/config";
 process.env.PLAYWRIGHT_BROWSERS_PATH = "0";
 process.env.PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = "1";
 
-import { promises as fs } from "node:fs";
 import logger from "@diff-email/logger";
 import type { Client, Engine, ScreenshotJobData } from "@diff-email/shared";
 import { put } from "@vercel/blob";
@@ -18,7 +17,6 @@ import { run, screenshot } from "../../../db/schema/core";
 import { connectBrowser } from "../../../lib/browserbase";
 import { ensureLoggedIn } from "../../../lib/login";
 import { redis, screenshotsQueue } from "../../../lib/queue";
-import { openEmailWithStagehand } from "../../../lib/stagehandFallback";
 import {
 	clickShowImagesWithStagehand,
 	loginWithStagehand,

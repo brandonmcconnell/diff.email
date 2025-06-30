@@ -209,26 +209,32 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 	try {
 		// Connect to a remote Browserbase session, reusing persisted context.
 		const { page, cleanup } = await connectBrowser(client, engine);
+		log.info(`[${client}:${engine}] [step] browser-connected`);
+
+		log.info(`[${client}:${engine}] [step] login-check`);
 		await ensureLoggedIn(page, client);
+		log.info(`[${client}:${engine}] [step] inbox-ready`);
+
 		log.debug("Connected to Browserbase session");
 
 		if (!subjectToken) {
 			throw new Error("Job is missing subjectToken; cannot locate email");
 		}
 
+		log.info(`[${client}:${engine}] [step] locating-email`);
 		// Wait for the email to appear and open it once (light mode)
 		await Promise.race([
 			waitForEmail(page, client, subjectToken ?? ""),
 			delayReject(90_000, "Timed out waiting for email > 90s"),
 		]);
-		log.info("Email located and opened; starting screenshots");
+		log.info(`[${client}:${engine}] [step] email-opened (playwright)`);
 
 		// Helper to capture, upload, and insert one screenshot for given color scheme
 		async function captureAndSave(isDark: boolean): Promise<void> {
 			log.debug({ isDark }, "Preparing to capture screenshot");
 			await page.emulateMedia({ colorScheme: isDark ? "dark" : "light" });
 
-			log.info({ isDark }, "Capturing screenshot");
+			log.info({ isDark }, `[${client}:${engine}] [step] screenshot-captured`);
 
 			const bodyHandle = await page.waitForSelector(
 				selectors[client].messageBody,
@@ -272,7 +278,7 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 		await captureAndSave(true);
 
 		await cleanup();
-		log.info("Browserbase session closed; job processing complete");
+		log.info(`[${client}:${engine}] [step] screenshots-done`);
 	} catch (err) {
 		log.warn(
 			{ err },
@@ -309,6 +315,7 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 			await captureAndSaveWithStagehand(true);
 
 			await cleanup();
+			log.info(`[${client}:${engine}] [step] email-opened (stagehand)`);
 			return; // success, do not rethrow
 		} catch (fallbackErr) {
 			log.error({ err: fallbackErr }, "Stagehand fallback also failed");

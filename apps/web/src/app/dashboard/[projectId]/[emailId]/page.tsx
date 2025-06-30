@@ -62,10 +62,8 @@ export default function EmailEditorPage() {
 		"chromium",
 	);
 	const [client, setClient] = usePersistentState<Client>("ui-client", "gmail");
-	const [mode, setMode] = usePersistentState<"live" | "screenshot">(
-		"ui-mode",
-		"live",
-	);
+	// Use non-persistent state so each new editor session starts in live preview mode.
+	const [mode, setMode] = useState<"live" | "screenshot">("live");
 	const [dark, setDark] = usePersistentState<boolean>("ui-dark", false);
 	const [consoleVisible, setConsoleVisible] = useState(false);
 	const [consoleLogs, setConsoleLogs] = useState<

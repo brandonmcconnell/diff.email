@@ -5,5 +5,9 @@
 			"path": "/api/screenshot-worker",
 			"schedule": "*/1 * * * *"
 		}
-	]
+	],
+	"buildCommand": "pnpm exec next build && pnpm db:migrate",
+	"env": {
+		"CI": "1"
+	}
 }

@@ -229,6 +229,21 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 		]);
 		log.info(`[${client}:${engine}] [step] email-opened (playwright)`);
 
+		// Gmail: click "Show images" if present to load remote images
+		if (client === "gmail") {
+			try {
+				const showBtn = await page.waitForSelector(
+					"button:text('Show images')",
+					{ timeout: 5_000 },
+				);
+				await showBtn.click();
+				log.info(`[${client}:${engine}] clicked Show images`);
+				await page.waitForTimeout(10_000);
+			} catch (_) {
+				log.debug(`[${client}:${engine}] Show images button not present`);
+			}
+		}
+
 		// Helper to capture, upload, and insert one screenshot for given color scheme
 		async function captureAndSave(isDark: boolean): Promise<void> {
 			log.debug({ isDark }, "Preparing to capture screenshot");

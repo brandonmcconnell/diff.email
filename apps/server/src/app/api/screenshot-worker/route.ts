@@ -104,7 +104,7 @@ function delayReject(ms: number, msg: string): Promise<never> {
 	);
 }
 
-export const defaultWaitForEmailTimeoutMs = 90_000;
+const defaultWaitForEmailTimeoutMs = 90_000;
 
 //--------------------------------------------------------------------------
 // Helper: wait for an email to arrive in the mailbox and open it.

@@ -19,6 +19,12 @@ import { connectBrowser } from "../../../lib/browserbase";
 import { ensureLoggedIn } from "../../../lib/login";
 import { redis, screenshotsQueue } from "../../../lib/queue";
 import { openEmailWithStagehand } from "../../../lib/stagehandFallback";
+import {
+	clickShowImagesWithStagehand,
+	loginWithStagehand,
+	searchEmailWithStagehand,
+} from "../../../lib/stagehandHelpers";
+import { withFallback } from "../../../lib/withFallback";
 import { selectors } from "./selectors";
 
 // -------------------------------------------------------------------------
@@ -210,141 +216,82 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 	}
 	log.debug("Verified run row exists in database");
 
-	try {
-		// Connect to a remote Browserbase session, reusing persisted context.
-		const { page, cleanup } = await connectBrowser(client, engine);
-		log.info(`[${client}:${engine}] [step] browser-connected`);
+	// Connect once and keep the session id for Stagehand attachment
+	const { page, browser, cleanup, sessionId } = await connectBrowser(
+		client,
+		engine,
+	);
 
-		log.info(`[${client}:${engine}] [step] login-check`);
-		await ensureLoggedIn(page, client);
-		log.info(`[${client}:${engine}] [step] inbox-ready`);
+	// 1) Login step ---------------------------------------------------------
+	await withFallback({
+		label: "login",
+		log,
+		primary: async () => {
+			await ensureLoggedIn(page, client);
+		},
+		fallback: async () => {
+			await loginWithStagehand(sessionId, client);
+		},
+	});
 
-		log.debug("Connected to Browserbase session");
+	// 2) Search/Open email step -------------------------------------------
+	await withFallback({
+		label: "locate-email",
+		log,
+		primary: async () => {
+			await Promise.race([
+				waitForEmail(page, client, subjectToken ?? "", engine),
+				delayReject(
+					defaultWaitForEmailTimeoutMs,
+					"Timed out waiting for email > 90s",
+				),
+			]);
+		},
+		fallback: async () => {
+			await searchEmailWithStagehand(sessionId, client, subjectToken ?? "");
+		},
+	});
 
-		if (!subjectToken) {
-			throw new Error("Job is missing subjectToken; cannot locate email");
-		}
-
-		log.info(`[${client}:${engine}] [step] locating-email`);
-		// Wait for the email to appear and open it once (light mode)
-		await Promise.race([
-			waitForEmail(page, client, subjectToken ?? "", engine),
-			delayReject(
-				defaultWaitForEmailTimeoutMs,
-				"Timed out waiting for email > 90s",
-			),
-		]);
-		log.info(`[${client}:${engine}] [step] email-opened (playwright)`);
-
-		// Gmail: click "Show images" if present to load remote images
-		if (client === "gmail") {
-			try {
-				log.info(`[${client}:${engine}] [step] waiting for show-images button`);
-				const showBtn = await page.waitForSelector(
-					"button:text('Show images')",
-					{ timeout: 5_000 },
-				);
-				await showBtn.click();
-				log.info(`[${client}:${engine}] clicked Show images`);
-				await page.waitForTimeout(10_000);
-			} catch (_) {
-				log.debug(`[${client}:${engine}] Show images button not present`);
-			}
-		}
-
-		// Helper to capture, upload, and insert one screenshot for given color scheme
-		async function captureAndSave(isDark: boolean): Promise<void> {
-			log.debug({ isDark }, "Preparing to capture screenshot");
-			await page.emulateMedia({ colorScheme: isDark ? "dark" : "light" });
-
-			log.info({ isDark }, `[${client}:${engine}] [step] screenshot-captured`);
-
-			const bodyHandle = await page.waitForSelector(
-				selectors[client].messageBody,
-				{ timeout: 10_000 },
-			);
-			if (!bodyHandle) throw new Error("Message body element not found");
-
-			// Give remote images / fonts a chance to load fully
-			try {
-				await page.waitForLoadState("networkidle", { timeout: 5_000 });
-			} catch (_) {
-				/* ignore – we'll still capture after timeout */
-			}
-			await page.waitForTimeout(3_000); // additional settle buffer
-
-			const buffer = await bodyHandle.screenshot({ type: "png" });
-
-			const filename = `screenshots/${job.id}-${isDark ? "dark" : "light"}.png`;
-			const { url } = await put(filename, buffer, {
-				access: "public",
-				token: blobToken,
-			});
-
-			await db.insert(screenshot).values({
-				runId,
-				client,
-				engine,
-				darkMode: isDark,
-				url,
-			});
-
-			log.info({ isDark, url }, "Screenshot saved");
-			log.debug(
-				{ isDark, filename, url },
-				"Screenshot uploaded to blob storage",
-			);
-		}
-
-		// Capture light then dark
-		await captureAndSave(false);
-		await captureAndSave(true);
-
-		await cleanup();
-		log.info(`[${client}:${engine}] [step] screenshots-done`);
-	} catch (err) {
-		log.warn(
-			{ err },
-			"Deterministic selectors failed – falling back to Stagehand",
-		);
-
-		try {
-			const { page, cleanup } = await connectBrowser(client, engine);
-
-			await openEmailWithStagehand(page, client, subjectToken ?? "");
-
-			// reuse existing capture logic
-			async function captureAndSaveWithStagehand(
-				isDark: boolean,
-			): Promise<void> {
-				await page.emulateMedia({ colorScheme: isDark ? "dark" : "light" });
-
-				const bodyHandle = await page.waitForSelector(
-					selectors[client].messageBody,
-					{ timeout: 10_000 },
-				);
-				const buffer = await bodyHandle.screenshot({ type: "png" });
-				const filename = `screenshots/${job.id}-stagehand-${isDark ? "dark" : "light"}.png`;
-				const { url } = await put(filename, buffer, {
-					access: "public",
-					token: blobToken,
+	// 3) Optional Gmail "Show images" step --------------------------------
+	if (client === "gmail") {
+		await withFallback({
+			label: "show-images",
+			log,
+			primary: async () => {
+				const btn = await page.waitForSelector("button:text('Show images')", {
+					timeout: 5_000,
 				});
-				await db
-					.insert(screenshot)
-					.values({ runId, client, engine, darkMode: isDark, url });
-			}
-
-			await captureAndSaveWithStagehand(false);
-			await captureAndSaveWithStagehand(true);
-
-			await cleanup();
-			log.info(`[${client}:${engine}] [step] email-opened (stagehand)`);
-			return; // success, do not rethrow
-		} catch (fallbackErr) {
-			log.error({ err: fallbackErr }, "Stagehand fallback also failed");
-			throw fallbackErr; // mark job failed
-		}
+				await btn.click();
+			},
+			fallback: async () => {
+				await clickShowImagesWithStagehand(sessionId);
+			},
+		});
 	}
+
+	// 4) Capture screenshots (deterministic, no fallback) ------------------
+	async function capture(isDark: boolean): Promise<void> {
+		await page.emulateMedia({ colorScheme: isDark ? "dark" : "light" });
+		const bodyHandle = await page.waitForSelector(
+			selectors[client].messageBody,
+			{ timeout: 10_000 },
+		);
+		const buffer = await bodyHandle.screenshot({ type: "png" });
+		const filename = `screenshots/${job.id}-${isDark ? "dark" : "light"}.png`;
+		const { url } = await put(filename, buffer, {
+			access: "public",
+			token: blobToken,
+		});
+		await db
+			.insert(screenshot)
+			.values({ runId, client, engine, darkMode: isDark, url });
+	}
+
+	await capture(false);
+	await capture(true);
+
+	await cleanup();
+	log.info(`[${client}:${engine}] job complete`);
 }
 
 //-------------------------------------------------------------------------

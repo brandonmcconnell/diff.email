@@ -6,6 +6,13 @@
 			"when": 1751158123378,
 			"tag": "0000_odd_stranger",
 			"breakpoints": true
+		},
+		{
+			"idx": 1,
+			"version": "7",
+			"when": 1751269099309,
+			"tag": "0001_broken_mysterio",
+			"breakpoints": true
 		}
 	]
 }

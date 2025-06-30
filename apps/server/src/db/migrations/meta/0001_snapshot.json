@@ -1,6 +1,6 @@
 {
-	"id": "40aa15b2-508c-4066-a44b-683539f06ee8",
-	"prevId": "c4cb2437-4d83-4658-b04c-7bfa65c5ab0a",
+	"id": "b44f17b1-231a-40d8-8356-4a1f3caad5f0",
+	"prevId": "bf71c6f4-b6f8-4572-a927-e3cb95d209d6",
 	"version": "7",
 	"dialect": "postgresql",
 	"tables": {
@@ -192,6 +192,18 @@
 					"primaryKey": true,
 					"notNull": true
 				},
+				"first_name": {
+					"name": "first_name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"last_name": {
+					"name": "last_name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
 				"name": {
 					"name": "name",
 					"type": "text",
@@ -292,6 +304,46 @@
 			"checkConstraints": {},
 			"isRLSEnabled": false
 		},
+		"public.browser_contexts": {
+			"name": "browser_contexts",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "text",
+					"primaryKey": true,
+					"notNull": true
+				},
+				"client": {
+					"name": "client",
+					"type": "client",
+					"typeSchema": "public",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"engine": {
+					"name": "engine",
+					"type": "engine",
+					"typeSchema": "public",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp with time zone",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
 		"public.emails": {
 			"name": "emails",
 			"schema": "",
@@ -309,8 +361,8 @@
 					"primaryKey": false,
 					"notNull": true
 				},
-				"title": {
-					"name": "title",
+				"name": {
+					"name": "name",
 					"type": "text",
 					"primaryKey": false,
 					"notNull": true
@@ -321,6 +373,20 @@
 					"primaryKey": false,
 					"notNull": true,
 					"default": "now()"
+				},
+				"language": {
+					"name": "language",
+					"type": "email_language",
+					"typeSchema": "public",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "'html'"
+				},
+				"description": {
+					"name": "description",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
 				}
 			},
 			"indexes": {},
@@ -370,6 +436,12 @@
 					"primaryKey": false,
 					"notNull": true,
 					"default": "now()"
+				},
+				"description": {
+					"name": "description",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
 				}
 			},
 			"indexes": {},
@@ -410,6 +482,12 @@
 					"primaryKey": false,
 					"notNull": true,
 					"default": "'pending'"
+				},
+				"expected_shots": {
+					"name": "expected_shots",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false
 				},
 				"created_at": {
 					"name": "created_at",
@@ -598,7 +676,25 @@
 					"name": "html",
 					"type": "text",
 					"primaryKey": false,
-					"notNull": true
+					"notNull": false
+				},
+				"files": {
+					"name": "files",
+					"type": "jsonb",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"entry_path": {
+					"name": "entry_path",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"export_name": {
+					"name": "export_name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
 				},
 				"created_at": {
 					"name": "created_at",
@@ -632,6 +728,11 @@
 			"name": "client",
 			"schema": "public",
 			"values": ["gmail", "outlook", "yahoo", "aol", "icloud"]
+		},
+		"public.email_language": {
+			"name": "email_language",
+			"schema": "public",
+			"values": ["html", "jsx"]
 		},
 		"public.engine": {
 			"name": "engine",

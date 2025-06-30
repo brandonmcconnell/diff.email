@@ -7,7 +7,7 @@ process.env.PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = "1";
 
 import { promises as fs } from "node:fs";
 import logger from "@diff-email/logger";
-import type { Client, ScreenshotJobData } from "@diff-email/shared";
+import type { Client, Engine, ScreenshotJobData } from "@diff-email/shared";
 import { put } from "@vercel/blob";
 import { type Job, Worker } from "bullmq";
 import { eq } from "drizzle-orm";
@@ -110,6 +110,7 @@ async function waitForEmail(
 	page: Page,
 	client: Client,
 	subjectToken: string,
+	engine: Engine,
 	timeoutMs = 90_000,
 ): Promise<void> {
 	const start = Date.now();
@@ -132,6 +133,7 @@ async function waitForEmail(
 		attempts++;
 		log.debug({ attempts, elapsedMs: Date.now() - start }, "Search attempt");
 		// Focus and search
+		log.info(`[${client}:${engine}] [step] waiting for search-input`);
 		await page.waitForSelector(searchInput, { timeout: 10_000 });
 		if (client === "icloud") {
 			// iCloud token field is a web-component; requires real mouse click then typing
@@ -224,7 +226,7 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 		log.info(`[${client}:${engine}] [step] locating-email`);
 		// Wait for the email to appear and open it once (light mode)
 		await Promise.race([
-			waitForEmail(page, client, subjectToken ?? ""),
+			waitForEmail(page, client, subjectToken ?? "", engine, 90_000),
 			delayReject(90_000, "Timed out waiting for email > 90s"),
 		]);
 		log.info(`[${client}:${engine}] [step] email-opened (playwright)`);
@@ -232,6 +234,7 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 		// Gmail: click "Show images" if present to load remote images
 		if (client === "gmail") {
 			try {
+				log.info(`[${client}:${engine}] [step] waiting for show-images button`);
 				const showBtn = await page.waitForSelector(
 					"button:text('Show images')",
 					{ timeout: 5_000 },

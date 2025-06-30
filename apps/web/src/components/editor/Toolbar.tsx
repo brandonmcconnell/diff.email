@@ -13,7 +13,7 @@ import {
 	Sun,
 	Terminal,
 } from "lucide-react";
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import {
@@ -81,9 +81,25 @@ export function Toolbar(props: Props) {
 	const entryPathId = useId();
 	const exportNameId = useId();
 
+	/*
+	 * Preserve console badge counts even when the latest logs array is empty.
+	 * This happens when the preview iframe or Monaco diagnostics broadcast a
+	 * `console_clear` event before any new messages are emitted, causing the
+	 * indicators to disappear briefly. We keep a reference to the last
+	 * non-empty logs array so the counts remain stable until new logs arrive.
+	 */
+	const lastNonEmptyLogsRef = useRef<typeof consoleLogs>([]);
+
+	if (consoleLogs.length > 0) {
+		lastNonEmptyLogsRef.current = consoleLogs;
+	}
+
+	const logsForCounting =
+		consoleLogs.length > 0 ? consoleLogs : lastNonEmptyLogsRef.current;
+
 	let [errorCount, warnCount, infoCount, debugCount, otherCount]: number[] =
 		Array(5).fill(0);
-	for (const log of consoleLogs) {
+	for (const log of logsForCounting) {
 		switch (log.method) {
 			case "error":
 				errorCount++;

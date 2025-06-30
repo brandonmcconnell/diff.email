@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Logo } from "@/components/pro-blocks/logo";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
+import { ModeToggle } from "./mode-toggle";
 import { Logomark } from "./pro-blocks/logomark";
 import { Button } from "./ui/button";
 import UserMenu from "./user-menu";
@@ -79,17 +80,20 @@ export default function Header({ className }: HeaderProps) {
 						<Logo width={128} className="max-sm:hidden" />
 						<Logomark width={32} className="sm:hidden" />
 					</Link>
-					<Button
-						variant="outline"
-						className={cn(
-							"flex h-9 items-center justify-center px-3 md:hidden",
-							isMenuOpen && "max-md:bg-muted",
-						)}
-						onClick={toggleMenu}
-						aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-					>
-						{isMenuOpen ? <X /> : <Menu />} Menu
-					</Button>
+					<div className="flex items-center gap-1 md:hidden">
+						<ModeToggle className="md:hidden" />
+						<Button
+							variant="outline"
+							className={cn(
+								"flex h-9 items-center justify-center px-3",
+								isMenuOpen && "max-md:bg-muted",
+							)}
+							onClick={toggleMenu}
+							aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+						>
+							{isMenuOpen ? <X /> : <Menu />} Menu
+						</Button>
+					</div>
 				</div>
 
 				<div
@@ -107,25 +111,28 @@ export default function Header({ className }: HeaderProps) {
 					<NavMenuItems isPending={isPending} hasSession={Boolean(session)} />
 					{isPending ? (
 						<span className="w-24 max-md:hidden" />
-					) : session ? (
-						<UserMenu />
 					) : (
-						<div className="flex gap-2 max-md:flex-col">
-							<Button variant="outline" asChild>
-								<Link href="/sign-in" className="max-md:w-full">
-									Sign in
-								</Link>
-							</Button>
-							<Button asChild>
-								<Link href="/sign-up" className="max-md:w-full">
-									Get started
-								</Link>
-							</Button>
+						<div className="contents items-center gap-1 md:flex">
+							<ModeToggle className="max-md:hidden" />
+							{session ? (
+								<UserMenu />
+							) : (
+								<div className="flex gap-2 max-md:flex-col">
+									<Button variant="outline" asChild>
+										<Link href="/sign-in" className="max-md:w-full">
+											Sign in
+										</Link>
+									</Button>
+									<Button asChild>
+										<Link href="/sign-up" className="max-md:w-full">
+											Get started
+										</Link>
+									</Button>
+								</div>
+							)}
 						</div>
 					)}
 				</div>
-				{/* TODO: Add mode toggle back in, need to figure out the right style and placement */}
-				{/* <ModeToggle /> */}
 			</div>
 		</nav>
 	);

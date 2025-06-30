@@ -45,53 +45,6 @@ if (!sessionsToken) {
 }
 
 //--------------------------------------------------------------------------
-// Helper: get storage state for a client/engine combo.  MVP-only: downloads
-// the blob file if it exists; otherwise throws (the headed cache script is
-// responsible for ensuring files exist).  Automatic refresh will be added
-// later.
-async function getStorageStatePath(
-	client: string,
-	engine: string,
-): Promise<string | undefined> {
-	const envPrefix =
-		process.env.VERCEL_ENV === "production"
-			? "prod"
-			: process.env.VERCEL_ENV === "preview"
-				? "preview"
-				: "dev";
-
-	const key = `${envPrefix}/sessions/${client}-${engine}.json`;
-	const url = `https://blob.vercel-storage.com/${sessionsBucket}/${key}`;
-
-	logger.debug(
-		{ client, engine, key, url },
-		"Attempting to fetch storage state",
-	);
-
-	try {
-		const res = await fetch(url, {
-			headers: {
-				Authorization: `Bearer ${sessionsToken}`,
-			},
-		});
-		if (res.ok) {
-			const buffer = Buffer.from(await res.arrayBuffer());
-			const filePath = `/tmp/${client}-${engine}.json`;
-			await fs.writeFile(filePath, buffer as NodeJS.ArrayBufferView);
-			logger.debug({ filePath }, "Storage state downloaded to temporary path");
-			return filePath;
-		}
-	} catch (err) {
-		logger.debug(
-			{ err },
-			"Error fetching storage state (will proceed without it)",
-		);
-		/* swallow */
-	}
-	return undefined;
-}
-
-//--------------------------------------------------------------------------
 // Utility: click the geometrical center of an element via real mouse event.
 async function mouseClickCenter(
 	page: Page,

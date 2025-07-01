@@ -521,6 +521,12 @@ export function PreviewPane({
 		enabled: !!versionId,
 	});
 
+	// Fetch list of runs for this email to auto-resume the latest in-progress one after a refresh.
+	const { data: runsForEmail } = useQuery({
+		...trpc.runs.list.queryOptions({ emailId }),
+		enabled: !!emailId,
+	});
+
 	// Screenshot generation dialog state
 	const [runId, setRunId] = useState<string | null>(null);
 	// Reset runId whenever the selected version changes so we stop polling the old run
@@ -528,20 +534,23 @@ export function PreviewPane({
 		setRunId(null);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [versionId]);
+
+	// Whenever we have no runId but the server reports an active run for this version, resume it.
+	useEffect(() => {
+		if (runId || !runsForEmail) return;
+		const active = runsForEmail.find(
+			(r) => r.versionId === versionId && r.status !== "done",
+		);
+		if (active) {
+			setRunId(active.id);
+		}
+	}, [runId, runsForEmail, versionId]);
+
 	const { data: runData } = useQuery({
 		...trpc.runs.get.queryOptions({ runId: runId as string }),
 		enabled: !!runId,
 		refetchInterval: 4_000,
 	});
-	const [dialogOpen, setDialogOpen] = useState(false);
-	// Keep track of combos currently being processed (queued but not yet completed)
-	const [processingCombos, setProcessingCombos] = useState<Set<string>>(
-		new Set(),
-	);
-	// Prepare mutation for sending test email & starting screenshot run.
-	const sendTestAndRun = useMutation(
-		trpc.emails.sendTestAndRun.mutationOptions(),
-	);
 
 	// Set of combos already completed in the current run (for disabling UI & pre-selecting)
 	const completedCombos = React.useMemo(() => {
@@ -555,18 +564,31 @@ export function PreviewPane({
 		return set;
 	}, [versionShots, runData]);
 
-	// Remove combos from processing set as soon as they become completed
+	// Keep track of combos currently being processed (queued but not yet completed)
+	const [processingCombos, setProcessingCombos] = useState<Set<string>>(
+		new Set(),
+	);
+
+	// Dialog open state for the "Generate screenshots" modal
+	const [dialogOpen, setDialogOpen] = useState(false);
+
+	// Prepare mutation for sending test email & starting screenshot run.
+	const sendTestAndRun = useMutation(
+		trpc.emails.sendTestAndRun.mutationOptions(),
+	);
+
+	// Derive processing combos from server data whenever it changes (covers page refreshes)
 	useEffect(() => {
-		if (completedCombos.size === 0) return;
-		setProcessingCombos((prev) => {
-			if (prev.size === 0) return prev;
-			const next = new Set(prev);
-			for (const key of completedCombos) {
-				next.delete(key);
-			}
-			return next;
-		});
-	}, [completedCombos]);
+		if (!runData || !(runData as { combos?: unknown }).combos) return;
+		const requested =
+			(runData as { combos?: { client: Client; engine: Engine }[] }).combos ??
+			[];
+		// Compute the set of combos that are still in flight (requested but not yet completed)
+		const stillProcessing = requested
+			.map((c) => `${c.client}|${c.engine}`)
+			.filter((key) => !completedCombos.has(key));
+		setProcessingCombos(new Set(stillProcessing));
+	}, [runData, completedCombos]);
 
 	// Default full-selection set and state holding current selection
 	const defaultSelected = React.useMemo(

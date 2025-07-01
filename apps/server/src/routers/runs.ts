@@ -93,7 +93,13 @@ export const runsRouter = router({
 			}
 			const [row] = await db
 				.insert(run)
-				.values({ emailId, versionId, expectedShots })
+				.values({
+					emailId,
+					versionId,
+					expectedShots,
+					// Persist requested combos so the UI can restore placeholders after refresh
+					combos: uniqueClients,
+				})
 				.returning();
 
 			if (!row) {

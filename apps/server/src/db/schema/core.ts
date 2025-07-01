@@ -1,3 +1,4 @@
+import type { Client, Engine } from "@diff-email/shared";
 import {
 	boolean,
 	integer,
@@ -81,6 +82,10 @@ export const run = pgTable("runs", {
 	expectedShots: integer("expected_shots"),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.defaultNow()
+		.notNull(),
+	// Array of requested screenshot combos for this run
+	combos: jsonb("combos")
+		.$type<Array<{ client: Client; engine: Engine }>>()
 		.notNull(),
 });
 

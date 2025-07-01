@@ -238,7 +238,13 @@ export const emailsRouter = router({
 			const expectedShots = clients.length;
 			const [runRow] = await db
 				.insert(run)
-				.values({ emailId, versionId, expectedShots })
+				.values({
+					emailId,
+					versionId,
+					expectedShots,
+					// Persist requested combos for placeholder restoration
+					combos: clients,
+				})
 				.returning();
 
 			if (!runRow) {

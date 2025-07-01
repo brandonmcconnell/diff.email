@@ -1,0 +1,1 @@
+ALTER TABLE "runs" ADD COLUMN "combos" jsonb NOT NULL DEFAULT '[]'; 

@@ -3,6 +3,7 @@ import logger from "@diff-email/logger";
 import type { Client } from "@diff-email/shared";
 import type { Page } from "playwright-core";
 import { generateOtp } from "./otp";
+import { inboxUrls } from "./urls";
 
 function env(key: string): string {
 	const value = process.env[key];
@@ -32,16 +33,8 @@ export async function openEmailWithStagehand(
 	await sh.init();
 	const shPage = sh.page;
 
-	// Navigate to client inbox first
-	const baseUrls: Record<Client, string> = {
-		gmail: "https://mail.google.com/mail/u/0/#inbox",
-		outlook: "https://outlook.live.com/mail/0/",
-		yahoo: "https://mail.yahoo.com/",
-		aol: "https://mail.aol.com/",
-		icloud: "https://www.icloud.com/mail",
-	};
-
-	await shPage.goto(baseUrls[client]);
+	// Navigate to client inbox first using centralized mapping
+	await shPage.goto(inboxUrls[client]);
 
 	const searchInstruction =
 		client === "icloud"

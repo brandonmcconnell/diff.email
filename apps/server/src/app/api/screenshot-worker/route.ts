@@ -23,6 +23,7 @@ import {
 	loginWithStagehand,
 	openEmailWithStagehand,
 } from "../../../lib/stagehandFallback";
+import { inboxUrls } from "../../../lib/urls";
 import { selectors } from "./selectors";
 
 // -------------------------------------------------------------------------
@@ -125,15 +126,7 @@ async function waitForEmail(
 	let attempts = 0;
 	const { searchInput, searchResult, messageBody } = selectors[client];
 
-	const baseUrls: Record<Client, string> = {
-		gmail: "https://mail.google.com/mail/u/0/#inbox",
-		outlook: "https://outlook.live.com/mail/0/",
-		yahoo: "https://mail.yahoo.com/",
-		aol: "https://mail.aol.com/",
-		icloud: "https://www.icloud.com/mail",
-	};
-
-	await page.goto(baseUrls[client], { waitUntil: "domcontentloaded" });
+	await page.goto(inboxUrls[client], { waitUntil: "domcontentloaded" });
 
 	while (Date.now() - start < timeoutMs) {
 		attempts++;

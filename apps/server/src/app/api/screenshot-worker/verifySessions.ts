@@ -4,6 +4,7 @@ import process from "node:process";
 import type { Client, Engine } from "@diff-email/shared";
 import { Command } from "commander";
 import { type BrowserContext, chromium, firefox, webkit } from "playwright";
+import { inboxUrls } from "../../../lib/urls";
 
 // ---------------------------------------------------------------------------
 // Helpers shared with cache/worker scripts -----------------------------------
@@ -71,14 +72,7 @@ async function checkCombo(client: Client, engine: Engine): Promise<boolean> {
 		ctx = await browser.newContext({ storageState });
 		const page = await ctx.newPage();
 
-		const baseUrls: Record<Client, string> = {
-			gmail: "https://mail.google.com/mail/u/0/#inbox",
-			outlook: "https://outlook.live.com/mail/0/",
-			yahoo: "https://mail.yahoo.com/",
-			aol: "https://mail.aol.com/",
-			icloud: "https://www.icloud.com/mail",
-		};
-		await page.goto(baseUrls[client], { waitUntil: "load" });
+		await page.goto(inboxUrls[client], { waitUntil: "load" });
 
 		// After navigation, give any automatic redirects a moment to settle.
 		await page.waitForTimeout(3000);

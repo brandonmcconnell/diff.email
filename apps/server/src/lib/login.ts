@@ -3,6 +3,7 @@ import type { Client } from "@diff-email/shared";
 import type { Page } from "playwright-core";
 import Twilio from "twilio";
 import { generateOtp } from "./otp";
+import { inboxUrls, loginUrls } from "./urls";
 
 function env(key: string): string {
 	const val = process.env[key];
@@ -41,11 +42,21 @@ async function waitForAppleSmsCode(
 	return undefined;
 }
 
+// ---------------------------------------------------------------------------
+// Centralized URL maps used throughout the server for each email client.
+// ---------------------------------------------------------------------------
+
 export async function ensureLoggedIn(
 	page: Page,
 	client: Client,
 ): Promise<void> {
 	const log = logger.child({ fn: "ensureLoggedIn", client });
+
+	// Load mailbox first to determine if session is still active.
+	await page.goto(inboxUrls[client], { waitUntil: "domcontentloaded" });
+
+	// Start from the mailbox root so that the visibility check is reliable.
+
 	const searchSel = selectors[client].searchInput;
 	const visible = await page.isVisible(searchSel).catch(() => false);
 	log.debug({ url: page.url(), searchSel, visible }, "login-check visibility");
@@ -55,6 +66,12 @@ export async function ensureLoggedIn(
 	}
 
 	log.warn("Not logged in – running login flow");
+
+	// Navigate to the dedicated login entry point for the provider before executing
+	// the deterministic login automation. This ensures we're starting from a
+	// consistent state regardless of any previous redirects.
+	await page.goto(loginUrls[client], { waitUntil: "domcontentloaded" });
+
 	switch (client) {
 		case "gmail":
 			await loginGmail(page);
@@ -85,10 +102,6 @@ async function loginGmail(page: Page): Promise<void> {
 	const email = env("GMAIL_USER");
 	const pass = env("GMAIL_PASS");
 	const secret = env("GMAIL_TOTP_SECRET");
-
-	await page.goto("https://mail.google.com/mail/u/0/#inbox", {
-		waitUntil: "domcontentloaded",
-	});
 
 	await page.waitForSelector("input[type=email]", { timeout: 5000 });
 	await page.fill("input[type=email]", email);
@@ -137,10 +150,7 @@ async function loginOutlook(page: Page): Promise<void> {
 	const pass = env("OUTLOOK_PASS");
 	const secret = env("OUTLOOK_TOTP_SECRET");
 
-	await page.goto("https://outlook.live.com/mail/0/?prompt=select_account", {
-		waitUntil: "domcontentloaded",
-	});
-
+	await page.waitForSelector("input[type=email]", { timeout: 5000 });
 	await page.fill("input[type=email]", email);
 	await page.keyboard.press("Enter");
 
@@ -201,11 +211,7 @@ async function loginYahoo(page: Page): Promise<void> {
 	const pass = env("YAHOO_PASS");
 	const secret = env("YAHOO_TOTP_SECRET");
 
-	await page.goto(
-		"https://login.yahoo.com/?.done=https%3A%2F%2Fmail.yahoo.com%2Fd",
-		{ waitUntil: "domcontentloaded" },
-	);
-
+	await page.waitForSelector("input[name='username']", { timeout: 5000 });
 	await page.fill("input[name='username']", email);
 	await page.click("input#login-signin");
 
@@ -270,7 +276,7 @@ async function loginAol(page: Page): Promise<void> {
 	const pass = env("AOL_PASS");
 	const secret = env("AOL_TOTP_SECRET");
 
-	await page.goto("https://login.aol.com", { waitUntil: "domcontentloaded" });
+	await page.waitForSelector("input[name='username']", { timeout: 5000 });
 	await page.fill("input[name='username']", email);
 	await page.click("input#login-signin");
 
@@ -328,17 +334,8 @@ async function loginIcloud(page: Page): Promise<void> {
 	const email = env("ICLOUD_USER");
 	const pass = env("ICLOUD_PASS");
 
-	await page.goto("https://www.icloud.com/mail", {
-		waitUntil: "domcontentloaded",
-	});
-
-	// Click the big blue "Sign in" button which loads the Apple ID auth iframe
-	try {
-		await page.waitForSelector("ui-button.sign-in-button", { timeout: 10_000 });
-		await page.click("ui-button.sign-in-button");
-	} catch (_) {
-		/* button might not exist if we were redirected straight to iframe */
-	}
+	await page.waitForSelector("ui-button.sign-in-button", { timeout: 10_000 });
+	await page.click("ui-button.sign-in-button");
 
 	// From this point on we operate within the auth iframe. Because Apple often
 	// reloads or replaces the iframe, we resolve the locator fresh each step.

@@ -9,6 +9,7 @@ import type { Client, Engine } from "@diff-email/shared";
 import { put } from "@vercel/blob";
 import { Command } from "commander";
 import { chromium, firefox, webkit } from "playwright";
+import { inboxUrls } from "../../../lib/urls";
 
 // ---------------------------------------------------------------------------
 // Env vars & constants --------------------------------------------------------
@@ -116,15 +117,7 @@ async function main(): Promise<void> {
 	});
 	const page = await context.newPage();
 
-	const loginUrl: Record<Client, string> = {
-		gmail: "https://mail.google.com/mail/u/0/#inbox",
-		outlook: "https://outlook.live.com/mail/0/",
-		yahoo: "https://mail.yahoo.com/",
-		aol: "https://mail.aol.com/",
-		icloud: "https://www.icloud.com/mail",
-	};
-
-	await page.goto(loginUrl[client]);
+	await page.goto(inboxUrls[client]);
 
 	console.log("\nPlease complete login in the opened browser window.");
 	console.log("Once your inbox fully loads, press <Enter> here to continue.");

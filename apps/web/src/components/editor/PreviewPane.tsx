@@ -592,11 +592,18 @@ export function PreviewPane({
 
 	// Derive processing combos from server data whenever it changes (covers page refreshes)
 	useEffect(() => {
+		// If the run ended with an error, nothing should remain "processing" – any
+		// combo without a screenshot should be marked failed.
+		if (runData?.status === "error") {
+			setProcessingCombos(new Set());
+			return;
+		}
+
 		if (!runData || !(runData as { combos?: unknown }).combos) return;
 		const requested =
 			(runData as { combos?: { client: Client; engine: Engine }[] }).combos ??
 			[];
-		// Compute the set of combos that are still in flight (requested but not yet completed)
+		// Compute set of combos that are still in flight (requested but not yet completed)
 		const stillProcessing = requested
 			.map((c) => `${c.client}|${c.engine}`)
 			.filter((key) => !completedCombos.has(key));
@@ -724,11 +731,14 @@ export function PreviewPane({
 										(s) => s.client === client && s.engine === engine,
 									);
 
-								const status: "processing" | "failed" | "succeeded" = shot
+								const isRunError = runData?.status === "error";
+								const status: "processing" | "failed" | "succeeded" | "unknown" = shot
 									? "succeeded"
-									: processingCombos.has(key)
-										? "processing"
-										: "failed";
+									: isRunError
+										? "failed"
+										: processingCombos.has(key)
+											? "processing"
+											: "unknown";
 
 								return (
 									<div
@@ -752,7 +762,8 @@ export function PreviewPane({
 											: {})}
 										className={cn(
 											"relative h-[200px] shrink-0 basis-[200px] overflow-hidden rounded-lg border bg-card shadow-sm",
-											status === "processing" && "animate-pulse",
+											(status === "processing" || status === "unknown") &&
+												"animate-pulse",
 											status === "succeeded" &&
 												"cursor-pointer hover:ring-2 hover:ring-primary/50",
 										)}
@@ -1009,8 +1020,11 @@ export function PreviewPane({
 								<img
 									src={lightboxUrl}
 									alt="Email screenshot"
-									className="pointer-events-none block h-fit w-auto max-w-[90vw]"
+									className="block h-fit w-auto max-w-[90vw]"
 									draggable={false}
+									onClick={(_e) => {
+										setLightboxOpen(false);
+									}}
 								/>
 							)}
 						</DialogContent>

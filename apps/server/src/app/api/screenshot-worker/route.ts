@@ -478,13 +478,24 @@ if (g[WORKER_KEY] == null) {
 		}
 	});
 
-	w.on("failed", (job: Job<ScreenshotJobData> | undefined, err: unknown) => {
+	w.on("failed", async (job: Job<ScreenshotJobData> | undefined, err: unknown) => {
 		logger.error({ jobId: job?.id, err }, "Job failed");
-		if (job && job.attemptsMade >= (job.opts.attempts ?? 1)) {
-			void db
-				.update(run)
-				.set({ status: "error" })
-				.where(eq(run.id, job.data.runId));
+		if (!job) return;
+		const { runId, client: jClient, engine: jEngine } = job.data;
+		// Remove the failed combo from the run.combos array so UI stops showing it as processing.
+		try {
+			const [row] = await db.select({ combos: run.combos }).from(run).where(eq(run.id, runId));
+			if (row?.combos) {
+				const remaining = (row.combos as { client: Client; engine: Engine }[]).filter(
+					(c) => !(c.client === jClient && c.engine === jEngine),
+				);
+				await db
+					.update(run)
+					.set({ combos: remaining, status: job.attemptsMade >= (job.opts.attempts ?? 1) ? "error" : run.status })
+					.where(eq(run.id, runId));
+			}
+		} catch (updateErr) {
+			logger.error({ err: updateErr }, "Failed to update run.combos after job failure");
 		}
 	});
 

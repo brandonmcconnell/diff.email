@@ -670,7 +670,12 @@ export function PreviewPane({
 			<div className="relative h-full w-full overflow-auto p-4">
 				<div className={notStarted ? "opacity-100" : undefined}>
 					{hasAnyShots && (
-						<div className="grid auto-rows-[200px] grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
+						<div
+							className={cn(
+								"grid auto-rows-[200px] grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4",
+								notStarted && "grid-cols-[repeat(auto-fit,minmax(180px,1fr))]",
+							)}
+						>
 							{displayCombos.map(({ client, engine }) => {
 								return (
 									<div
@@ -700,7 +705,7 @@ export function PreviewPane({
 												<div className="absolute inset-0 bg-gradient-to-br from-muted/50 to-muted" />
 											);
 										})()}
-										<div className="absolute inset-x-0.75 bottom-0.75 rounded-md bg-linear-to-r from-background to-background/50 px-2.5 py-1.5 font-medium text-foreground text-xs backdrop-blur-sm">
+										<div className="absolute inset-x-0.75 bottom-0.75 rounded-md bg-linear-to-r from-background to-background/50 px-2.5 py-1.5 font-medium text-foreground text-xs backdrop-blur-[1px]">
 											<span className="font-semibold">
 												{clientLabels[client]}
 											</span>

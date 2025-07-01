@@ -530,6 +530,7 @@ export function PreviewPane({
 	// Screenshot generation dialog state
 	const [runId, setRunId] = useState<string | null>(null);
 	// Reset runId whenever the selected version changes so we stop polling the old run
+	// biome-ignore lint/correctness/useExhaustiveDependencies: runId reset only depends on versionId
 	useEffect(() => {
 		setRunId(null);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -576,6 +577,10 @@ export function PreviewPane({
 	const sendTestAndRun = useMutation(
 		trpc.emails.sendTestAndRun.mutationOptions(),
 	);
+
+	// Lightbox state
+	const [lightboxOpen, setLightboxOpen] = useState(false);
+	const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
 	// Derive processing combos from server data whenever it changes (covers page refreshes)
 	useEffect(() => {
@@ -720,9 +725,28 @@ export function PreviewPane({
 								return (
 									<div
 										key={key}
+										{...(status === "succeeded"
+											? {
+													role: "button" as const,
+													tabIndex: 0,
+													onClick: () => {
+														if (shot) {
+															setLightboxUrl(shot.url);
+															setLightboxOpen(true);
+														}
+													},
+													onKeyDown: (ev: React.KeyboardEvent) => {
+														if (ev.key === "Enter" || ev.key === " ") {
+															(ev.currentTarget as HTMLDivElement).click();
+														}
+													},
+												}
+											: {})}
 										className={cn(
 											"relative h-[200px] shrink-0 basis-[200px] overflow-hidden rounded-lg border bg-card shadow-sm",
 											status === "processing" && "animate-pulse",
+											status === "succeeded" &&
+												"cursor-pointer hover:ring-2 hover:ring-primary/50",
 										)}
 									>
 										{status === "succeeded" ? (
@@ -731,7 +755,7 @@ export function PreviewPane({
 													"absolute inset-0 bg-cover bg-top bg-no-repeat",
 													dark ? "bg-[black]" : "bg-[white]",
 												)}
-												style={{ backgroundImage: `url(${shot!.url})` }}
+												style={{ backgroundImage: `url(${shot?.url ?? ""})` }}
 											/>
 										) : (
 											<div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted/50 to-muted">
@@ -792,7 +816,7 @@ export function PreviewPane({
 										Generate screenshots
 									</Button>
 								</DialogTrigger>
-								<DialogContent className="sm:max-w-lg">
+								<DialogContent showCloseButton={false} className="sm:max-w-lg">
 									<DialogHeader>
 										<DialogTitle>Generate screenshots</DialogTitle>
 										<DialogDescription>
@@ -956,6 +980,40 @@ export function PreviewPane({
 							</Dialog>
 						</div>
 					)}
+
+					{/* Lightbox dialog */}
+					<Dialog
+						open={lightboxOpen}
+						onOpenChange={(o) => {
+							setLightboxOpen(o);
+							if (!o) setLightboxUrl(null);
+						}}
+					>
+						<DialogContent
+							showCloseButton={false}
+							className={cn(
+								"flex w-auto max-w-none overflow-y-auto border-none bg-transparent p-0",
+								"top-0 left-0 translate-x-0 translate-y-0 gap-0 rounded-none py-10 shadow-none",
+								"items-center-safe h-svh max-h-svh min-h-svh w-svw min-w-svw max-w-svw justify-center",
+							)}
+							onClick={(_e) => {
+								setLightboxOpen(false);
+								setLightboxUrl(null);
+							}}
+						>
+							{/* a11y: hidden title satisfies Radix requirement */}
+							<DialogTitle className="sr-only">Email screenshot</DialogTitle>
+							{lightboxUrl && (
+								// biome-ignore lint/performance/noImgElement: optimisation not needed inside lightbox
+								<img
+									src={lightboxUrl}
+									alt="Email screenshot"
+									className="pointer-events-none block h-fit w-auto max-w-[90vw]"
+									draggable={false}
+								/>
+							)}
+						</DialogContent>
+					</Dialog>
 				</div>
 			</div>
 		);

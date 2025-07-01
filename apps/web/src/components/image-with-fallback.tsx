@@ -18,6 +18,7 @@ export function ImageWithFallback({
 }: ImageWithFallbackProps) {
 	const [hasError, setHasError] = useState(false);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: reset error flag only when src changes intentionally
 	useEffect(() => {
 		setHasError(false);
 		// eslint-disable-next-line react-hooks/exhaustive-deps

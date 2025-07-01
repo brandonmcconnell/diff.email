@@ -25,13 +25,15 @@ export interface ConnectedSession {
 	cleanup: () => Promise<void>;
 }
 
+const projectId: string = (() => {
+	const id = process.env.BROWSERBASE_PROJECT_ID;
+	if (!id) throw new Error("Missing BROWSERBASE_PROJECT_ID env var");
+	return id;
+})();
+
 const bb = new Browserbase({
 	apiKey: process.env.BROWSERBASE_API_KEY,
 });
-
-if (!process.env.BROWSERBASE_PROJECT_ID) {
-	throw new Error("Missing BROWSERBASE_PROJECT_ID env var");
-}
 
 // Map the internal Engine type (chromium | firefox | webkit) to Playwright
 // browser type helpers for connectOverCDP.
@@ -62,7 +64,7 @@ export async function connectBrowser(
 
 	if (!existing) {
 		const context = await bb.contexts.create({
-			projectId: process.env.BROWSERBASE_PROJECT_ID!,
+			projectId,
 		});
 
 		existing = { id: context.id } as const;
@@ -76,7 +78,7 @@ export async function connectBrowser(
 
 	// 2. Create a fresh session tied to that context (persisted)
 	const session = await bb.sessions.create({
-		projectId: process.env.BROWSERBASE_PROJECT_ID!,
+		projectId,
 		browserSettings: {
 			recordSession: true,
 			context: {

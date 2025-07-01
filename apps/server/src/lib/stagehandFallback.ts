@@ -16,7 +16,7 @@ function env(key: string): string {
  * selectors fail. The function assumes the page is already at the mailbox root.
  */
 export async function openEmailWithStagehand(
-	page: Page,
+	_page: Page,
 	client: Client,
 	subjectToken: string,
 ): Promise<void> {

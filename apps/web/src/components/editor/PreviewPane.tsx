@@ -732,7 +732,11 @@ export function PreviewPane({
 									);
 
 								const isRunError = runData?.status === "error";
-								const status: "processing" | "failed" | "succeeded" | "unknown" = shot
+								const status:
+									| "processing"
+									| "failed"
+									| "succeeded"
+									| "unknown" = shot
 									? "succeeded"
 									: isRunError
 										? "failed"
@@ -1016,16 +1020,19 @@ export function PreviewPane({
 							{/* a11y: hidden title satisfies Radix requirement */}
 							<DialogTitle className="sr-only">Email screenshot</DialogTitle>
 							{lightboxUrl && (
-								// biome-ignore lint/performance/noImgElement: optimisation not needed inside lightbox
-								<img
-									src={lightboxUrl}
-									alt="Email screenshot"
-									className="block h-fit w-auto max-w-[90vw]"
-									draggable={false}
-									onClick={(_e) => {
-										setLightboxOpen(false);
-									}}
-								/>
+								<button
+									type="button"
+									onClick={() => setLightboxOpen(false)}
+									className="appearance-none border-none bg-transparent p-0 focus-visible:outline-none"
+								>
+									{/* biome-ignore lint/performance/noImgElement: optimization not needed inside lightbox */}
+									<img
+										src={lightboxUrl}
+										alt="Email screenshot"
+										className="block h-fit w-auto max-w-[90vw]"
+										draggable={false}
+									/>
+								</button>
 							)}
 						</DialogContent>
 					</Dialog>

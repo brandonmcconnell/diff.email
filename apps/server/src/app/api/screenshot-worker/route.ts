@@ -5,7 +5,6 @@ import "dotenv/config";
 process.env.PLAYWRIGHT_BROWSERS_PATH = "0";
 process.env.PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = "1";
 
-import { promises as fs } from "node:fs";
 import logger from "@diff-email/logger";
 import type { Client, Engine, ScreenshotJobData } from "@diff-email/shared";
 import { put } from "@vercel/blob";
@@ -34,60 +33,6 @@ const blobToken =
 
 if (!blobToken) {
 	throw new Error("No blob token found in env vars");
-}
-
-const sessionsBucket = process.env.SESSIONS_BUCKET ?? "diff-email-sessions";
-const sessionsToken = process.env.SESSIONS_STATE_READ_WRITE_TOKEN;
-
-if (!sessionsToken) {
-	throw new Error("Missing SESSIONS_STATE_READ_WRITE_TOKEN env var");
-}
-
-//--------------------------------------------------------------------------
-// Helper: get storage state for a client/engine combo.  MVP-only: downloads
-// the blob file if it exists; otherwise throws (the headed cache script is
-// responsible for ensuring files exist).  Automatic refresh will be added
-// later.
-async function getStorageStatePath(
-	client: string,
-	engine: string,
-): Promise<string | undefined> {
-	const envPrefix =
-		process.env.VERCEL_ENV === "production"
-			? "prod"
-			: process.env.VERCEL_ENV === "preview"
-				? "preview"
-				: "dev";
-
-	const key = `${envPrefix}/sessions/${client}-${engine}.json`;
-	const url = `https://blob.vercel-storage.com/${sessionsBucket}/${key}`;
-
-	logger.debug(
-		{ client, engine, key, url },
-		"Attempting to fetch storage state",
-	);
-
-	try {
-		const res = await fetch(url, {
-			headers: {
-				Authorization: `Bearer ${sessionsToken}`,
-			},
-		});
-		if (res.ok) {
-			const buffer = Buffer.from(await res.arrayBuffer());
-			const filePath = `/tmp/${client}-${engine}.json`;
-			await fs.writeFile(filePath, buffer as NodeJS.ArrayBufferView);
-			logger.debug({ filePath }, "Storage state downloaded to temporary path");
-			return filePath;
-		}
-	} catch (err) {
-		logger.debug(
-			{ err },
-			"Error fetching storage state (will proceed without it)",
-		);
-		/* swallow */
-	}
-	return undefined;
 }
 
 //--------------------------------------------------------------------------
@@ -478,26 +423,41 @@ if (g[WORKER_KEY] == null) {
 		}
 	});
 
-	w.on("failed", async (job: Job<ScreenshotJobData> | undefined, err: unknown) => {
-		logger.error({ jobId: job?.id, err }, "Job failed");
-		if (!job) return;
-		const { runId, client: jClient, engine: jEngine } = job.data;
-		// Remove the failed combo from the run.combos array so UI stops showing it as processing.
-		try {
-			const [row] = await db.select({ combos: run.combos }).from(run).where(eq(run.id, runId));
-			if (row?.combos) {
-				const remaining = (row.combos as { client: Client; engine: Engine }[]).filter(
-					(c) => !(c.client === jClient && c.engine === jEngine),
-				);
-				await db
-					.update(run)
-					.set({ combos: remaining, status: job.attemptsMade >= (job.opts.attempts ?? 1) ? "error" : run.status })
+	w.on(
+		"failed",
+		async (job: Job<ScreenshotJobData> | undefined, err: unknown) => {
+			logger.error({ jobId: job?.id, err }, "Job failed");
+			if (!job) return;
+			const { runId, client: jClient, engine: jEngine } = job.data;
+			// Remove the failed combo from the run.combos array so UI stops showing it as processing.
+			try {
+				const [row] = await db
+					.select({ combos: run.combos })
+					.from(run)
 					.where(eq(run.id, runId));
+				if (row?.combos) {
+					const remaining = (
+						row.combos as { client: Client; engine: Engine }[]
+					).filter((c) => !(c.client === jClient && c.engine === jEngine));
+					await db
+						.update(run)
+						.set({
+							combos: remaining,
+							status:
+								job.attemptsMade >= (job.opts.attempts ?? 1)
+									? "error"
+									: run.status,
+						})
+						.where(eq(run.id, runId));
+				}
+			} catch (updateErr) {
+				logger.error(
+					{ err: updateErr },
+					"Failed to update run.combos after job failure",
+				);
 			}
-		} catch (updateErr) {
-			logger.error({ err: updateErr }, "Failed to update run.combos after job failure");
-		}
-	});
+		},
+	);
 
 	// Capture internal BullMQ / Redis errors
 	w.on("error", (err: unknown) => {

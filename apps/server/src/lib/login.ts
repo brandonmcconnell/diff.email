@@ -409,7 +409,7 @@ async function loginIcloud(page: Page): Promise<void> {
 					"button[type='submit'], button[data-testid='verify-continue'], button:text('Continue'), button:text('Trust')",
 				);
 			if (await contBtn.count()) await contBtn.click();
-		} catch (e) {
+		} catch (_err) {
 			throw new Error("Failed to enter iCloud SMS code");
 		}
 	} catch (err) {

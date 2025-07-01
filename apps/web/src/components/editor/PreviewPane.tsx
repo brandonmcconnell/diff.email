@@ -4,6 +4,7 @@ import type { Client, Engine } from "@diff-email/shared";
 import { Label } from "@radix-ui/react-label";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Console, type Hook } from "console-feed";
+import { RefreshCcw } from "lucide-react";
 import * as React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -28,7 +29,6 @@ import { useComputedTheme } from "@/hooks/useComputedTheme";
 import { bundle } from "@/lib/bundler";
 import { cn, pluralize } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
-import { RefreshCcw } from "lucide-react";
 
 interface Props {
 	html: string;
@@ -590,6 +590,17 @@ export function PreviewPane({
 		setProcessingCombos(new Set(stillProcessing));
 	}, [runData, completedCombos]);
 
+	// Memo of all combos that should render tiles (ensures hooks order stable)
+	const requestedCombosSet = React.useMemo(() => {
+		const set = new Set<string>();
+		(
+			runData as { combos?: { client: Client; engine: Engine }[] } | undefined
+		)?.combos?.forEach((c) => set.add(`${c.client}|${c.engine}`));
+		processingCombos.forEach((k) => set.add(k));
+		completedCombos.forEach((k) => set.add(k));
+		return set;
+	}, [runData, processingCombos, completedCombos]);
+
 	// Default full-selection set and state holding current selection
 	const defaultSelected = React.useMemo(
 		() => new Set(combos.map(({ client, engine }) => `${client}|${engine}`)),
@@ -660,19 +671,6 @@ export function PreviewPane({
 	type Shot = { client: Client; engine: Engine; url: string };
 
 	if (mode === "screenshot") {
-		// Determine which combos should be displayed: any that were requested in this run
-		const requestedCombosSet = React.useMemo(() => {
-			const set = new Set<string>();
-			// combos explicitly requested when this run was created
-			(runData as { combos?: { client: Client; engine: Engine }[] } | undefined)?.combos?.forEach(
-				(c) => set.add(`${c.client}|${c.engine}`),
-			);
-			// plus any we have local state for
-			processingCombos.forEach((k) => set.add(k));
-			completedCombos.forEach((k) => set.add(k));
-			return set;
-		}, [runData, processingCombos, completedCombos]);
-
 		const displayCombos = combos.filter((c) =>
 			requestedCombosSet.has(`${c.client}|${c.engine}`),
 		);
@@ -702,64 +700,67 @@ export function PreviewPane({
 			<div className="relative h-full w-full overflow-auto p-4">
 				<div className={notStarted ? "opacity-100" : undefined}>
 					{hasAnyShots && (
-						<div className="flex flex-wrap gap-4 justify-center">
+						<div className="flex flex-wrap justify-center gap-4">
 							{displayCombos.map(({ client, engine }) => {
+								const key = `${client}|${engine}`;
+								const shot =
+									(runData?.screenshots as Shot[] | undefined)?.find(
+										(s) => s.client === client && s.engine === engine,
+									) ??
+									(versionShots as Shot[] | undefined)?.find(
+										(s) => s.client === client && s.engine === engine,
+									);
+
+								const status: "processing" | "failed" | "succeeded" = shot
+									? "succeeded"
+									: processingCombos.has(key)
+										? "processing"
+										: "failed";
+
 								return (
 									<div
-										key={`${client}|${engine}`}
+										key={key}
 										className={cn(
-											"relative basis-[200px] h-[200px] flex-none shrink-0 overflow-hidden rounded-lg border bg-card shadow-sm",
-											processingCombos.has(`${client}|${engine}`) && "animate-pulse",
+											"relative h-[200px] shrink-0 basis-[200px] overflow-hidden rounded-lg border bg-card shadow-sm",
+											status === "processing" && "animate-pulse",
 										)}
 									>
-										{(() => {
-											const key = `${client}|${engine}`;
-											const shot =
-												(runData?.screenshots as Shot[] | undefined)?.find(
-													(s) => s.client === client && s.engine === engine,
-												) ??
-												(versionShots as Shot[] | undefined)?.find(
-													(s) => s.client === client && s.engine === engine,
-												);
-											const isProcessing = processingCombos.has(key);
-											const isFailed = !shot && !isProcessing;
-											if (shot) {
-												return (
-													<div
-														className="absolute inset-0 bg-cover bg-top"
-														style={{ backgroundImage: `url(${shot.url})` }}
-													/>
-												);
-											}
-											return (
-												<div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted/50 to-muted">
-													{isFailed && (
-														<button
-															type="button"
-															className="flex items-center justify-center rounded-full bg-background/70 p-2 hover:bg-background"
-															onClick={async (e) => {
-																e.stopPropagation();
-																try {
-																	setProcessingCombos((prev) => new Set(prev).add(key));
-																	await sendTestAndRun.mutateAsync({
-																		emailId,
-																		versionId,
-																		clients: [{ client, engine }],
-																		dark,
-																	});
-																} catch {
-																	// ignore error; UI will stay in failed state
-																} finally {
-																	// polling will update state
-																}
-															}}
-														>
-															<RefreshCcw size={20} />
-														</button>
-													)}
-												</div>
-											);
-										})()}
+										{status === "succeeded" ? (
+											<div
+												className={cn(
+													"absolute inset-0 bg-cover bg-top bg-no-repeat",
+													dark ? "bg-[black]" : "bg-[white]",
+												)}
+												style={{ backgroundImage: `url(${shot!.url})` }}
+											/>
+										) : (
+											<div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted/50 to-muted">
+												{status === "failed" && (
+													<button
+														type="button"
+														className="flex items-center justify-center rounded-full bg-background/70 p-2 hover:bg-background"
+														onClick={async (e) => {
+															e.stopPropagation();
+															try {
+																setProcessingCombos((prev) =>
+																	new Set(prev).add(key),
+																);
+																await sendTestAndRun.mutateAsync({
+																	emailId,
+																	versionId,
+																	clients: [{ client, engine }],
+																	dark,
+																});
+															} catch {
+																/* ignore */
+															} /* polling updates UI */
+														}}
+													>
+														<RefreshCcw size={20} />
+													</button>
+												)}
+											</div>
+										)}
 										<div className="absolute inset-x-0.75 bottom-0.75 rounded-md bg-linear-to-r from-background to-background/50 px-2.5 py-1.5 font-medium text-foreground text-xs backdrop-blur-[1px]">
 											<span className="font-semibold">
 												{clientLabels[client]}

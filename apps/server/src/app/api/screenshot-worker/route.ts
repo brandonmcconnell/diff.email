@@ -199,6 +199,7 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 						"Timed out waiting for email > 90s",
 					),
 				]);
+				log.info("Email located by deterministic selectors");
 			},
 			fallback: async () => {
 				await searchEmailWithStagehand(sessionId, client, subjectToken ?? "");
@@ -215,6 +216,7 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 						timeout: 5_000,
 					});
 					await btn.click();
+					log.info("Show images button clicked deterministically");
 				},
 				fallback: async () => {
 					await clickShowImagesWithStagehand(sessionId);
@@ -227,7 +229,7 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 			await page.emulateMedia({ colorScheme: isDark ? "dark" : "light" });
 			const bodyHandle = await page.waitForSelector(
 				selectors[client].messageBody,
-				{ timeout: 10_000 },
+				{ timeout: 15_000 },
 			);
 			const buffer = await bodyHandle.screenshot({ type: "png" });
 			const filename = `screenshots/${job.id}-${isDark ? "dark" : "light"}.png`;

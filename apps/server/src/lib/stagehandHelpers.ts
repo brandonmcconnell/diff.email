@@ -82,6 +82,10 @@ async function stagehandAct(
 	}
 
 	const observed = await sh.page.observe(instruction);
+	logger.info(
+		{ instruction, actions: observed.length },
+		"Stagehand observe result",
+	);
 	if (observed.length === 0) {
 		// fallback: try a computer-use agent (OpenAI preview) if configured
 		try {
@@ -96,7 +100,9 @@ async function stagehandAct(
 			await agent.execute(instruction);
 			return;
 		} catch (_) {
-			return;
+			throw new Error(
+				`Stagehand computer-use agent failed for: ${instruction}`,
+			);
 		}
 	}
 	await sh.page.act(observed[0]!);

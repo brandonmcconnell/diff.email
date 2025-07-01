@@ -191,22 +191,19 @@ export const emailsRouter = router({
 				icloud: process.env.ICLOUD_USER,
 			};
 
-			// Build unique list of addresses.
+			// Build unique address list based solely on the *clients* present in the
+			// requested combos (engine duplicates collapse to one address).
+			const uniqueClients = Array.from(new Set(clients.map((c) => c.client)));
+
 			const toAddresses: string[] = to
 				? [to]
-				: Array.from(
-						new Set(
-							clients.map((c) => {
-								const addr = clientToEnv[c.client];
-								if (!addr) {
-									throw new Error(
-										`Missing env var for ${c.client.toUpperCase()}_USER`,
-									);
-								}
-								return addr;
-							}),
-						),
-					);
+				: uniqueClients.map((cl) => {
+						const addr = clientToEnv[cl];
+						if (!addr) {
+							throw new Error(`Missing env var for ${cl.toUpperCase()}_USER`);
+						}
+						return addr;
+					});
 
 			// Resend accepts string | string[] for "to"; use array if multiple.
 			const resendTo: string | string[] =

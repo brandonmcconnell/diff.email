@@ -439,16 +439,14 @@ if (g[WORKER_KEY] == null) {
 					const remaining = (
 						row.combos as { client: Client; engine: Engine }[]
 					).filter((c) => !(c.client === jClient && c.engine === jEngine));
-					await db
-						.update(run)
-						.set({
-							combos: remaining,
-							status:
-								job.attemptsMade >= (job.opts.attempts ?? 1)
-									? "error"
-									: run.status,
-						})
-						.where(eq(run.id, runId));
+					const updateData: Partial<typeof run.$inferSelect> = {
+						combos: remaining,
+					};
+					if (job.attemptsMade >= (job.opts.attempts ?? 1)) {
+						updateData.status = "error" as const;
+					}
+
+					await db.update(run).set(updateData).where(eq(run.id, runId));
 				}
 			} catch (updateErr) {
 				logger.error(

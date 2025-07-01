@@ -3,6 +3,22 @@ import logger from "@diff-email/logger";
 import type { Client } from "@diff-email/shared";
 import { generateOtp } from "./otp";
 
+// Cache one Stagehand instance per Browserbase session so we don't close the
+// CDP connection mid-job.  Close it at the very end via `shutdownStagehand`.
+const shCache = new Map<string, Stagehand>();
+
+export async function shutdownStagehand(sessionId: string): Promise<void> {
+	const inst = shCache.get(sessionId);
+	if (inst) {
+		try {
+			await inst.close();
+		} catch (_) {
+			/* swallow */
+		}
+		shCache.delete(sessionId);
+	}
+}
+
 type CredTool = {
 	user: string;
 	pass: string;
@@ -51,19 +67,39 @@ async function stagehandAct(
 	sessionId: string,
 	instruction: string,
 ): Promise<void> {
-	const sh = new Stagehand({
-		env: "BROWSERBASE",
-		apiKey: process.env.BROWSERBASE_API_KEY,
-		projectId: process.env.BROWSERBASE_PROJECT_ID,
-		browserbaseSessionID: sessionId,
-		verbose: 0,
-		disablePino: true,
-	});
+	let sh = shCache.get(sessionId);
+	if (!sh) {
+		sh = new Stagehand({
+			env: "BROWSERBASE",
+			apiKey: process.env.BROWSERBASE_API_KEY,
+			projectId: process.env.BROWSERBASE_PROJECT_ID,
+			browserbaseSessionID: sessionId,
+			verbose: 0,
+			disablePino: true,
+		});
+		await sh.init();
+		shCache.set(sessionId, sh);
+	}
 
-	await sh.init();
-	const [action] = await sh.page.observe(instruction);
-	await sh.page.act(action);
-	await sh.close();
+	const observed = await sh.page.observe(instruction);
+	if (observed.length === 0) {
+		// fallback: try a computer-use agent (OpenAI preview) if configured
+		try {
+			const agent = sh.agent({
+				provider: "openai",
+				model: "computer-use-preview",
+				instructions: `You are a helpful assistant that can use a web browser to accomplish a single task precisely: ${instruction}`,
+				options: process.env.OPENAI_API_KEY
+					? { apiKey: process.env.OPENAI_API_KEY }
+					: undefined,
+			});
+			await agent.execute(instruction);
+			return;
+		} catch (_) {
+			return;
+		}
+	}
+	await sh.page.act(observed[0]!);
 }
 
 export async function loginWithStagehand(

@@ -21,6 +21,7 @@ import {
 	clickShowImagesWithStagehand,
 	loginWithStagehand,
 	searchEmailWithStagehand,
+	shutdownStagehand,
 } from "../../../lib/stagehandHelpers";
 import { withFallback } from "../../../lib/withFallback";
 import { selectors } from "./selectors";
@@ -173,75 +174,81 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 		engine,
 	);
 
-	// 1) Login step ---------------------------------------------------------
-	await withFallback({
-		label: "login",
-		log,
-		primary: async () => {
-			await ensureLoggedIn(page, client);
-		},
-		fallback: async () => {
-			await loginWithStagehand(sessionId, client);
-		},
-	});
-
-	// 2) Search/Open email step -------------------------------------------
-	await withFallback({
-		label: "locate-email",
-		log,
-		primary: async () => {
-			await Promise.race([
-				waitForEmail(page, client, subjectToken ?? "", engine),
-				delayReject(
-					defaultWaitForEmailTimeoutMs,
-					"Timed out waiting for email > 90s",
-				),
-			]);
-		},
-		fallback: async () => {
-			await searchEmailWithStagehand(sessionId, client, subjectToken ?? "");
-		},
-	});
-
-	// 3) Optional Gmail "Show images" step --------------------------------
-	if (client === "gmail") {
+	try {
+		// 1) Login step ---------------------------------------------------------
 		await withFallback({
-			label: "show-images",
+			label: "login",
 			log,
 			primary: async () => {
-				const btn = await page.waitForSelector("button:text('Show images')", {
-					timeout: 5_000,
-				});
-				await btn.click();
+				await ensureLoggedIn(page, client);
 			},
 			fallback: async () => {
-				await clickShowImagesWithStagehand(sessionId);
+				await loginWithStagehand(sessionId, client);
 			},
 		});
-	}
 
-	// 4) Capture screenshots (deterministic, no fallback) ------------------
-	async function capture(isDark: boolean): Promise<void> {
-		await page.emulateMedia({ colorScheme: isDark ? "dark" : "light" });
-		const bodyHandle = await page.waitForSelector(
-			selectors[client].messageBody,
-			{ timeout: 10_000 },
-		);
-		const buffer = await bodyHandle.screenshot({ type: "png" });
-		const filename = `screenshots/${job.id}-${isDark ? "dark" : "light"}.png`;
-		const { url } = await put(filename, buffer, {
-			access: "public",
-			token: blobToken,
+		// 2) Search/Open email step -------------------------------------------
+		await withFallback({
+			label: "locate-email",
+			log,
+			primary: async () => {
+				await Promise.race([
+					waitForEmail(page, client, subjectToken ?? "", engine),
+					delayReject(
+						defaultWaitForEmailTimeoutMs,
+						"Timed out waiting for email > 90s",
+					),
+				]);
+			},
+			fallback: async () => {
+				await searchEmailWithStagehand(sessionId, client, subjectToken ?? "");
+			},
 		});
-		await db
-			.insert(screenshot)
-			.values({ runId, client, engine, darkMode: isDark, url });
+
+		// 3) Optional Gmail "Show images" step --------------------------------
+		if (client === "gmail") {
+			await withFallback({
+				label: "show-images",
+				log,
+				primary: async () => {
+					const btn = await page.waitForSelector("button:text('Show images')", {
+						timeout: 5_000,
+					});
+					await btn.click();
+				},
+				fallback: async () => {
+					await clickShowImagesWithStagehand(sessionId);
+				},
+			});
+		}
+
+		// 4) Capture screenshots (deterministic, no fallback) ------------------
+		async function capture(isDark: boolean): Promise<void> {
+			await page.emulateMedia({ colorScheme: isDark ? "dark" : "light" });
+			const bodyHandle = await page.waitForSelector(
+				selectors[client].messageBody,
+				{ timeout: 10_000 },
+			);
+			const buffer = await bodyHandle.screenshot({ type: "png" });
+			const filename = `screenshots/${job.id}-${isDark ? "dark" : "light"}.png`;
+			const { url } = await put(filename, buffer, {
+				access: "public",
+				token: blobToken,
+			});
+			await db
+				.insert(screenshot)
+				.values({ runId, client, engine, darkMode: isDark, url });
+		}
+
+		await capture(false);
+		await capture(true);
+	} finally {
+		await cleanup().catch(() => {
+			/* ignore */
+		});
+		await shutdownStagehand(sessionId).catch(() => {});
 	}
 
-	await capture(false);
-	await capture(true);
-
-	await cleanup();
 	log.info(`[${client}:${engine}] job complete`);
 }
 

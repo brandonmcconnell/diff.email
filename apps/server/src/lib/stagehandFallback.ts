@@ -24,10 +24,16 @@ export async function openEmailWithStagehand(
 
 	const sh = new Stagehand({
 		env: "BROWSERBASE",
-		apiKey: process.env.BROWSERBASE_API_KEY,
-		projectId: process.env.BROWSERBASE_PROJECT_ID,
+		apiKey: env("BROWSERBASE_API_KEY"),
+		projectId: env("BROWSERBASE_PROJECT_ID"),
 		verbose: 0,
 		disablePino: true,
+		browserbaseSessionCreateParams: {
+			projectId: env("BROWSERBASE_PROJECT_ID"),
+			browserSettings: {
+				viewport: { width: 1024, height: 768 },
+			},
+		},
 	});
 
 	await sh.init();
@@ -36,13 +42,36 @@ export async function openEmailWithStagehand(
 	// Navigate to client inbox first using centralized mapping
 	await shPage.goto(inboxUrls[client]);
 
-	const searchInstruction =
-		client === "icloud"
-			? `Find the email whose subject contains the text \"${subjectToken}\" and open it. Wait until the message body is visible.`
-			: `Use the mailbox search input to search for \"${subjectToken}\" then open the first result.`;
+	// Try deterministic observe/act first for speed; if it fails, fall back to
+	// the Computer-Use agent for more flexible reasoning.
+	try {
+		const searchInstruction =
+			client === "icloud"
+				? `Find the email whose subject contains the text \"${subjectToken}\" and open it. Wait until the message body is visible.`
+				: `Use the mailbox search input to search for \"${subjectToken}\" then open the first result.`;
 
-	const [action] = await shPage.observe(searchInstruction);
-	await shPage.act(action);
+		const [action] = await shPage.observe(searchInstruction);
+		await shPage.act(action);
+	} catch (deterministicErr) {
+		log.warn(
+			{ deterministicErr },
+			"Observe/act failed – falling back to CU agent",
+		);
+
+		const agent = sh.agent({
+			provider: "openai",
+			model: "computer-use-preview",
+			instructions:
+				"You are a helpful assistant that can use a browser and operate a webmail UI to locate, open, and screenshot emails. Do not ask follow up questions, the user will trust your judgement.",
+			options: { apiKey: env("OPENAI_API_KEY") },
+		});
+
+		await agent.execute(
+			client === "icloud"
+				? `Find the email whose subject contains the text "${subjectToken}" and open it. Wait until the message body is visible.`
+				: `Use the mailbox search input to search for "${subjectToken}" then open the first result.`,
+		);
+	}
 
 	// Ensure body is visible before returning (approx selectors).
 	await shPage.extract("confirm that the email body is visible");
@@ -102,8 +131,8 @@ export async function loginWithStagehand(
 
 	const sh = new Stagehand({
 		env: "BROWSERBASE",
-		apiKey: process.env.BROWSERBASE_API_KEY,
-		projectId: process.env.BROWSERBASE_PROJECT_ID,
+		apiKey: env("BROWSERBASE_API_KEY"),
+		projectId: env("BROWSERBASE_PROJECT_ID"),
 		verbose: 0,
 		disablePino: true,
 	});
@@ -111,22 +140,33 @@ export async function loginWithStagehand(
 	await sh.init();
 	const shPage = sh.page;
 
-	const instructionsByClient: Record<Client, string> = {
-		gmail: `Navigate to Gmail and log in using the email address "${creds.user}" and password "${creds.pass}". If prompted for a two-factor authentication code, enter "${creds.getTotp()}". Once the inbox is visible and the search input appears, stop.`,
-		outlook: `Open Outlook Web and sign in with the username "${creds.user}" and password "${creds.pass}". Handle any MFA prompts with the code "${creds.getTotp()}". Finish when the mailbox sidebar is visible.`,
-		yahoo: `Go to Yahoo Mail and log in with the username "${creds.user}" and password "${creds.pass}". Provide the verification code "${creds.getTotp()}" if asked. End when the inbox search bar is visible.`,
-		aol: `Open AOL Mail and sign in with username "${creds.user}" and password "${creds.pass}". Use the code "${creds.getTotp()}" if multi-factor authentication is requested. Conclude when the inbox loads and search is available.`,
-		icloud: `Go to iCloud Mail and sign in with Apple ID "${creds.user}" and password "${creds.pass}". Complete any subsequent prompts. Finish when the mailbox list appears.`,
+	const deterministicInstr: Record<Client, string> = {
+		gmail: `Focus the email input field, enter "${creds.user}", submit, enter the password "${creds.pass}", and complete the 2-factor prompt with code "${creds.getTotp()}". Wait until the Gmail inbox search bar appears.`,
+		outlook: `Enter "${creds.user}" in the email field, submit, enter "${creds.pass}" as password, provide the 2-factor code "${creds.getTotp()}", and wait for the Outlook sidebar to appear.`,
+		yahoo: `Log in to Yahoo with user "${creds.user}", password "${creds.pass}", and verification code "${creds.getTotp()}" if prompted. Stop when the Yahoo Mail search bar is visible.`,
+		aol: `Sign in to AOL Mail with "${creds.user}" / "${creds.pass}", use code "${creds.getTotp()}" if MFA is required, and wait for the inbox to load.`,
+		icloud: `Sign in to iCloud Mail with Apple ID "${creds.user}" and password "${creds.pass}". Complete any prompts until the mailbox list appears.`,
 	};
 
-	const [action] = await shPage.observe(instructionsByClient[client]);
-	await shPage.act(action);
+	try {
+		const [act] = await shPage.observe(deterministicInstr[client]);
+		await shPage.act(act);
+	} catch (detErr) {
+		log.warn({ detErr }, "Deterministic login failed – using CU agent");
 
-	// Quick extraction confirmation that login was successful
+		const cuAgent = sh.agent({
+			provider: "openai",
+			model: "computer-use-preview",
+			instructions:
+				"You are a helpful assistant that can log into email accounts in a browser UI. Complete the login flow without asking questions.",
+			options: { apiKey: env("OPENAI_API_KEY") },
+		});
+
+		await cuAgent.execute(deterministicInstr[client]);
+	}
+
 	await shPage.extract("confirm that the mailbox UI is visible");
-
-	log.info("Stagehand successfully completed login");
-
+	log.info("Stagehand login complete");
 	await sh.close();
 }
 
@@ -145,8 +185,8 @@ export async function clickShowImagesWithStagehand(
 
 	const sh = new Stagehand({
 		env: "BROWSERBASE",
-		apiKey: process.env.BROWSERBASE_API_KEY,
-		projectId: process.env.BROWSERBASE_PROJECT_ID,
+		apiKey: env("BROWSERBASE_API_KEY"),
+		projectId: env("BROWSERBASE_PROJECT_ID"),
 		verbose: 0,
 		disablePino: true,
 	});
@@ -154,16 +194,26 @@ export async function clickShowImagesWithStagehand(
 	await sh.init();
 	const shPage = sh.page;
 
-	const [action] = await shPage.observe(
-		"Within the currently opened Gmail email, click the button labeled 'Show images' so that remote images are displayed, then wait until the images are visible.",
-	);
-	await shPage.act(action);
+	const deterministicInstr =
+		"Within the currently opened Gmail email, click the button labeled 'Show images' so that remote images are displayed, then wait until the images are visible.";
+
+	try {
+		const [act] = await shPage.observe(deterministicInstr);
+		await shPage.act(act);
+	} catch (detErr) {
+		log.warn({ detErr }, "Deterministic click failed – using CU agent");
+		const agent = sh.agent({
+			provider: "openai",
+			model: "computer-use-preview",
+			instructions: "Enable remote images in the currently opened Gmail email.",
+			options: { apiKey: env("OPENAI_API_KEY") },
+		});
+		await agent.execute(deterministicInstr);
+	}
 
 	await shPage.extract(
 		"verify that inline images are now visible in the email body",
 	);
-
 	log.info("Stagehand clicked 'Show images' successfully");
-
 	await sh.close();
 }

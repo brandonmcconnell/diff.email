@@ -4,7 +4,6 @@ import type { Client, Engine } from "@diff-email/shared";
 import { Label } from "@radix-ui/react-label";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Console, type Hook } from "console-feed";
-import Image from "next/image";
 import * as React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -29,6 +28,7 @@ import { useComputedTheme } from "@/hooks/useComputedTheme";
 import { bundle } from "@/lib/bundler";
 import { cn, pluralize } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
+import { RefreshCcw } from "lucide-react";
 
 interface Props {
 	html: string;
@@ -660,11 +660,21 @@ export function PreviewPane({
 	type Shot = { client: Client; engine: Engine; url: string };
 
 	if (mode === "screenshot") {
-		// Derive which combos have a screenshot (or are in-flight)
-		const displayCombos = combos.filter(
-			(c) =>
-				completedCombos.has(`${c.client}|${c.engine}`) ||
-				processingCombos.has(`${c.client}|${c.engine}`),
+		// Determine which combos should be displayed: any that were requested in this run
+		const requestedCombosSet = React.useMemo(() => {
+			const set = new Set<string>();
+			// combos explicitly requested when this run was created
+			(runData as { combos?: { client: Client; engine: Engine }[] } | undefined)?.combos?.forEach(
+				(c) => set.add(`${c.client}|${c.engine}`),
+			);
+			// plus any we have local state for
+			processingCombos.forEach((k) => set.add(k));
+			completedCombos.forEach((k) => set.add(k));
+			return set;
+		}, [runData, processingCombos, completedCombos]);
+
+		const displayCombos = combos.filter((c) =>
+			requestedCombosSet.has(`${c.client}|${c.engine}`),
 		);
 
 		const hasMissingShots = combos.some(
@@ -692,19 +702,18 @@ export function PreviewPane({
 			<div className="relative h-full w-full overflow-auto p-4">
 				<div className={notStarted ? "opacity-100" : undefined}>
 					{hasAnyShots && (
-						<div
-							className={cn(
-								"grid auto-rows-[200px] grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4",
-								notStarted && "grid-cols-[repeat(auto-fit,minmax(180px,1fr))]",
-							)}
-						>
+						<div className="flex flex-wrap gap-4 justify-center">
 							{displayCombos.map(({ client, engine }) => {
 								return (
 									<div
 										key={`${client}|${engine}`}
-										className="relative overflow-hidden rounded-lg border bg-card shadow-sm"
+										className={cn(
+											"relative basis-[200px] h-[200px] flex-none shrink-0 overflow-hidden rounded-lg border bg-card shadow-sm",
+											processingCombos.has(`${client}|${engine}`) && "animate-pulse",
+										)}
 									>
 										{(() => {
+											const key = `${client}|${engine}`;
 											const shot =
 												(runData?.screenshots as Shot[] | undefined)?.find(
 													(s) => s.client === client && s.engine === engine,
@@ -712,19 +721,43 @@ export function PreviewPane({
 												(versionShots as Shot[] | undefined)?.find(
 													(s) => s.client === client && s.engine === engine,
 												);
+											const isProcessing = processingCombos.has(key);
+											const isFailed = !shot && !isProcessing;
 											if (shot) {
 												return (
-													<Image
-														src={shot.url}
-														alt="screenshot"
-														fill
-														unoptimized
-														className="object-cover"
+													<div
+														className="absolute inset-0 bg-cover bg-top"
+														style={{ backgroundImage: `url(${shot.url})` }}
 													/>
 												);
 											}
 											return (
-												<div className="absolute inset-0 bg-gradient-to-br from-muted/50 to-muted" />
+												<div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted/50 to-muted">
+													{isFailed && (
+														<button
+															type="button"
+															className="flex items-center justify-center rounded-full bg-background/70 p-2 hover:bg-background"
+															onClick={async (e) => {
+																e.stopPropagation();
+																try {
+																	setProcessingCombos((prev) => new Set(prev).add(key));
+																	await sendTestAndRun.mutateAsync({
+																		emailId,
+																		versionId,
+																		clients: [{ client, engine }],
+																		dark,
+																	});
+																} catch {
+																	// ignore error; UI will stay in failed state
+																} finally {
+																	// polling will update state
+																}
+															}}
+														>
+															<RefreshCcw size={20} />
+														</button>
+													)}
+												</div>
 											);
 										})()}
 										<div className="absolute inset-x-0.75 bottom-0.75 rounded-md bg-linear-to-r from-background to-background/50 px-2.5 py-1.5 font-medium text-foreground text-xs backdrop-blur-[1px]">

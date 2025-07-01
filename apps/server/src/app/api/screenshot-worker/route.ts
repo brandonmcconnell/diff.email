@@ -18,7 +18,11 @@ import { run, screenshot } from "../../../db/schema/core";
 import { connectBrowser } from "../../../lib/browserbase";
 import { ensureLoggedIn } from "../../../lib/login";
 import { redis, screenshotsQueue } from "../../../lib/queue";
-import { openEmailWithStagehand } from "../../../lib/stagehandFallback";
+import {
+	clickShowImagesWithStagehand,
+	loginWithStagehand,
+	openEmailWithStagehand,
+} from "../../../lib/stagehandFallback";
 import { selectors } from "./selectors";
 
 // -------------------------------------------------------------------------
@@ -179,6 +183,75 @@ async function waitForEmail(
 }
 
 //--------------------------------------------------------------------------
+// Helper step functions implementing granular deterministic logic with
+// Stagehand fallbacks. Each function will attempt the deterministic
+// strategy first and, if that fails, fall back to Stagehand for a natural
+// language approach before returning control to deterministic selectors for
+// the following steps.
+//--------------------------------------------------------------------------
+async function stepLogin(page: Page, client: Client): Promise<void> {
+	const stepLog = logger.child({ fn: "stepLogin", client });
+	try {
+		stepLog.info(`[${client}] [step] login-check (deterministic)`);
+		await ensureLoggedIn(page, client);
+	} catch (err) {
+		stepLog.warn(
+			{ err },
+			"Deterministic login failed – falling back to Stagehand",
+		);
+		await loginWithStagehand(page, client);
+	}
+}
+
+async function stepLocateEmail(
+	page: Page,
+	client: Client,
+	subjectToken: string,
+	engine: Engine,
+): Promise<void> {
+	const stepLog = logger.child({ fn: "stepLocateEmail", client, engine });
+	try {
+		stepLog.info(`[${client}:${engine}] [step] locating-email (deterministic)`);
+		await Promise.race([
+			waitForEmail(page, client, subjectToken, engine),
+			delayReject(
+				defaultWaitForEmailTimeoutMs,
+				"Timed out waiting for email > 90s (deterministic)",
+			),
+		]);
+	} catch (err) {
+		stepLog.warn(
+			{ err },
+			"Deterministic locate-email failed – falling back to Stagehand",
+		);
+		await openEmailWithStagehand(page, client, subjectToken);
+	}
+}
+
+async function stepShowImages(
+	page: Page,
+	client: Client,
+	engine: Engine,
+): Promise<void> {
+	if (client !== "gmail") return; // currently only Gmail requires this step
+	const stepLog = logger.child({ fn: "stepShowImages", client, engine });
+	try {
+		stepLog.info(`[${client}:${engine}] [step] show-images (deterministic)`);
+		const showBtn = await page.waitForSelector("button:text('Show images')", {
+			timeout: 5_000,
+		});
+		await showBtn.click();
+		await page.waitForTimeout(10_000); // allow remote images to load
+	} catch (err) {
+		stepLog.warn(
+			{ err },
+			"Deterministic show-images click failed – falling back to Stagehand",
+		);
+		await clickShowImagesWithStagehand(page, client);
+	}
+}
+
+//--------------------------------------------------------------------------
 async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 	const { runId, client, engine, subjectToken } = job.data;
 
@@ -216,7 +289,7 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 		log.info(`[${client}:${engine}] [step] browser-connected`);
 
 		log.info(`[${client}:${engine}] [step] login-check`);
-		await ensureLoggedIn(page, client);
+		await stepLogin(page, client);
 		log.info(`[${client}:${engine}] [step] inbox-ready`);
 
 		log.debug("Connected to Browserbase session");
@@ -227,29 +300,12 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 
 		log.info(`[${client}:${engine}] [step] locating-email`);
 		// Wait for the email to appear and open it once (light mode)
-		await Promise.race([
-			waitForEmail(page, client, subjectToken ?? "", engine),
-			delayReject(
-				defaultWaitForEmailTimeoutMs,
-				"Timed out waiting for email > 90s",
-			),
-		]);
+		await stepLocateEmail(page, client, subjectToken ?? "", engine);
 		log.info(`[${client}:${engine}] [step] email-opened (playwright)`);
 
 		// Gmail: click "Show images" if present to load remote images
 		if (client === "gmail") {
-			try {
-				log.info(`[${client}:${engine}] [step] waiting for show-images button`);
-				const showBtn = await page.waitForSelector(
-					"button:text('Show images')",
-					{ timeout: 5_000 },
-				);
-				await showBtn.click();
-				log.info(`[${client}:${engine}] clicked Show images`);
-				await page.waitForTimeout(10_000);
-			} catch (_) {
-				log.debug(`[${client}:${engine}] Show images button not present`);
-			}
+			await stepShowImages(page, client, engine);
 		}
 
 		// Helper to capture, upload, and insert one screenshot for given color scheme

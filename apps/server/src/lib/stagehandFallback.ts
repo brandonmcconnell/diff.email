@@ -2,6 +2,13 @@ import { Stagehand } from "@browserbasehq/stagehand";
 import logger from "@diff-email/logger";
 import type { Client } from "@diff-email/shared";
 import type { Page } from "playwright-core";
+import { generateOtp } from "./otp";
+
+function env(key: string): string {
+	const value = process.env[key];
+	if (!value) throw new Error(`Missing environment variable: ${key}`);
+	return value;
+}
 
 /**
  * Use Stagehand AI to locate and open the desired email when deterministic
@@ -60,31 +67,34 @@ export async function openEmailWithStagehand(
 
 const credentialPlaceholders: Record<
 	Client,
-	{ user: string; pass: string; totp?: string }
+	{ user: string; pass: string; getTotp: () => string }
 > = {
 	gmail: {
-		user: "GMAIL_USER_PLACEHOLDER",
-		pass: "GMAIL_PASS_PLACEHOLDER",
-		totp: "GMAIL_TOTP_PLACEHOLDER",
+		user: env("GMAIL_USER"),
+		pass: env("GMAIL_PASS"),
+		getTotp: () => generateOtp(env("GMAIL_TOTP_SECRET")),
 	},
 	outlook: {
-		user: "OUTLOOK_USER_PLACEHOLDER",
-		pass: "OUTLOOK_PASS_PLACEHOLDER",
-		totp: "OUTLOOK_TOTP_PLACEHOLDER",
+		user: env("OUTLOOK_USER"),
+		pass: env("OUTLOOK_PASS"),
+		getTotp: () => generateOtp(env("OUTLOOK_TOTP_SECRET")),
 	},
 	yahoo: {
-		user: "YAHOO_USER_PLACEHOLDER",
-		pass: "YAHOO_PASS_PLACEHOLDER",
-		totp: "YAHOO_TOTP_PLACEHOLDER",
+		user: env("YAHOO_USER"),
+		pass: env("YAHOO_PASS"),
+		getTotp: () => generateOtp(env("YAHOO_TOTP_SECRET")),
 	},
 	aol: {
-		user: "AOL_USER_PLACEHOLDER",
-		pass: "AOL_PASS_PLACEHOLDER",
-		totp: "AOL_TOTP_PLACEHOLDER",
+		user: env("AOL_USER"),
+		pass: env("AOL_PASS"),
+		getTotp: () => generateOtp(env("AOL_TOTP_SECRET")),
 	},
 	icloud: {
-		user: "ICLOUD_USER_PLACEHOLDER",
-		pass: "ICLOUD_PASS_PLACEHOLDER",
+		user: env("ICLOUD_USER"),
+		pass: env("ICLOUD_PASS"),
+		getTotp: () => {
+			throw new Error("ICLOUD_TOTP_SECRET not implemented");
+		},
 	},
 };
 
@@ -109,10 +119,10 @@ export async function loginWithStagehand(
 	const shPage = sh.page;
 
 	const instructionsByClient: Record<Client, string> = {
-		gmail: `Navigate to Gmail and log in using the email address "${creds.user}" and password "${creds.pass}". If prompted for a two-factor authentication code, enter "${creds.totp}". Once the inbox is visible and the search input appears, stop.`,
-		outlook: `Open Outlook Web and sign in with the username "${creds.user}" and password "${creds.pass}". Handle any MFA prompts with the code "${creds.totp}". Finish when the mailbox sidebar is visible.`,
-		yahoo: `Go to Yahoo Mail and log in with the username "${creds.user}" and password "${creds.pass}". Provide the verification code "${creds.totp}" if asked. End when the inbox search bar is visible.`,
-		aol: `Open AOL Mail and sign in with username "${creds.user}" and password "${creds.pass}". Use the code "${creds.totp}" if multi-factor authentication is requested. Conclude when the inbox loads and search is available.`,
+		gmail: `Navigate to Gmail and log in using the email address "${creds.user}" and password "${creds.pass}". If prompted for a two-factor authentication code, enter "${creds.getTotp()}". Once the inbox is visible and the search input appears, stop.`,
+		outlook: `Open Outlook Web and sign in with the username "${creds.user}" and password "${creds.pass}". Handle any MFA prompts with the code "${creds.getTotp()}". Finish when the mailbox sidebar is visible.`,
+		yahoo: `Go to Yahoo Mail and log in with the username "${creds.user}" and password "${creds.pass}". Provide the verification code "${creds.getTotp()}" if asked. End when the inbox search bar is visible.`,
+		aol: `Open AOL Mail and sign in with username "${creds.user}" and password "${creds.pass}". Use the code "${creds.getTotp()}" if multi-factor authentication is requested. Conclude when the inbox loads and search is available.`,
 		icloud: `Go to iCloud Mail and sign in with Apple ID "${creds.user}" and password "${creds.pass}". Complete any subsequent prompts. Finish when the mailbox list appears.`,
 	};
 

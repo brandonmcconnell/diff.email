@@ -1,1 +1,1 @@
-ALTER TABLE "runs" ADD COLUMN "combos" jsonb NOT NULL DEFAULT '[]'; 
+ALTER TABLE "runs" ADD COLUMN "combos" jsonb NOT NULL DEFAULT '[]'::jsonb; 

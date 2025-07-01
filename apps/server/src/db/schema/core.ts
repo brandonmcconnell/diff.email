@@ -86,7 +86,8 @@ export const run = pgTable("runs", {
 	// Array of requested screenshot combos for this run
 	combos: jsonb("combos")
 		.$type<Array<{ client: Client; engine: Engine }>>()
-		.notNull(),
+		.notNull()
+		.default([]),
 });
 
 export const screenshot = pgTable("screenshots", {

@@ -582,6 +582,14 @@ export function PreviewPane({
 	const [lightboxOpen, setLightboxOpen] = useState(false);
 	const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
+	// After the dialog closes, wait for the exit animation before clearing URL
+	useEffect(() => {
+		if (!lightboxOpen) {
+			const id = window.setTimeout(() => setLightboxUrl(null), 200); // 200 ms matches Radix anim duration
+			return () => clearTimeout(id);
+		}
+	}, [lightboxOpen]);
+
 	// Derive processing combos from server data whenever it changes (covers page refreshes)
 	useEffect(() => {
 		if (!runData || !(runData as { combos?: unknown }).combos) return;
@@ -982,13 +990,7 @@ export function PreviewPane({
 					)}
 
 					{/* Lightbox dialog */}
-					<Dialog
-						open={lightboxOpen}
-						onOpenChange={(o) => {
-							setLightboxOpen(o);
-							if (!o) setLightboxUrl(null);
-						}}
-					>
+					<Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
 						<DialogContent
 							showCloseButton={false}
 							className={cn(
@@ -998,7 +1000,6 @@ export function PreviewPane({
 							)}
 							onClick={(_e) => {
 								setLightboxOpen(false);
-								setLightboxUrl(null);
 							}}
 						>
 							{/* a11y: hidden title satisfies Radix requirement */}

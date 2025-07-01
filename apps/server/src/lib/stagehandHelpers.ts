@@ -83,13 +83,31 @@ export async function loginWithStagehand(
 
 	await sh.init();
 	const otpValue = creds.totp?.() ?? "";
-	const instruction =
-		client === "icloud"
-			? `Fill the username field with "${creds.user}", press Next, then type "${creds.pass}" and submit. Wait until the mailbox list is visible.`
-			: `Fill the username/email field with "${creds.user}", press Next, then type "${creds.pass}" and submit. If a verification/OTP field appears, enter the code "${otpValue}". Wait until the inbox loads.`;
+	const instruction = (() => {
+		if (client === "icloud") {
+			return `Navigate to https://www.icloud.com/mail. If a "Sign in" button is visible, click it to open the Apple-ID iframe. Fill the Apple-ID field with "${creds.user}" and press Enter, then fill the password field with "${creds.pass}" and press Enter. If a six-digit code prompt appears, retrieve the code manually or via SMS and enter it. Wait until the mailbox list appears on the left.`;
+		}
 
-	const [action] = await sh.page.observe(instruction);
-	await sh.page.act(action);
+		// webmail clients that use Google / Microsoft style pages
+		const base =
+			client === "gmail"
+				? "https://mail.google.com"
+				: client === "outlook"
+					? "https://outlook.live.com/mail/0/"
+					: client === "yahoo"
+						? "https://mail.yahoo.com"
+						: client === "aol"
+							? "https://mail.aol.com"
+							: "";
+		return `Navigate to ${base}. If you land on a generic home page, click the "Sign in" link or button. Fill the email/username field with "${creds.user}" and continue. When the password input appears, type "${creds.pass}" and submit. If a 6-digit verification/OTP field appears, enter "${otpValue}". Wait until you see the inbox list.`;
+	})();
+
+	const actions = await sh.page.observe(instruction);
+	if (actions.length === 0) {
+		await sh.close();
+		throw new Error(`Stagehand could not derive an action for: ${instruction}`);
+	}
+	await sh.page.act(actions[0]!);
 	await sh.close();
 	logger.info({ client }, "Stagehand completed login");
 }

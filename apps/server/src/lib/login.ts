@@ -86,7 +86,9 @@ async function loginGmail(page: Page): Promise<void> {
 	const pass = env("GMAIL_PASS");
 	const secret = env("GMAIL_TOTP_SECRET");
 
-	await page.goto("https://mail.google.com", { waitUntil: "domcontentloaded" });
+	await page.goto("https://mail.google.com/mail/u/0/#inbox", {
+		waitUntil: "domcontentloaded",
+	});
 
 	await page.waitForSelector("input[type=email]", { timeout: 5000 });
 	await page.fill("input[type=email]", email);

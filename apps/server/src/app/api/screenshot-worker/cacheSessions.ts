@@ -117,8 +117,8 @@ async function main(): Promise<void> {
 	const page = await context.newPage();
 
 	const loginUrl: Record<Client, string> = {
-		gmail: "https://mail.google.com/",
-		outlook: "https://outlook.live.com/mail/",
+		gmail: "https://mail.google.com/mail/u/0/#inbox",
+		outlook: "https://outlook.live.com/mail/0/",
 		yahoo: "https://mail.yahoo.com/",
 		aol: "https://mail.aol.com/",
 		icloud: "https://www.icloud.com/mail",

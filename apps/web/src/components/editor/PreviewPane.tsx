@@ -877,7 +877,9 @@ export function PreviewPane({
 															}
 														/>
 														<span className="font-medium text-sm">
-															{engineLabels[eng]}
+															{engines.length > 1
+																? engineLabels[eng]
+																: "Select all"}
 														</span>
 													</Label>
 													<ToggleGroup
@@ -926,9 +928,15 @@ export function PreviewPane({
 										})}
 
 										<div className="pt-4">
-											<p className="mb-1 text-sm">
-												This run will use <strong>{pendingCount}</strong>{" "}
-												{pluralize(pendingCount, "screenshot")}.
+											<p className="mb-1 text-pretty text-sm">
+												{pendingCount ? (
+													<>
+														This run will use <strong>{pendingCount}</strong>{" "}
+														{pluralize(pendingCount, "screenshot")}.
+													</>
+												) : (
+													<>Please select at least one email client.</>
+												)}
 											</p>
 											<Progress
 												value={

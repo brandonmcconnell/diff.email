@@ -186,6 +186,24 @@ export default function EmailEditorPage() {
 	}, [language, latestQuery.data, latestQuery.isSuccess]);
 
 	function handleSave() {
+		// Re-compute dirty state locally to avoid creating new versions when
+		// nothing has changed (e.g. when the user presses Cmd/Ctrl+S and the
+		// toolbar button is disabled).
+		const hasUnsavedChanges =
+			language === "html"
+				? htmlRef.current !== lastSavedHtml
+				: // TODO: Switch this use of `JSON.stringify` for `Composite.equal` polyfill
+					// ? https://github.com/tc39/proposal-composites
+					JSON.stringify(filesRef.current ?? {}) !==
+						JSON.stringify(lastSavedFiles ?? {}) ||
+					entry !== lastSavedEntry ||
+					exportName !== lastSavedExport;
+
+		if (!hasUnsavedChanges) {
+			toast.success("No new changes to save");
+			return;
+		}
+
 		if (language === "html") {
 			const currentHtml = htmlRef.current;
 			versionsSave.mutate(

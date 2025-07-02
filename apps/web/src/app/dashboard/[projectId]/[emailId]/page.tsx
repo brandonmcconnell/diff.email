@@ -23,6 +23,7 @@ import {
 	type ReadOnlyVersion,
 	VersionHistoryDialog,
 } from "@/components/version-history-dialog";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { prompt } from "@/lib/dialogs";
 import { confirmDeletion } from "@/lib/utils";
@@ -72,6 +73,9 @@ export default function EmailEditorPage() {
 			method: ConsoleMethod;
 		}>
 	>([]);
+
+	// Determine current viewport ≥ md (768px)
+	const isDesktop = useMediaQuery("(min-width: 768px)");
 
 	const manageEmail = useMutation(
 		trpc.emails.manage.mutationOptions({
@@ -460,10 +464,10 @@ export default function EmailEditorPage() {
 					</div>
 				</div>
 			)}
-			{mounted && (
-				<>
-					{/* Desktop (md+) split view */}
-					<div className="overflow-visible! hidden min-h-0 max-w-svw flex-1 border-t md:flex">
+			{mounted &&
+				(isDesktop ? (
+					/* ------------------------ Desktop split view ------------------------ */
+					<div className="overflow-visible! flex min-h-0 max-w-svw flex-1 border-t">
 						<ResizablePanelGroup
 							direction="horizontal"
 							className="overflow-visible! flex flex-1"
@@ -554,9 +558,9 @@ export default function EmailEditorPage() {
 							</ResizablePanel>
 						</ResizablePanelGroup>
 					</div>
-
-					{/* Mobile (tabs) */}
-					<div className="@container/preview overflow-visible! flex min-h-0 flex-1 flex-col border-t md:hidden">
+				) : (
+					/* -------------------------- Mobile tabs ----------------------------- */
+					<div className="@container/preview overflow-visible! flex min-h-0 flex-1 flex-col border-t">
 						<Tabs
 							value={view}
 							onValueChange={(v) => setView(v as "editor" | "preview")}
@@ -650,8 +654,7 @@ export default function EmailEditorPage() {
 							view={view}
 						/>
 					</div>
-				</>
-			)}
+				))}
 		</div>
 	);
 }

@@ -646,7 +646,16 @@ export function PreviewPane({
 		);
 	}, [dialogOpen, mode, completedCombos, combos]);
 
-	const pendingCount = selectedCombos.size;
+	// Only count combos that are actually eligible (not already completed or currently processing)
+	const filteredSelection = React.useMemo(
+		() =>
+			[...selectedCombos].filter((k) => {
+				return !completedCombos.has(k) && !processingCombos.has(k);
+			}),
+		[selectedCombos, completedCombos, processingCombos],
+	);
+
+	const pendingCount = filteredSelection.length;
 	const quotaRemaining = Number.POSITIVE_INFINITY;
 	const hasUnlimitedPlan = quotaRemaining === Number.POSITIVE_INFINITY;
 
@@ -970,7 +979,7 @@ export function PreviewPane({
 													const result = await sendTestAndRun.mutateAsync({
 														emailId,
 														versionId,
-														clients: [...selectedCombos].map((k) => {
+														clients: filteredSelection.map((k) => {
 															const [client, engine] = k.split("|") as [
 																Client,
 																Engine,

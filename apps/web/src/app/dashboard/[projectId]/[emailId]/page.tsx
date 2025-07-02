@@ -500,7 +500,7 @@ export default function EmailEditorPage() {
 									if (!isReady) return null;
 									return (
 										<EditorPane
-											key={currentVersionId || "live"}
+											key={isReadOnly ? currentVersionId : "live"}
 											value={html}
 											onChange={(v) => {
 												if (isReadOnly) return; // Avoid loops in read-only mode
@@ -590,7 +590,7 @@ export default function EmailEditorPage() {
 							>
 								{isReady && (
 									<EditorPane
-										key={currentVersionId || "live"}
+										key={isReadOnly ? currentVersionId : "live"}
 										value={html}
 										onChange={(v) => {
 											if (isReadOnly) return; // Avoid loops in read-only mode

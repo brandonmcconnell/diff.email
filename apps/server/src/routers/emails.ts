@@ -158,7 +158,7 @@ export const emailsRouter = router({
 					.array(
 						z.object({
 							client: z.enum(["gmail", "outlook", "yahoo", "aol", "icloud"]),
-							engine: z.enum(["chromium", "firefox", "webkit"]),
+							engine: z.literal("chromium"),
 						}),
 					)
 					.default([{ client: "gmail", engine: "chromium" }]),

@@ -36,7 +36,7 @@ if (!token) {
 }
 
 const clients: Client[] = ["gmail", "outlook", "yahoo", "aol", "icloud"];
-const engines: Engine[] = ["chromium", "firefox", "webkit"];
+const engines: Engine[] = ["chromium"];
 const combos = clients.flatMap((c) => engines.map((e) => `${c}-${e}`));
 
 // derive storeId host like cacheSessions

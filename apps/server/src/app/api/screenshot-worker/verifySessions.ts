@@ -3,7 +3,7 @@ import { promises as fs } from "node:fs";
 import process from "node:process";
 import type { Client, Engine } from "@diff-email/shared";
 import { Command } from "commander";
-import { type BrowserContext, chromium, firefox, webkit } from "playwright";
+import { type BrowserContext, chromium } from "playwright";
 import { inboxUrls } from "../../../lib/urls";
 
 // ---------------------------------------------------------------------------
@@ -46,7 +46,7 @@ async function downloadStorageState(
 const cli = new Command();
 cli
 	.option("--client <client>", "single client id (gmail|outlook|…)")
-	.option("--engine <engine>", "single engine id (chromium|firefox|webkit)");
+	.option("--engine <engine>", "single engine id (chromium)");
 
 cli.parse(process.argv);
 
@@ -63,8 +63,8 @@ async function checkCombo(client: Client, engine: Engine): Promise<boolean> {
 	const storageState = await downloadStorageState(client, engine);
 	if (!storageState) return false;
 
-	const browserType =
-		engine === "firefox" ? firefox : engine === "webkit" ? webkit : chromium;
+	// Browserbase only supports Chromium; use Chromium unconditionally
+	const browserType = chromium;
 	let browser: import("playwright").Browser | undefined;
 	let ctx: BrowserContext | undefined;
 	try {
@@ -101,9 +101,7 @@ async function main(): Promise<void> {
 	const clients: Client[] = singleClient
 		? [singleClient]
 		: ["gmail", "outlook", "yahoo", "aol", "icloud"];
-	const engines: Engine[] = singleEngine
-		? [singleEngine]
-		: ["chromium", "firefox", "webkit"];
+	const engines: Engine[] = singleEngine ? [singleEngine] : ["chromium"];
 
 	let failures = 0;
 	for (const client of clients) {

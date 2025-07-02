@@ -1,13 +1,7 @@
 import Browserbase from "@browserbasehq/sdk";
 import type { Client, Engine } from "@diff-email/shared";
 import { and, eq } from "drizzle-orm";
-import {
-	type Browser,
-	chromium,
-	firefox,
-	type Page,
-	webkit,
-} from "playwright-core";
+import { type Browser, chromium, type Page } from "playwright-core";
 import { db } from "../db";
 import { browserContext } from "../db/schema/browserContext";
 
@@ -35,14 +29,9 @@ const bb = new Browserbase({
 	apiKey: process.env.BROWSERBASE_API_KEY,
 });
 
-// Map the internal Engine type (chromium | firefox | webkit) to Playwright
-// browser type helpers for connectOverCDP.
-function getBrowserType(engine: Engine) {
-	return engine === "firefox"
-		? firefox
-		: engine === "webkit"
-			? webkit
-			: chromium;
+// With Browserbase supporting only Chromium for our use case, always return Chromium.
+function getBrowserType(_engine: Engine) {
+	return chromium;
 }
 
 export async function connectBrowser(

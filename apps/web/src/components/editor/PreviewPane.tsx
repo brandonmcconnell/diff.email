@@ -123,7 +123,7 @@ export function PreviewPane({
 
 	// Common constants for screenshot grid
 	const clients: Client[] = ["gmail", "outlook", "yahoo", "aol", "icloud"];
-	const engines: Engine[] = ["chromium", "firefox", "webkit"];
+	const engines: Engine[] = ["chromium"];
 	const combos = React.useMemo(
 		() =>
 			clients.flatMap((cl) =>
@@ -710,10 +710,8 @@ export function PreviewPane({
 			aol: "AOL",
 			icloud: "iCloud",
 		};
-		const engineLabels: Record<Engine, string> = {
+		const engineLabels: Record<string, string> = {
 			chromium: "Chrome",
-			firefox: "Firefox",
-			webkit: "Safari",
 		};
 
 		return (
@@ -858,7 +856,10 @@ export function PreviewPane({
 														? false
 														: "indeterminate";
 											return (
-												<div key={eng} className="space-y-2">
+												<div
+													key={eng}
+													className="@container/generate-screenshots space-y-2"
+												>
 													<Label className="inline-flex cursor-pointer items-center gap-2">
 														<Checkbox
 															checked={groupChecked}
@@ -873,8 +874,10 @@ export function PreviewPane({
 													<ToggleGroup
 														type="multiple"
 														className={cn(
-															"grid w-full grid-cols-3 grid-rows-2 gap-2",
-															"*:rounded-md! md:flex",
+															"grid w-full grid-cols-2 grid-rows-2 gap-2",
+															"@xs/generate-screenshots:grid-cols-3",
+															"@md/generate-screenshots:flex",
+															"*:rounded-md!",
 														)}
 														value={clients
 															.filter((cl) =>

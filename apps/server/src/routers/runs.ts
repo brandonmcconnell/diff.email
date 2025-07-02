@@ -16,7 +16,7 @@ export const runsRouter = router({
 				clients: z.array(
 					z.object({
 						client: z.enum(["gmail", "outlook", "yahoo", "aol", "icloud"]),
-						engine: z.enum(["chromium", "firefox", "webkit"]),
+						engine: z.literal("chromium"),
 					}),
 				),
 				subjectToken: z.string().optional(),

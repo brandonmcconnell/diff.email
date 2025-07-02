@@ -8,7 +8,7 @@ import process from "node:process";
 import type { Client, Engine } from "@diff-email/shared";
 import { put } from "@vercel/blob";
 import { Command } from "commander";
-import { chromium, firefox, webkit } from "playwright";
+import { chromium } from "playwright";
 import { inboxUrls } from "../../../lib/urls";
 
 // ---------------------------------------------------------------------------
@@ -34,7 +34,7 @@ const cli = new Command();
 
 cli
 	.requiredOption("--client <client>", "gmail|outlook|yahoo|aol|icloud")
-	.requiredOption("--engine <engine>", "chromium|firefox|webkit")
+	.requiredOption("--engine <engine>", "chromium")
 	.option("--force", "overwrite existing session")
 	.option("--debug", "verbose output");
 
@@ -107,8 +107,7 @@ async function main(): Promise<void> {
 
 	// ---------------------------------------------------------------------------
 	// Step 1: Launch headed browser & wait for operator login --------------------
-	const browserType =
-		engine === "firefox" ? firefox : engine === "webkit" ? webkit : chromium;
+	const browserType = chromium;
 
 	console.log(`Launching ${engine} for ${client}.`);
 	const userDataDir = `/tmp/${client}-${engine}-cache`;

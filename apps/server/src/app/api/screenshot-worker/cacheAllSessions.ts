@@ -22,7 +22,7 @@ if (opts.force) extra.push("--force");
 if (opts.debug) extra.push("--debug");
 
 const clients = ["gmail", "outlook", "yahoo", "aol", "icloud"] as const;
-const engines = ["chromium", "firefox", "webkit"] as const;
+const engines = ["chromium"] as const;
 
 // Small helper to determine if a session JSON is still valid by invoking the
 // verifier script for the given combo. Returns true if needs refresh.

@@ -25,7 +25,7 @@ export const clientEnum = pgEnum("client", [
 	"icloud",
 ]);
 
-export const engineEnum = pgEnum("engine", ["chromium", "firefox", "webkit"]);
+export const engineEnum = pgEnum("engine", ["chromium"]);
 
 export const emailLanguageEnum = pgEnum("email_language", ["html", "jsx"]);
 

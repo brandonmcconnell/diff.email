@@ -71,6 +71,7 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 		const jobStart = Date.now();
 		const sh = new StagehandClient(client, engine);
 		await sh.init();
+		log.info({ sessionId: sh.sessionId }, "bb.session");
 
 		// optional login (skips if already logged in)
 		await sh.login();
@@ -108,7 +109,14 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 		await captureAndSave(true);
 
 		await sh.close();
-		log.info({ duration: Date.now() - jobStart, success: true }, "job.done");
+		log.info(
+			{
+				duration: Date.now() - jobStart,
+				success: true,
+				sessionId: sh.sessionId,
+			},
+			"job.done",
+		);
 	} catch (err) {
 		log.error({ err, success: false }, "job.done");
 		throw err;

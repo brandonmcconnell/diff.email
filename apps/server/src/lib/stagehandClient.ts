@@ -60,6 +60,7 @@ export class StagehandClient {
 	readonly engine: Engine;
 	private sh!: Stagehand; // set in init()
 	page!: SHPage;
+	public sessionId?: string;
 
 	constructor(client: Client, engine: Engine) {
 		this.client = client;
@@ -118,6 +119,15 @@ export class StagehandClient {
 		});
 
 		await this.sh.init();
+
+		// Try to capture the Browserbase session ID from internal Stagehand state.
+		const possibleId = (this.sh as unknown as { session?: { id?: string } })
+			.session?.id;
+		if (possibleId) {
+			this.sessionId = possibleId;
+			log.info({ sessionId: possibleId }, "session.open");
+		}
+
 		this.page = this.sh.page as unknown as SHPage;
 
 		log.info("Stagehand session started");

@@ -15,7 +15,7 @@ export const selectors: Record<Client, SelectorGroup> = {
 	outlook: {
 		searchInput: "input#topSearchInput",
 		searchResult: "[data-convid][role='option']",
-		messageBody: "[tabindex='0'][aria-label='Message body']",
+		messageBody: "[role='document']",
 	},
 	yahoo: {
 		searchInput:

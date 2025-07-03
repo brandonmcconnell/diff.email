@@ -96,9 +96,27 @@ export class StagehandClient {
 				client: this.client,
 				engine: this.engine,
 			});
-			log.info({ contextId: created.id }, "Created new Browserbase context");
+			log.info(
+				{
+					event: "ctx.ready",
+					contextId: created.id,
+					reused: false,
+					client: this.client,
+					engine: this.engine,
+				},
+				"ctx.ready",
+			);
 		} else {
-			log.debug({ contextId: ctxRow.id }, "Using existing Browserbase context");
+			log.debug(
+				{
+					event: "ctx.ready",
+					contextId: ctxRow.id,
+					reused: true,
+					client: this.client,
+					engine: this.engine,
+				},
+				"ctx.ready",
+			);
 		}
 		this.sh = new Stagehand({
 			env: "BROWSERBASE",
@@ -125,7 +143,15 @@ export class StagehandClient {
 			.session?.id;
 		if (possibleId) {
 			this.sessionId = possibleId;
-			log.info({ sessionId: possibleId }, "session.open");
+			log.info(
+				{
+					event: "session.open",
+					sessionId: possibleId,
+					client: this.client,
+					engine: this.engine,
+				},
+				"session.open",
+			);
 		}
 
 		this.page = this.sh.page as unknown as SHPage;
@@ -156,9 +182,29 @@ export class StagehandClient {
 		try {
 			const [step] = await this.page.observe(instrDetailed);
 			await this.page.act(step);
-			log.info({ step: "login", cached: true, ms: Date.now() - t0 }, "ok");
+			log.info(
+				{
+					event: "login.cached",
+					cached: true,
+					ms: Date.now() - t0,
+					sessionId: this.sessionId,
+					client: this.client,
+					engine: this.engine,
+				},
+				"login.cached",
+			);
 		} catch (err) {
-			log.warn({ step: "login", fallback: true, err }, "observe_failed");
+			log.warn(
+				{
+					event: "login.observe_failed",
+					fallback: true,
+					err,
+					sessionId: this.sessionId,
+					client: this.client,
+					engine: this.engine,
+				},
+				"login.observe_failed",
+			);
 			const agent = this.sh.agent({
 				provider: "openai",
 				model: "computer-use-preview",
@@ -167,8 +213,16 @@ export class StagehandClient {
 			});
 			await agent.execute(instrDetailed);
 			log.info(
-				{ step: "login", cached: false, fallback: true, ms: Date.now() - t0 },
-				"cu_ok",
+				{
+					event: "login.fallback",
+					cached: false,
+					fallback: true,
+					ms: Date.now() - t0,
+					sessionId: this.sessionId,
+					client: this.client,
+					engine: this.engine,
+				},
+				"login.fallback",
 			);
 		}
 	}
@@ -190,9 +244,29 @@ export class StagehandClient {
 		try {
 			const [step] = await this.page.observe(instr);
 			await this.page.act(step);
-			log.info({ step: "openEmail", cached: true, ms: Date.now() - t0 }, "ok");
+			log.info(
+				{
+					event: "openEmail.cached",
+					cached: true,
+					ms: Date.now() - t0,
+					sessionId: this.sessionId,
+					client: this.client,
+					engine: this.engine,
+				},
+				"openEmail.cached",
+			);
 		} catch (err) {
-			log.warn({ step: "openEmail", fallback: true, err }, "observe_failed");
+			log.warn(
+				{
+					event: "openEmail.observe_failed",
+					fallback: true,
+					err,
+					sessionId: this.sessionId,
+					client: this.client,
+					engine: this.engine,
+				},
+				"openEmail.observe_failed",
+			);
 			const agent = this.sh.agent({
 				provider: "openai",
 				model: "computer-use-preview",
@@ -202,12 +276,15 @@ export class StagehandClient {
 			await agent.execute(instr);
 			log.info(
 				{
-					step: "openEmail",
+					event: "openEmail.fallback",
 					cached: false,
 					fallback: true,
 					ms: Date.now() - t0,
+					sessionId: this.sessionId,
+					client: this.client,
+					engine: this.engine,
 				},
-				"cu_ok",
+				"openEmail.fallback",
 			);
 		}
 
@@ -227,9 +304,29 @@ export class StagehandClient {
 		try {
 			const [step] = await this.page.observe(instr);
 			await this.page.act(step);
-			log.info({ step: "showImages", cached: true, ms: Date.now() - t0 }, "ok");
+			log.info(
+				{
+					event: "showImages.cached",
+					cached: true,
+					ms: Date.now() - t0,
+					sessionId: this.sessionId,
+					client: this.client,
+					engine: this.engine,
+				},
+				"showImages.cached",
+			);
 		} catch (err) {
-			log.warn({ step: "showImages", fallback: true, err }, "observe_failed");
+			log.warn(
+				{
+					event: "showImages.observe_failed",
+					fallback: true,
+					err,
+					sessionId: this.sessionId,
+					client: this.client,
+					engine: this.engine,
+				},
+				"showImages.observe_failed",
+			);
 			const agent = this.sh.agent({
 				provider: "openai",
 				model: "computer-use-preview",
@@ -239,12 +336,15 @@ export class StagehandClient {
 			await agent.execute(instr);
 			log.info(
 				{
-					step: "showImages",
+					event: "showImages.fallback",
 					cached: false,
 					fallback: true,
 					ms: Date.now() - t0,
+					sessionId: this.sessionId,
+					client: this.client,
+					engine: this.engine,
 				},
-				"cu_ok",
+				"showImages.fallback",
 			);
 		}
 	}
@@ -262,12 +362,15 @@ export class StagehandClient {
 		const buf = await body.screenshot({ type: "png" });
 		logger.info(
 			{
-				step: "screenshot",
+				event: "screenshot",
 				dark: isDark,
 				bytes: buf.length,
 				ms: Date.now() - t0,
+				sessionId: this.sessionId,
+				client: this.client,
+				engine: this.engine,
 			},
-			"saved",
+			"screenshot",
 		);
 		return buf;
 	}

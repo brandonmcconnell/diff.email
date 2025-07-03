@@ -71,7 +71,10 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 		const jobStart = Date.now();
 		const sh = new StagehandClient(client, engine);
 		await sh.init();
-		log.info({ sessionId: sh.sessionId }, "bb.session");
+		log.info(
+			{ event: "bb.session", sessionId: sh.sessionId, client, engine },
+			"bb.session",
+		);
 
 		// optional login (skips if already logged in)
 		await sh.login();
@@ -111,14 +114,27 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 		await sh.close();
 		log.info(
 			{
+				event: "job.done",
 				duration: Date.now() - jobStart,
 				success: true,
 				sessionId: sh.sessionId,
+				client,
+				engine,
 			},
 			"job.done",
 		);
 	} catch (err) {
-		log.error({ err, success: false }, "job.done");
+		log.error(
+			{
+				event: "job.done",
+				err,
+				success: false,
+				sessionId: (err as any)?.sessionId,
+				client,
+				engine,
+			},
+			"job.done",
+		);
 		throw err;
 	}
 }

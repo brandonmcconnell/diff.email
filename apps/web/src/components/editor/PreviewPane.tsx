@@ -819,8 +819,6 @@ export function PreviewPane({
 											<span className="font-semibold">
 												{clientLabels[client]}
 											</span>
-											<span className="mx-1 select-none opacity-50">•</span>
-											<span>{engineLabels[engine]}</span>
 										</div>
 									</div>
 								);

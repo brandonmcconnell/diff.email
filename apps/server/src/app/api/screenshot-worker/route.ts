@@ -111,7 +111,6 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 		await captureAndSave(false);
 		await captureAndSave(true);
 
-		await sh.close();
 		log.info(
 			{
 				event: "job.done",
@@ -129,13 +128,19 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 				event: "job.done",
 				err,
 				success: false,
-				sessionId: (err as any)?.sessionId,
+				sessionId: sh.sessionId,
 				client,
 				engine,
 			},
 			"job.done",
 		);
 		throw err;
+	} finally {
+		try {
+			await sh.close();
+		} catch (_) {
+			/* swallow – avoid masking original error */
+		}
 	}
 }
 

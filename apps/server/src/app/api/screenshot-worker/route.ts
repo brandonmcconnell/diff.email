@@ -86,9 +86,7 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 
 		await sh.openEmail(subjectToken);
 
-		if (client === "gmail") {
-			await sh.showRemoteImagesIfNeeded();
-		}
+		await sh.showRemoteImagesIfNeeded();
 
 		// Helper: capture & upload
 		async function captureAndSave(isDark: boolean): Promise<void> {

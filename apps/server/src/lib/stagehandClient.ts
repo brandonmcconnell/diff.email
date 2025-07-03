@@ -189,7 +189,8 @@ export class StagehandClient {
 			instrDetailed += `• Enter the current 6-digit verification code "${otp}" when prompted. If the code is rejected, immediately regenerate a new one with the same secret and retry.\n`;
 		}
 		instrDetailed +=
-			"After each form step, click the visible 'Next', 'Continue', or equivalent button to proceed until the inbox loads.";
+			"After each form step, click the visible 'Next', 'Continue', or equivalent button to proceed until the inbox loads. " +
+			"If a 'Stay signed in' or 'Remember me' checkbox is present, enable it before continuing.";
 
 		const t0 = Date.now();
 		const agent = this.sh.agent({
@@ -277,13 +278,12 @@ export class StagehandClient {
 	}
 
 	async showRemoteImagesIfNeeded(): Promise<void> {
-		if (this.client !== "gmail") return;
 		const log = logger.child({
 			fn: "StagehandClient.showImages",
 			client: this.client,
 		});
 		const instr =
-			"If a banner or button labelled 'Show images' is visible inside the open Gmail message, click it to display remote images. Then wait until inline images are visible before continuing.";
+			"If an email client banner or button is visible prompting you to show images or show external images or anything to that effect, click it to display remote images. Then wait until inline images are visible before continuing.";
 		const t0 = Date.now();
 		try {
 			const [step] = await this.page.observe(instr);
@@ -336,9 +336,11 @@ export class StagehandClient {
 	async screenshotBody(isDark: boolean): Promise<Buffer> {
 		const t0 = Date.now();
 		await this.page.emulateMedia({ colorScheme: isDark ? "dark" : "light" });
-		// Move mouse to corner to avoid hover popovers
+		// Move mouse to corner and press Escape to dismiss any hover/focus overlays
 		await this.page.mouse.move(0, 0);
 		const bodySelector = selectors[this.client].messageBody;
+		await this.page.keyboard.press("Escape");
+		await this.page.waitForTimeout(200);
 		const body = await this.page.waitForSelector(bodySelector, {
 			timeout: 15_000,
 		});

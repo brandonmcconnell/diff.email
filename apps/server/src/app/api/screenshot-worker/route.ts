@@ -68,6 +68,7 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 	log.debug("Verified run row exists in database");
 
 	try {
+		const jobStart = Date.now();
 		const sh = new StagehandClient(client, engine);
 		await sh.init();
 
@@ -107,9 +108,9 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 		await captureAndSave(true);
 
 		await sh.close();
-		log.info(`[${client}:${engine}] [step] screenshots-done`);
+		log.info({ duration: Date.now() - jobStart, success: true }, "job.done");
 	} catch (err) {
-		log.error({ err }, "Stagehand flow failed");
+		log.error({ err, success: false }, "job.done");
 		throw err;
 	}
 }

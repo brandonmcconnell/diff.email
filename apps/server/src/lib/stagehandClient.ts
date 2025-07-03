@@ -142,12 +142,13 @@ export class StagehandClient {
 				: "") +
 			"Always opt to stay logged in when asked, and skip any prompts to add backup info.";
 
+		const t0 = Date.now();
 		try {
 			const [step] = await this.page.observe(instrDetailed);
 			await this.page.act(step);
-			log.info("Login completed via observe/act");
+			log.info({ step: "login", cached: true, ms: Date.now() - t0 }, "ok");
 		} catch (err) {
-			log.warn({ err }, "observe/act login failed – falling back to CUA");
+			log.warn({ step: "login", fallback: true, err }, "observe_failed");
 			const agent = this.sh.agent({
 				provider: "openai",
 				model: "computer-use-preview",
@@ -155,6 +156,10 @@ export class StagehandClient {
 				options: { apiKey: env("OPENAI_API_KEY") },
 			});
 			await agent.execute(instrDetailed);
+			log.info(
+				{ step: "login", cached: false, fallback: true, ms: Date.now() - t0 },
+				"cu_ok",
+			);
 		}
 	}
 
@@ -171,12 +176,13 @@ export class StagehandClient {
 			"Open that email (double-click or tap if needed). " +
 			"Ensure the message body is fully visible before continuing.";
 
+		const t0 = Date.now();
 		try {
 			const [step] = await this.page.observe(instr);
 			await this.page.act(step);
-			log.info("Email opened via observe/act");
+			log.info({ step: "openEmail", cached: true, ms: Date.now() - t0 }, "ok");
 		} catch (err) {
-			log.warn({ err }, "observe/act open-email failed – using CUA");
+			log.warn({ step: "openEmail", fallback: true, err }, "observe_failed");
 			const agent = this.sh.agent({
 				provider: "openai",
 				model: "computer-use-preview",
@@ -184,6 +190,15 @@ export class StagehandClient {
 				options: { apiKey: env("OPENAI_API_KEY") },
 			});
 			await agent.execute(instr);
+			log.info(
+				{
+					step: "openEmail",
+					cached: false,
+					fallback: true,
+					ms: Date.now() - t0,
+				},
+				"cu_ok",
+			);
 		}
 
 		// Confirm body visible
@@ -198,12 +213,13 @@ export class StagehandClient {
 		});
 		const instr =
 			"If a banner or button labelled 'Show images' is visible inside the open Gmail message, click it to display remote images. Then wait until inline images are visible before continuing.";
+		const t0 = Date.now();
 		try {
 			const [step] = await this.page.observe(instr);
 			await this.page.act(step);
-			log.info("Show images done via observe/act");
+			log.info({ step: "showImages", cached: true, ms: Date.now() - t0 }, "ok");
 		} catch (err) {
-			log.warn({ err }, "observe/act show-images failed – using CUA");
+			log.warn({ step: "showImages", fallback: true, err }, "observe_failed");
 			const agent = this.sh.agent({
 				provider: "openai",
 				model: "computer-use-preview",
@@ -211,10 +227,20 @@ export class StagehandClient {
 				options: { apiKey: env("OPENAI_API_KEY") },
 			});
 			await agent.execute(instr);
+			log.info(
+				{
+					step: "showImages",
+					cached: false,
+					fallback: true,
+					ms: Date.now() - t0,
+				},
+				"cu_ok",
+			);
 		}
 	}
 
 	async screenshotBody(isDark: boolean): Promise<Buffer> {
+		const t0 = Date.now();
 		await this.page.emulateMedia({ colorScheme: isDark ? "dark" : "light" });
 		const bodySelector = selectors[this.client].messageBody;
 		const body = await this.page.waitForSelector(bodySelector, {
@@ -223,7 +249,17 @@ export class StagehandClient {
 		if (!body) throw new Error("Message body element not found");
 		// small settle time
 		await this.page.waitForTimeout(2_000);
-		return body.screenshot({ type: "png" });
+		const buf = await body.screenshot({ type: "png" });
+		logger.info(
+			{
+				step: "screenshot",
+				dark: isDark,
+				bytes: buf.length,
+				ms: Date.now() - t0,
+			},
+			"saved",
+		);
+		return buf;
 	}
 
 	async close(): Promise<void> {

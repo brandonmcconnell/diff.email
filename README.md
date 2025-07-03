@@ -50,10 +50,13 @@ All in one, open-source toolbox—no more juggling SaaS tabs or waiting for emai
 - ✉️ **Author** raw HTML *or* JSX, with support for [React Email](https://react.email/) components.
 - 💡 **Live Preview** in a sandboxed `<iframe>`.
 - 📸 **One-click run** captures Gmail, Outlook, Yahoo, AOL & iCloud across Chromium, Firefox & WebKit.
+- 🤖 **AI-native mailbox automation**
+   - Stagehand CUA logs in, searches and screenshots the target email per provider
+   - Stagehand caches selectors to make subsequent runs instant without LLM dependence
 - 🕶 **Dark-mode** toggle that toggles both the live preview and screenshots to their dark mode equivalents.
 - 🕑 **Automatic versioning** & diffs between any two saves.
 - 🔑 **Better Auth** user accounts (Postgres adapter).
-- 🌩 **Serverless-friendly**—runs entirely on Vercel (or any Node 18+ host).
+- 🌩 **Serverless-friendly** — runs entirely on Vercel (or any Node 18+ host).
 
 ---
 
@@ -102,7 +105,7 @@ graph TD
 | ORM                | **Drizzle ORM**                          | SQL-first, type-safe |
 | Queue              | **BullMQ** + **Upstash Redis**           | Durable job storage |
 | Object Store       | **@vercel/blob**                         | Public CDN URLs for screenshots |
-| Screenshots        | **Playwright** (Chromium/Firefox/WebKit) | Real engines, not emulation |
+| Screenshots        | **Playwright + Stagehand**               | Real engines with AI navigation |
 | Dev UX             | **pnpm**, **Biome**, **shadcn/ui**       | Fast installs, zero-config formatting |
 
 *Scope guard: Please keep the stack above—no Bun, Prisma, MongoDB, etc.*
@@ -208,7 +211,7 @@ pnpm dev:web      # RSC front-end on :3001
 1. **User clicks "Save & Run".**
 2. `versions.save` creates a new HTML snapshot.
 3. `runs.create` inserts a `runs` row, enqueues 15 BullMQ jobs.
-4. **Worker (inside the server app)** picks up each job, launches Playwright with pre-cached mailbox sessions.
+4. **Worker (inside the server app)** picks up each job, launches Playwright with Browserbase + Stagehand to drive real webmail UIs.
 5. Screenshot PNG ➜ upload to `@vercel/blob` ➜ insert into `screenshots` table.
 6. When the last job finishes, the run flips to `done`, and the UI grid automatically refreshes via React-Query.
 
@@ -242,7 +245,7 @@ sequenceDiagram
 
 ## 🛣️ Roadmap
 
-- [ ] Use [Stagehand](https://github.com/browserbase/stagehand) AI-powered worker as fallback on failures
+- [x] Stagehand CUA drives all mailbox interactions (cached selectors + LLM fallback)
 - [ ] Implement usage-based billing via [Polar](https://github.com/polarsource/polar) ([SDK](https://github.com/polarsource/polar-js))
 - [ ] Deep-linking to emails where possible (Gmail ✅, Outlook ❓, Yahoo ❓, AOL ❓)
 - [ ] Automatic dark-mode screenshot runs

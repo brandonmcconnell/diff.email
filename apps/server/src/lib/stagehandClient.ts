@@ -184,52 +184,23 @@ export class StagehandClient {
 			"Always opt to stay logged in when asked, and skip any prompts to add backup info.";
 
 		const t0 = Date.now();
-		try {
-			const [step] = await this.page.observe(instrDetailed);
-			await this.page.act(step);
-			log.info(
-				{
-					event: "login.cached",
-					cached: true,
-					ms: Date.now() - t0,
-					sessionId: this.sessionId,
-					client: this.client,
-					engine: this.engine,
-				},
-				"login.cached",
-			);
-		} catch (err) {
-			log.warn(
-				{
-					event: "login.observe_failed",
-					fallback: true,
-					err,
-					sessionId: this.sessionId,
-					client: this.client,
-					engine: this.engine,
-				},
-				"login.observe_failed",
-			);
-			const agent = this.sh.agent({
-				provider: "openai",
-				model: "computer-use-preview",
-				instructions: instrDetailed,
-				options: { apiKey: env("OPENAI_API_KEY") },
-			});
-			await agent.execute(instrDetailed);
-			log.info(
-				{
-					event: "login.fallback",
-					cached: false,
-					fallback: true,
-					ms: Date.now() - t0,
-					sessionId: this.sessionId,
-					client: this.client,
-					engine: this.engine,
-				},
-				"login.fallback",
-			);
-		}
+		const agent = this.sh.agent({
+			provider: "openai",
+			model: "computer-use-preview",
+			instructions: instrDetailed,
+			options: { apiKey: env("OPENAI_API_KEY") },
+		});
+		await agent.execute(instrDetailed);
+		log.info(
+			{
+				event: "login.agent",
+				ms: Date.now() - t0,
+				sessionId: this.sessionId,
+				client: this.client,
+				engine: this.engine,
+			},
+			"login.agent",
+		);
 	}
 
 	async openEmail(subjectToken: string): Promise<void> {

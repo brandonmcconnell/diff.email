@@ -166,6 +166,11 @@ export class StagehandClient {
 		});
 		const creds = credsMap[this.client];
 
+		// Ensure we are on the mailbox domain so that the login UI is present.
+		await this.page.goto(inboxUrls[this.client], {
+			waitUntil: "domcontentloaded",
+		});
+
 		// Instruction string ensures: skip if already logged in, stay logged in.
 		const baseInstr =
 			"If the mailbox UI is already visible (search bar or sidebar), skip login entirely. Otherwise, sign in with the credentials provided.";

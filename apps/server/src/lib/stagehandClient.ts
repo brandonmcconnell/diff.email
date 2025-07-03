@@ -7,6 +7,7 @@ import type { Page } from "playwright-core";
 import { selectors } from "../app/api/screenshot-worker/selectors";
 import { db } from "../db";
 import { browserContext } from "../db/schema/browserContext";
+import { generateOtp } from "./otp";
 import { inboxUrls } from "./urls";
 
 function env(key: string): string {
@@ -156,6 +157,10 @@ export class StagehandClient {
 
 		this.page = this.sh.page as unknown as SHPage;
 
+		// Set generous timeouts for slow providers
+		this.page.setDefaultNavigationTimeout(120_000);
+		this.page.setDefaultTimeout(60_000);
+
 		log.info("Stagehand session started");
 	}
 
@@ -174,14 +179,16 @@ export class StagehandClient {
 		// Instruction string ensures: skip if already logged in, stay logged in.
 		const baseInstr =
 			"If the mailbox UI is already visible (search bar or sidebar), skip login entirely. Otherwise, sign in with the credentials provided.";
-		const instrDetailed =
+		let instrDetailed =
 			`${baseInstr}\n\n` +
 			`• Email: "${creds.user}"\n` +
-			`• Password: "${creds.pass}"\n` +
-			(creds.secret
-				? `• If prompted for 2-factor verification, generate a 6-digit TOTP code using secret "${creds.secret}" (RFC 6238) **at the moment of entry** and submit it. If the code is rejected, regenerate a fresh one and retry.\n`
-				: "") +
-			"Always opt to stay logged in when asked, and skip any prompts to add backup info.";
+			`• Password: "${creds.pass}"\n`;
+
+		if (creds.secret) {
+			instrDetailed += `• When prompted for a 6-digit verification code, generate a fresh code **right now** using the shared secret \\"${creds.secret}\\" (RFC-6238 TOTP) and enter it. If the code is rejected, immediately generate a new one and retry.\n`;
+		}
+		instrDetailed +=
+			"After each form step, click the visible 'Next', 'Continue', or equivalent button to proceed until the inbox loads.";
 
 		const t0 = Date.now();
 		const agent = this.sh.agent({
@@ -328,6 +335,8 @@ export class StagehandClient {
 	async screenshotBody(isDark: boolean): Promise<Buffer> {
 		const t0 = Date.now();
 		await this.page.emulateMedia({ colorScheme: isDark ? "dark" : "light" });
+		// Move mouse to corner to avoid hover popovers
+		await this.page.mouse.move(0, 0);
 		const bodySelector = selectors[this.client].messageBody;
 		const body = await this.page.waitForSelector(bodySelector, {
 			timeout: 15_000,

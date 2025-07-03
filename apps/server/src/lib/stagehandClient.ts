@@ -1,8 +1,12 @@
+import Browserbase from "@browserbasehq/sdk";
 import { Stagehand } from "@browserbasehq/stagehand";
 import logger from "@diff-email/logger";
 import type { Client, Engine } from "@diff-email/shared";
+import { and, eq } from "drizzle-orm";
 import type { Page } from "playwright-core";
 import { selectors } from "../app/api/screenshot-worker/selectors";
+import { db } from "../db";
+import { browserContext } from "../db/schema/browserContext";
 import { inboxUrls } from "./urls";
 
 function env(key: string): string {
@@ -67,14 +71,46 @@ export class StagehandClient {
 			fn: "StagehandClient.init",
 			client: this.client,
 		});
+
+		// Reuse or create persisted Browserbase Context for this (client,engine)
+		const projectId = env("BROWSERBASE_PROJECT_ID");
+		const bb = new Browserbase({ apiKey: env("BROWSERBASE_API_KEY") });
+		let ctxRow = (
+			await db
+				.select({ id: browserContext.id })
+				.from(browserContext)
+				.where(
+					and(
+						eq(browserContext.client, this.client),
+						eq(browserContext.engine, this.engine),
+					),
+				)
+		)[0];
+
+		if (!ctxRow) {
+			const created = await bb.contexts.create({ projectId });
+			ctxRow = { id: created.id } as const;
+			await db.insert(browserContext).values({
+				id: created.id,
+				client: this.client,
+				engine: this.engine,
+			});
+			log.info({ contextId: created.id }, "Created new Browserbase context");
+		} else {
+			log.debug({ contextId: ctxRow.id }, "Using existing Browserbase context");
+		}
 		this.sh = new Stagehand({
 			env: "BROWSERBASE",
 			apiKey: env("BROWSERBASE_API_KEY"),
-			projectId: env("BROWSERBASE_PROJECT_ID"),
+			projectId,
 			browserbaseSessionCreateParams: {
-				projectId: env("BROWSERBASE_PROJECT_ID"),
+				projectId,
 				browserSettings: {
 					viewport: { width: 1024, height: 768 },
+					context: {
+						id: ctxRow.id,
+						persist: true,
+					},
 				},
 			},
 			verbose: 0,

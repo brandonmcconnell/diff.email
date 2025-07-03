@@ -1022,6 +1022,13 @@ export function PreviewPane({
 						</div>
 					)}
 
+					{processingCombos.size > 0 && (
+						<div className="relative mx-auto flex w-full max-w-lg flex-col items-center justify-center text-balance p-4 text-center text-muted-foreground text-sm">
+							Generating screenshots. Please be patient. This can take several
+							minutes to complete.
+						</div>
+					)}
+
 					{/* Lightbox dialog */}
 					<Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
 						<DialogContent

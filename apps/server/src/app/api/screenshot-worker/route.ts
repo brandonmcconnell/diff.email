@@ -10,20 +10,14 @@ import type { Client, Engine, ScreenshotJobData } from "@diff-email/shared";
 import { put } from "@vercel/blob";
 import { type Job, Worker } from "bullmq";
 import { eq } from "drizzle-orm";
-import type { ElementHandle, Page } from "playwright-core";
+// Playwright types no longer directly imported – Stagehand encapsulates them
 // --- Shared imports from the server package ------------------------------
 import { db } from "../../../db";
 import { run, screenshot } from "../../../db/schema/core";
-import { connectBrowser } from "../../../lib/browserbase";
-import { ensureLoggedIn } from "../../../lib/login";
 import { redis, screenshotsQueue } from "../../../lib/queue";
-import {
-	clickShowImagesWithStagehand,
-	loginWithStagehand,
-	openEmailWithStagehand,
-} from "../../../lib/stagehandFallback";
-import { inboxUrls } from "../../../lib/urls";
-import { selectors } from "./selectors";
+import { StagehandClient } from "../../../lib/stagehandClient";
+
+// imports removed: inboxUrls, selectors – no longer needed
 
 // -------------------------------------------------------------------------
 // Environment helpers
@@ -36,159 +30,11 @@ if (!blobToken) {
 }
 
 //--------------------------------------------------------------------------
-// Utility: click the geometrical center of an element via real mouse event.
-async function mouseClickCenter(
-	page: Page,
-	handle: ElementHandle,
-): Promise<void> {
-	const box = await handle.boundingBox();
-	if (!box) throw new Error("Could not obtain bounding box for element");
-	await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-}
-
-//--------------------------------------------------------------------------
-// Utility: reject after N ms (used for Promise.race watchdog)
-function delayReject(ms: number, msg: string): Promise<never> {
-	return new Promise((_, reject) =>
-		setTimeout(() => reject(new Error(msg)), ms),
-	);
-}
-
-const defaultWaitForEmailTimeoutMs = 90_000;
-
-//--------------------------------------------------------------------------
-// Helper: wait for an email to arrive in the mailbox and open it.
-async function waitForEmail(
-	page: Page,
-	client: Client,
-	subjectToken: string,
-	engine: Engine,
-	timeoutMs = defaultWaitForEmailTimeoutMs,
-): Promise<void> {
-	const start = Date.now();
-	const log = logger.child({ client, subjectToken, fn: "waitForEmail" });
-	log.debug({ timeoutMs }, "Begin waiting for email");
-	let attempts = 0;
-	const { searchInput, searchResult, messageBody } = selectors[client];
-
-	await page.goto(inboxUrls[client], { waitUntil: "domcontentloaded" });
-
-	while (Date.now() - start < timeoutMs) {
-		attempts++;
-		log.debug({ attempts, elapsedMs: Date.now() - start }, "Search attempt");
-		// Focus and search
-		log.info(`[${client}:${engine}] [step] waiting for search-input`);
-		await page.waitForSelector(searchInput, { timeout: 10_000 });
-		if (client === "icloud") {
-			// iCloud token field is a web-component; requires real mouse click then typing
-			const handle = await page.$(searchInput);
-			if (!handle) throw new Error("iCloud search field not found");
-			await mouseClickCenter(page, handle);
-			await page.keyboard.type(subjectToken, { delay: 50 });
-		} else {
-			// Ensure input is focused before filling, in case .fill alone doesn't trigger events
-			await page.click(searchInput, { clickCount: 1 });
-			await page.fill(searchInput, subjectToken);
-		}
-		await page.keyboard.press("Enter");
-
-		try {
-			await page.waitForSelector(searchResult, { timeout: 5_000 });
-			const first = await page.$(searchResult);
-			if (!first) throw new Error("Search result element vanished");
-
-			if (client === "icloud") {
-				// iCloud requires real mouse clicks
-				await mouseClickCenter(page, first);
-			} else {
-				await first.click();
-			}
-
-			// Wait for the message body to render
-			await page.waitForSelector(messageBody, { timeout: 10_000 });
-			log.debug({ attempts }, "Email opened successfully");
-			return; // success
-		} catch (_e) {
-			log.debug({ attempts }, "Email not found, will retry in 5s");
-			// Email not yet found – wait and retry
-			await page.waitForTimeout(5_000);
-		}
-	}
-
-	throw new Error(
-		`Email with token ${subjectToken} not found in ${client} within ${timeoutMs} ms`,
-	);
-}
-
-//--------------------------------------------------------------------------
 // Helper step functions implementing granular deterministic logic with
 // Stagehand fallbacks. Each function will attempt the deterministic
 // strategy first and, if that fails, fall back to Stagehand for a natural
 // language approach before returning control to deterministic selectors for
 // the following steps.
-//--------------------------------------------------------------------------
-async function stepLogin(page: Page, client: Client): Promise<void> {
-	const stepLog = logger.child({ fn: "stepLogin", client });
-	try {
-		stepLog.info(`[${client}] [step] login-check (deterministic)`);
-		await ensureLoggedIn(page, client);
-	} catch (err) {
-		stepLog.warn(
-			{ err },
-			"Deterministic login failed – falling back to Stagehand",
-		);
-		await loginWithStagehand(page, client);
-	}
-}
-
-async function stepLocateEmail(
-	page: Page,
-	client: Client,
-	subjectToken: string,
-	engine: Engine,
-): Promise<void> {
-	const stepLog = logger.child({ fn: "stepLocateEmail", client, engine });
-	try {
-		stepLog.info(`[${client}:${engine}] [step] locating-email (deterministic)`);
-		await Promise.race([
-			waitForEmail(page, client, subjectToken, engine),
-			delayReject(
-				defaultWaitForEmailTimeoutMs,
-				"Timed out waiting for email > 90s (deterministic)",
-			),
-		]);
-	} catch (err) {
-		stepLog.warn(
-			{ err },
-			"Deterministic locate-email failed – falling back to Stagehand",
-		);
-		await openEmailWithStagehand(page, client, subjectToken);
-	}
-}
-
-async function stepShowImages(
-	page: Page,
-	client: Client,
-	engine: Engine,
-): Promise<void> {
-	if (client !== "gmail") return; // currently only Gmail requires this step
-	const stepLog = logger.child({ fn: "stepShowImages", client, engine });
-	try {
-		stepLog.info(`[${client}:${engine}] [step] show-images (deterministic)`);
-		const showBtn = await page.waitForSelector("button:text('Show images')", {
-			timeout: 5_000,
-		});
-		await showBtn.click();
-		await page.waitForTimeout(10_000); // allow remote images to load
-	} catch (err) {
-		stepLog.warn(
-			{ err },
-			"Deterministic show-images click failed – falling back to Stagehand",
-		);
-		await clickShowImagesWithStagehand(page, client);
-	}
-}
-
 //--------------------------------------------------------------------------
 async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 	const { runId, client, engine, subjectToken } = job.data;
@@ -222,53 +68,25 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 	log.debug("Verified run row exists in database");
 
 	try {
-		// Connect to a remote Browserbase session, reusing persisted context.
-		const { page, cleanup } = await connectBrowser(client, engine);
-		log.info(`[${client}:${engine}] [step] browser-connected`);
+		const sh = new StagehandClient(client, engine);
+		await sh.init();
 
-		log.info(`[${client}:${engine}] [step] login-check`);
-		await stepLogin(page, client);
-		log.info(`[${client}:${engine}] [step] inbox-ready`);
-
-		log.debug("Connected to Browserbase session");
+		// optional login (skips if already logged in)
+		await sh.login();
 
 		if (!subjectToken) {
 			throw new Error("Job is missing subjectToken; cannot locate email");
 		}
 
-		log.info(`[${client}:${engine}] [step] locating-email`);
-		// Wait for the email to appear and open it once (light mode)
-		await stepLocateEmail(page, client, subjectToken ?? "", engine);
-		log.info(`[${client}:${engine}] [step] email-opened (playwright)`);
+		await sh.openEmail(subjectToken);
 
-		// Gmail: click "Show images" if present to load remote images
 		if (client === "gmail") {
-			await stepShowImages(page, client, engine);
+			await sh.showRemoteImagesIfNeeded();
 		}
 
-		// Helper to capture, upload, and insert one screenshot for given color scheme
+		// Helper: capture & upload
 		async function captureAndSave(isDark: boolean): Promise<void> {
-			log.debug({ isDark }, "Preparing to capture screenshot");
-			await page.emulateMedia({ colorScheme: isDark ? "dark" : "light" });
-
-			log.info({ isDark }, `[${client}:${engine}] [step] screenshot-captured`);
-
-			const bodyHandle = await page.waitForSelector(
-				selectors[client].messageBody,
-				{ timeout: 10_000 },
-			);
-			if (!bodyHandle) throw new Error("Message body element not found");
-
-			// Give remote images / fonts a chance to load fully
-			try {
-				await page.waitForLoadState("networkidle", { timeout: 5_000 });
-			} catch (_) {
-				/* ignore – we'll still capture after timeout */
-			}
-			await page.waitForTimeout(3_000); // additional settle buffer
-
-			const buffer = await bodyHandle.screenshot({ type: "png" });
-
+			const buffer = await sh.screenshotBody(isDark);
 			const filename = `screenshots/${job.id}-${isDark ? "dark" : "light"}.png`;
 			const { url } = await put(filename, buffer, {
 				access: "public",
@@ -282,62 +100,17 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 				darkMode: isDark,
 				url,
 			});
-
 			log.info({ isDark, url }, "Screenshot saved");
-			log.debug(
-				{ isDark, filename, url },
-				"Screenshot uploaded to blob storage",
-			);
 		}
 
-		// Capture light then dark
 		await captureAndSave(false);
 		await captureAndSave(true);
 
-		await cleanup();
+		await sh.close();
 		log.info(`[${client}:${engine}] [step] screenshots-done`);
 	} catch (err) {
-		log.warn(
-			{ err },
-			"Deterministic selectors failed – falling back to Stagehand",
-		);
-
-		try {
-			const { page, cleanup } = await connectBrowser(client, engine);
-
-			await openEmailWithStagehand(page, client, subjectToken ?? "");
-
-			// reuse existing capture logic
-			async function captureAndSaveWithStagehand(
-				isDark: boolean,
-			): Promise<void> {
-				await page.emulateMedia({ colorScheme: isDark ? "dark" : "light" });
-
-				const bodyHandle = await page.waitForSelector(
-					selectors[client].messageBody,
-					{ timeout: 10_000 },
-				);
-				const buffer = await bodyHandle.screenshot({ type: "png" });
-				const filename = `screenshots/${job.id}-stagehand-${isDark ? "dark" : "light"}.png`;
-				const { url } = await put(filename, buffer, {
-					access: "public",
-					token: blobToken,
-				});
-				await db
-					.insert(screenshot)
-					.values({ runId, client, engine, darkMode: isDark, url });
-			}
-
-			await captureAndSaveWithStagehand(false);
-			await captureAndSaveWithStagehand(true);
-
-			await cleanup();
-			log.info(`[${client}:${engine}] [step] email-opened (stagehand)`);
-			return; // success, do not rethrow
-		} catch (fallbackErr) {
-			log.error({ err: fallbackErr }, "Stagehand fallback also failed");
-			throw fallbackErr; // mark job failed
-		}
+		log.error({ err }, "Stagehand flow failed");
+		throw err;
 	}
 }
 

@@ -218,7 +218,39 @@ export class StagehandClient {
 			client: this.client,
 		});
 
-		await this.page.goto(inboxUrls[this.client]);
+		await this.page.goto(inboxUrls[this.client], {
+			waitUntil: "domcontentloaded",
+		});
+
+		// Special deterministic click-then-type for iCloud's token search field
+		if (this.client === "icloud") {
+			try {
+				const tokenField = await this.page.waitForSelector(
+					selectors[this.client].searchInput,
+					{ timeout: 10_000 },
+				);
+				await tokenField.click();
+				await this.page.keyboard.type(subjectToken, { delay: 50 });
+				await this.page.keyboard.press("Enter");
+				// Wait for first result
+				const first = await this.page.waitForSelector(
+					selectors[this.client].searchResult,
+					{ timeout: 10_000 },
+				);
+				if (first) {
+					const box = await first.boundingBox();
+					if (box) {
+						await this.page.mouse.click(
+							box.x + box.width / 2,
+							box.y + box.height / 2,
+						);
+						await this.page.waitForTimeout(3000);
+					}
+				}
+			} catch (_) {
+				/* ignore */
+			}
+		}
 
 		const instr =
 			`Use the mailbox user-interface to locate the email whose subject contains the exact text "${subjectToken}" (case-insensitive). ` +
@@ -341,13 +373,30 @@ export class StagehandClient {
 		const bodySelector = selectors[this.client].messageBody;
 		await this.page.keyboard.press("Escape");
 		await this.page.waitForTimeout(200);
-		const body = await this.page.waitForSelector(bodySelector, {
-			timeout: 15_000,
-		});
-		if (!body) throw new Error("Message body element not found");
-		// small settle time
-		await this.page.waitForTimeout(2_000);
-		const buf = await body.screenshot({ type: "png" });
+		let buf: Buffer;
+		try {
+			if (this.client === "icloud") {
+				const frameEl = await this.page.waitForSelector(bodySelector, {
+					timeout: 15_000,
+				});
+				const frame = await frameEl.contentFrame();
+				if (!frame) throw new Error("iCloud message iframe not found");
+				const frameBody = await frame.waitForSelector("body", {
+					timeout: 10_000,
+				});
+				await frame.waitForTimeout(1000);
+				buf = await frameBody.screenshot({ type: "png" });
+			} else {
+				const body = await this.page.waitForSelector(bodySelector, {
+					timeout: 15_000,
+				});
+				if (!body) throw new Error("Message body element not found");
+				await this.page.waitForTimeout(2_000);
+				buf = await body.screenshot({ type: "png" });
+			}
+		} catch (e) {
+			throw e;
+		}
 		logger.info(
 			{
 				event: "screenshot",

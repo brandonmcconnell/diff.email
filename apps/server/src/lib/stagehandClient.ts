@@ -185,7 +185,8 @@ export class StagehandClient {
 			`• Password: "${creds.pass}"\n`;
 
 		if (creds.secret) {
-			instrDetailed += `• When prompted for a 6-digit verification code, generate a fresh code **right now** using the shared secret \\"${creds.secret}\\" (RFC-6238 TOTP) and enter it. If the code is rejected, immediately generate a new one and retry.\n`;
+			const otp = generateOtp(creds.secret);
+			instrDetailed += `• Enter the current 6-digit verification code "${otp}" when prompted. If the code is rejected, immediately regenerate a new one with the same secret and retry.\n`;
 		}
 		instrDetailed +=
 			"After each form step, click the visible 'Next', 'Continue', or equivalent button to proceed until the inbox loads.";

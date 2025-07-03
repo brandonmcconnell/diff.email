@@ -67,12 +67,13 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 	}
 	log.debug("Verified run row exists in database");
 
+	const jobStart = Date.now();
+	let sh!: StagehandClient;
 	try {
-		const jobStart = Date.now();
-		const sh = new StagehandClient(client, engine);
+		sh = new StagehandClient(client, engine);
 		await sh.init();
 		log.info(
-			{ event: "bb.session", sessionId: sh.sessionId, client, engine },
+			{ event: "bb.session", sessionId: sh!.sessionId, client, engine },
 			"bb.session",
 		);
 
@@ -116,7 +117,7 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 				event: "job.done",
 				duration: Date.now() - jobStart,
 				success: true,
-				sessionId: sh.sessionId,
+				sessionId: sh!.sessionId,
 				client,
 				engine,
 			},
@@ -128,7 +129,7 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 				event: "job.done",
 				err,
 				success: false,
-				sessionId: sh.sessionId,
+				sessionId: sh?.sessionId,
 				client,
 				engine,
 			},
@@ -136,10 +137,12 @@ async function processJob(job: Job<ScreenshotJobData>): Promise<void> {
 		);
 		throw err;
 	} finally {
-		try {
-			await sh.close();
-		} catch (_) {
-			/* swallow – avoid masking original error */
+		if (sh) {
+			try {
+				await sh.close();
+			} catch (_) {
+				/* swallow */
+			}
 		}
 	}
 }

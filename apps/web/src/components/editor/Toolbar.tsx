@@ -394,7 +394,7 @@ export function Toolbar(props: Props) {
 						title="Toggle console"
 					>
 						<Terminal size={16} />
-						<div className="hidden items-center gap-px md:flex">
+						<div className="@md/preview:flex hidden items-center gap-px">
 							{consoleBadgeCounts.map(
 								([count, color]) =>
 									count > 0 && (
@@ -409,7 +409,7 @@ export function Toolbar(props: Props) {
 						</div>
 						<div
 							className={cn(
-								"grid auto-cols-fr grid-flow-col grid-rows-2 gap-px md:hidden",
+								"grid @md/preview:hidden auto-cols-fr grid-flow-col grid-rows-2 gap-px",
 								"rounded border border-transparent p-0.5",
 								consoleVisible && "border-neutral-900/20 bg-white",
 							)}
